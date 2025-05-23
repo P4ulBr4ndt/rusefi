@@ -74,6 +74,12 @@ public enum SerialPortScanner {
             this(port, type, null);
         }
 
+        protected PortResult(final PortResult origin) {
+            this.port = origin.port;
+            this.type = origin.type;
+            this.signature = origin.signature;
+        }
+
         @Override
         public String toString() {
             if (type.friendlyString == null) {
@@ -301,7 +307,7 @@ public enum SerialPortScanner {
         void onChange(AvailableHardware currentHardware);
     }
 
-    public static String getEcuSignature(String port) {
+    private static String getEcuSignature(String port) {
         try (IoStream stream = BufferedSerialIoStream.openPort(port)) {
             return SerialAutoChecker.checkResponse(stream, callbackContext -> null);
         } catch (Exception e) {
@@ -309,7 +315,7 @@ public enum SerialPortScanner {
         }
     }
 
-    public static boolean ecuHasOpenblt(String port) {
+    private static boolean ecuHasOpenblt(String port) {
         try (IoStream stream = BufferedSerialIoStream.openPort(port)) {
             if (stream == null) {
                 return false;
@@ -330,7 +336,7 @@ public enum SerialPortScanner {
         }
     }
 
-    public static boolean isPortOpenblt(String port) {
+    private static boolean isPortOpenblt(String port) {
         try (IoStream stream = BufferedSerialIoStream.openPort(port)) {
             if (stream == null) {
                 return false;
