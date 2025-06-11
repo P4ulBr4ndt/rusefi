@@ -91,12 +91,13 @@ static void handleHarleyCAN(CanCycle cycle) {
   }
 
   if (cycle.isInterval(CI::_50ms)) {
+    bool running = engine->rpmCalculator.isRunning();
     {
       CanTxMessage msg(CanCategory::NBC, 0x146);
       msg[0] = 0x11;
       msg[1] = 0x00;
       msg[2] = 0x00;
-      msg[3] = 0x04;
+      msg[3] = running ? 0x44 : 0x04;
       msg[4] = 0x00;
       msg[5] = 0x00;
       msg[6] = frameCounter146_342;
@@ -106,7 +107,7 @@ static void handleHarleyCAN(CanCycle cycle) {
     {
       CanTxMessage msg(CanCategory::NBC, 0x342);
       msg[0] = 0x54;
-      msg[1] = 0x0A;
+      msg[1] = running ? 0x2A : 0x04;
       msg[2] = 0x54;
       msg[3] = 0x00;
       msg[4] = 0x00;
