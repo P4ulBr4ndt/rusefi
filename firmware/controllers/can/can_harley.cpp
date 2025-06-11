@@ -73,7 +73,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg.setShortValue(Sensor::getOrZero(SensorType::VehicleSpeed), CAN_HD_VSS_OFFSET);
       msg[CAN_HD_GEAR_OFFSET] = calculateHarleyGearValue();
       msg[6] = frameCounter142;
-      msg[7] = crc8(msg, 7);
+      msg[7] = crc8(msg.getFrame()->data8, 7);
       frameCounter142 = (frameCounter142 + 1) % 64;
     }
   }
@@ -85,7 +85,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg.setShortValue(Sensor::getOrZero(SensorType::Tps1Secondary), 2);
       msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) * 2;
       msg[6] = frameCounter144;
-      msg[7] = crc8(msg, 7);
+      msg[7] = crc8(msg.getFrame()->data8, 7);
       frameCounter144 = (frameCounter144 + 1) % 64;
     }
   }
@@ -100,7 +100,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[4] = 0x00;
       msg[5] = 0x00;
       msg[6] = frameCounter146_342;
-      msg[7] = crc8(msg, 7);
+      msg[7] = crc8(msg.getFrame()->data8, 7);
     }
     
     {
@@ -112,7 +112,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[4] = 0x00;
       msg[5] = 0x00;
       msg[6] = frameCounter146_342;
-      msg[7] = crc8(msg, 7);
+      msg[7] = crc8(msg.getFrame()->data8, 7);
     }
 
     {
@@ -183,7 +183,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[4] = 0x00;
       msg[5] = 0x00;
       msg[6] = frameCounter148;
-      msg[7] = crc8(msg, 7);
+      msg[7] = crc8(msg.getFrame()->data8, 7);
     }
 
     {
