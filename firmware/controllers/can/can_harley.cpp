@@ -4,7 +4,6 @@
 
 #include "can_harley.h"
 #include "can_msg_tx.h" // CanTxMessage
-#include "crc.h" // crc8
 #include "engine_configuration.h" // engineConfiguration->vinNumber
 
 uint8_t frameCounter142 = 0x0;
