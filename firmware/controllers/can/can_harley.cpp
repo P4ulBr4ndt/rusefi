@@ -13,18 +13,56 @@ uint8_t frameCounter148 = 0x40;
 
 /*
 TODO: Actual Value Mapping
-N: 0.872V => 0xA0
-1: 0.484V => 0x10
-2: 1.262V => 0x20
-3: 2.098V => 0x30
-4: 2.874V => 0x40
-5: 3.643V => 0x50
-6: 4.439V => 0x60
+N: 0.872V => 0xA0 => 17.44%
+1: 0.484V => 0x10 => 9.86%
+2: 1.262V => 0x20 => 25,24%
+3: 2.098V => 0x30 => 41,96%
+4: 2.874V => 0x40 => 57,48%
+5: 3.643V => 0x50 => 72,96%
+6: 4.439V => 0x60 => 88,78%
 */
+float harleyGearValues[] = { 17.44f, 9.86f, 25.24f, 41.96f, 57.48f, 72.96f, 88.78f };
 uint8_t calculateHarleyGearValue() {
   float sensorValue = Sensor::getOrZero(SensorType::AuxLinear1);
+  float bestMatch = 0.0f;
+  uint8_t bestOffs = 0;
+  for (uint8_t i = 0; i < sizeof(harleyGearValues)/sizeof(harleyGearValues[0]); i++) {
+    float i_delta = abs(harleyGearValues[i] - sensorValue);
+    float x_delta = abs(bestMatch - sensorValue);
+    if (i_delta < x_delta) {
+      bestMatch = harleyGearValues[i];
+      bestOffs = i;
+    }
+  }
 
-  return 0xA0;
+  switch (bestOffs)
+  {
+    case 0:
+      return 0xA0; // N
+      break;
+    case 1:
+      return 0x10; // 1
+      break;
+    case 2:
+      return 0x20; // 2
+      break;
+    case 3:
+      return 0x30; // 3
+      break;
+    case 4:
+      return 0x40; // 4
+      break;
+    case 5:
+      return 0x50; // 5
+      break;
+    case 6:
+      return 0x60; // 6
+      break;
+    
+    default:
+    return 0x0;
+      break;
+  }
 }
 
 static void handleHarleyCAN(CanCycle cycle) {
