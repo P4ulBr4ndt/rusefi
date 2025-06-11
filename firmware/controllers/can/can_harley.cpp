@@ -11,10 +11,6 @@ uint8_t frameCounter144 = 0x0;
 uint8_t frameCounter146_342 = 0x0;
 uint8_t frameCounter148 = 0x40;
 
-void boardUpdateDash(CanCycle cycle) {
-  handleHarleyCAN(cycle);
-}
-
 /*
 TODO: Actual Value Mapping
 N: 0.872V => 0xA0
@@ -181,6 +177,10 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[0] = 0x1;
     }
   }
+}
+
+void boardUpdateDash(CanCycle cycle) {
+  handleHarleyCAN(cycle);
 }
 
 #endif // EFI_CAN_SUPPORT
