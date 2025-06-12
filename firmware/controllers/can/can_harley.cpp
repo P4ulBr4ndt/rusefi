@@ -69,8 +69,8 @@ static void handleHarleyCAN(CanCycle cycle) {
   if (cycle.isInterval(CI::_10ms)) {
     {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_RPM_ID);
-      msg.setShortValue(Sensor::getOrZero(SensorType::Rpm), CAN_HD_RPM_OFFSET);
-      msg.setShortValue(Sensor::getOrZero(SensorType::VehicleSpeed), CAN_HD_VSS_OFFSET);
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Rpm), CAN_HD_RPM_OFFSET);
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::VehicleSpeed), CAN_HD_VSS_OFFSET);
       msg[CAN_HD_GEAR_OFFSET] = calculateHarleyGearValue();
       msg[6] = frameCounter142;
       msg[7] = crc8(msg.getFrame()->data8, 7);
@@ -81,8 +81,8 @@ static void handleHarleyCAN(CanCycle cycle) {
   if (cycle.isInterval(CI::_20ms)) {
     {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_THROTTLE_ID);
-      msg.setShortValue(Sensor::getOrZero(SensorType::Tps1Primary), 0);
-      msg.setShortValue(Sensor::getOrZero(SensorType::Tps1Secondary), 2);
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Primary), 0);
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Secondary), 2);
       msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) * 2;
       msg[6] = frameCounter144;
       msg[7] = crc8(msg.getFrame()->data8, 7);
