@@ -12,14 +12,13 @@ uint8_t frameCounter146_342 = 0x0;
 uint8_t frameCounter148 = 0x40;
 
 /*
-TODO: Actual Value Mapping
-N: 0.872V => 0xA0 => 17.44%
-1: 0.484V => 0x10 => 9.86%
-2: 1.262V => 0x20 => 25,24%
-3: 2.098V => 0x30 => 41,96%
-4: 2.874V => 0x40 => 57,48%
-5: 3.643V => 0x50 => 72,96%
-6: 4.439V => 0x60 => 88,78%
+N: 0.872V => 17.44% => 0xA0
+1: 0.484V => 09.86% => 0x10
+2: 1.262V => 25,24% => 0x20
+3: 2.098V => 41,96% => 0x30
+4: 2.874V => 57,48% => 0x40
+5: 3.643V => 72,96% => 0x50
+6: 4.439V => 88,78% => 0x60
 */
 float harleyGearValues[] = { 17.44f, 9.86f, 25.24f, 41.96f, 57.48f, 72.96f, 88.78f };
 uint8_t calculateHarleyGearValue() {
@@ -83,7 +82,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_THROTTLE_ID);
       msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Primary), 0);
       msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Secondary), 2);
-      msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) * 2;
+      msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) * 2; // 0% = 0, 100% = 200
       msg[6] = frameCounter144;
       msg[7] = crc8(msg.getFrame()->data8, 7);
       frameCounter144 = (frameCounter144 + 1) % 64;
@@ -111,7 +110,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[2] = 0x54;
       msg[3] = 0x00;
       msg[4] = 0x00;
-      msg[5] = 0x00;
+      msg[5] = Sensor::getOrZero(SensorType::AuxLinear2); //TODO Fuel Level Sensor in %
       msg[6] = frameCounter146_342;
       msg[7] = crc8(msg.getFrame()->data8, 7);
     }
@@ -185,6 +184,10 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[5] = 0x00;
       msg[6] = frameCounter148;
       msg[7] = crc8(msg.getFrame()->data8, 7);
+    }
+    frameCounter148++;
+    if {frameCounter148 > 0x7F} {
+      frameCounter148 = 0x40;
     }
 
     {
