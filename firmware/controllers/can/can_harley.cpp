@@ -80,8 +80,8 @@ static void handleHarleyCAN(CanCycle cycle) {
   if (cycle.isInterval(CI::_20ms)) {
     {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_THROTTLE_ID);
-      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Primary), 0);
-      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Secondary), 2);
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Primary), 0); // TARGET TPS?
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Secondary), 2); // ACTUAL TPS?
       msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) * 2; // 0% = 0, 100% = 200
       msg[6] = frameCounter144;
       msg[7] = crc8(msg.getFrame()->data8, 7);
@@ -93,7 +93,7 @@ static void handleHarleyCAN(CanCycle cycle) {
     bool running = engine->rpmCalculator.isRunning();
     {
       CanTxMessage msg(CanCategory::NBC, 0x146);
-      msg[0] = 0x11;
+      msg[0] = 0x11; // JIFFY STAND SENSOR in here
       msg[1] = 0x00;
       msg[2] = 0x00;
       msg[3] = running ? 0x44 : 0x04;
@@ -118,10 +118,10 @@ static void handleHarleyCAN(CanCycle cycle) {
     {
       CanTxMessage msg(CanCategory::NBC, 0x344);
       msg[0] = 0x00;
-      msg[1] = 0x28;
-      msg[2] = 0x36;
+      msg[1] = Sensor::getOrZero(SensorType::OilTemperature); // ENGINE TEMPERATURE
+      msg[2] = Sensor::getOrZero(SensorType::Clt); // CLT
       msg[3] = 0xFF;
-      msg[4] = 0xCD;
+      msg[4] = Sensor::getOrZero(SensorType::Map); // MAP?
       msg[5] = 0x21;
       msg[6] = 0x00;
       msg[7] = 0x00;
