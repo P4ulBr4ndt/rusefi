@@ -186,7 +186,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[7] = crc8(msg.getFrame()->data8, 7);
     }
     frameCounter148++;
-    if {frameCounter148 > 0x7F} {
+    if (frameCounter148 > 0x7F) {
       frameCounter148 = 0x40;
     }
 
