@@ -12,6 +12,9 @@ uint8_t frameCounter146_342 = 0x0;
 uint8_t frameCounter148 = 0x40;
 
 /*
+
+TODO CLUTCH looks like 0xD0
+
 N: 0.872V => 17.44% => 0xA0
 1: 0.484V => 09.86% => 0x10
 2: 1.262V => 25,24% => 0x20
@@ -93,7 +96,7 @@ static void handleHarleyCAN(CanCycle cycle) {
     bool running = engine->rpmCalculator.isRunning();
     {
       CanTxMessage msg(CanCategory::NBC, 0x146);
-      msg[0] = 0x11; // JIFFY STAND SENSOR in here
+      msg[0] = 0x11; // JIFFY STAND SENSOR in here 0x11 = UP, 0x12 = DOWN
       msg[1] = 0x00;
       msg[2] = 0x00;
       msg[3] = running ? 0x44 : 0x04;
@@ -119,9 +122,9 @@ static void handleHarleyCAN(CanCycle cycle) {
       CanTxMessage msg(CanCategory::NBC, 0x344);
       msg[0] = 0x00;
       msg[1] = Sensor::getOrZero(SensorType::OilTemperature); // ENGINE TEMPERATURE
-      msg[2] = Sensor::getOrZero(SensorType::Clt); // CLT
+      msg[2] = Sensor::getOrZero(SensorType::Clt); // CLT WHEN AVAILABLE
       msg[3] = 0xFF;
-      msg[4] = Sensor::getOrZero(SensorType::Map); // MAP?
+      msg[4] = 0xCC; // Mostly 0xCC in the end of log 0xCB, Ambient Pressure * 2 ?? 204 / 2 = 102 = 1020hPa?
       msg[5] = 0x21;
       msg[6] = 0x00;
       msg[7] = 0x00;
@@ -176,7 +179,7 @@ static void handleHarleyCAN(CanCycle cycle) {
 
     {
       CanTxMessage msg(CanCategory::NBC, 0x148);
-      msg[0] = 0x31;
+      msg[0] = 0x31; // Sometimes swichtes between 0x31 and 0x11
       msg[1] = 0x13;
       msg[2] = 0x00;
       msg[3] = 0x00;
@@ -194,8 +197,8 @@ static void handleHarleyCAN(CanCycle cycle) {
       CanTxMessage msg(CanCategory::NBC, 0x346);
       msg[0] = 0x00;
       msg[1] = 0x1A;
-      msg[2] = 0x2B;
-      msg[3] = 0x55;
+      msg[2] = 0x2B; // ODOMETER STUFF? COUNTING UP ONLY WHILE MOVING
+      msg[3] = 0x55; // ODOMETER STUFF? COUNTING UP ONLY WHILE MOVING
       msg[4] = 0x00;
       msg[5] = 0x4F;
       msg[6] = 0x80;
@@ -205,10 +208,10 @@ static void handleHarleyCAN(CanCycle cycle) {
     {
       CanTxMessage msg(CanCategory::NBC, 0x348);
       msg[0] = 0x00;
-      msg[1] = 0x00;
-      msg[2] = 0x00;
-      msg[3] = 0x0D;
-      msg[4] = 0xAC;
+      msg[1] = 0x00; // ALWAYS COUNTING UP
+      msg[2] = 0x00; // ALWAYS COUNTING UP
+      msg[3] = 0x0D; // STANDING STILL: 0x0D, MOVING: 0x17
+      msg[4] = 0xAC; // IDLE: 0xAC, DRIVING: Moving down a lot from base value 0xD4
       msg[5] = 0x00;
       msg[6] = 0x00;
       msg[7] = 0x00;
