@@ -80,12 +80,22 @@ static void handleHarleyCAN(CanCycle cycle) {
     }
   }
   
+  /**
+  uint floatToShortForTPS(float tps)
+  {
+    float buf;
+    
+    buf = FLOOR((float)(int)((tps + 0.1) * 5.0));
+    return ((int)buf + 5000) * (uint)(-5001 < SUB42(buf,0)) & 0xffff;
+  }
+  */
   if (cycle.isInterval(CI::_20ms)) {
     {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_THROTTLE_ID);
       msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Primary), 0); // TARGET TPS?
       msg.setShortValueMsb(Sensor::getOrZero(SensorType::Tps1Secondary), 2); // ACTUAL TPS?
-      msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) * 2; // 0% = 0, 100% = 200
+      msg[4] = Sensor::getOrZero(SensorType::AcceleratorPedal) / 0.4545; // As OEM does
+      msg[5] = 0x00; // TODO: What is this? It rarely moves up from 0 to 0x20 or 0x40
       msg[6] = frameCounter144;
       msg[7] = crc8(msg.getFrame()->data8, 7);
       frameCounter144 = (frameCounter144 + 1) % 64;
@@ -112,7 +122,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[1] = running ? 0x2A : 0x04;
       msg[2] = 0x54;
       msg[3] = 0x00;
-      msg[4] = 0x00;
+      msg[4] = 21.0f * Sensor::getOrZero(SensorType::AuxLinear2) * (100.0f / 5.0f); // Range left in KM. 5.0f = l/100km 21.0f = tank volume TODO: Make tank volume and fuel usage somewhat dynamic
       msg[5] = Sensor::getOrZero(SensorType::AuxLinear2); //TODO Fuel Level Sensor in %
       msg[6] = frameCounter146_342;
       msg[7] = crc8(msg.getFrame()->data8, 7);
@@ -124,7 +134,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[1] = Sensor::getOrZero(SensorType::OilTemperature); // ENGINE TEMPERATURE
       msg[2] = Sensor::getOrZero(SensorType::Clt); // CLT WHEN AVAILABLE
       msg[3] = 0xFF;
-      msg[4] = 0xCC; // Mostly 0xCC in the end of log 0xCB, Ambient Pressure * 2 ?? 204 / 2 = 102 = 1020hPa?
+      msg[4] = 0xCC; // Mostly 0xCC, in the end of log 0xCB, Ambient Pressure * 2 ?? 204 / 2 = 102 = 1020hPa?
       msg[5] = 0x21;
       msg[6] = 0x00;
       msg[7] = 0x00;
@@ -195,10 +205,10 @@ static void handleHarleyCAN(CanCycle cycle) {
 
     {
       CanTxMessage msg(CanCategory::NBC, 0x346);
-      msg[0] = 0x00;
-      msg[1] = 0x1A;
-      msg[2] = 0x2B; // ODOMETER STUFF? COUNTING UP ONLY WHILE MOVING
-      msg[3] = 0x55; // ODOMETER STUFF? COUNTING UP ONLY WHILE MOVING
+      msg[0] = 0x00; // TRIP B OR ODOMETER 0x000A8658 = 689752 Displayed as 689.8KM on PAM AMERICA ST
+      msg[1] = 0x1A; // TRIP B OR ODOMETER
+      msg[2] = 0x2B; // TRIP B OR ODOMETER
+      msg[3] = 0x55; // TRIP B OR ODOMETER
       msg[4] = 0x00;
       msg[5] = 0x4F;
       msg[6] = 0x80;
