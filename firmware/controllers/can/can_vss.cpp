@@ -32,6 +32,7 @@ static expected<uint16_t> look_up_rpm_can_id(can_vss_nbc_e type) {
 		case W202:
 		case BMW_e90:
 		case HYUNDAI_PB:
+    case HARLEY_124:
 			firmwareError(ObdCode::OBD_Vehicle_Speed_SensorB, "RPM Can type not implemented yet: %d", type);
 			return unexpected;
 		default:
@@ -56,6 +57,8 @@ static expected<uint16_t> look_up_vss_can_id(can_vss_nbc_e type) {
 		  return 0x309;
 		case W202:
 			return 0x0200; /* W202 C180 ABS signal */
+		case HARLEY_124:
+			return 0x124; /* Modern EURO5 HD */
 		default:
 			firmwareError(ObdCode::OBD_Vehicle_Speed_SensorB, "Wrong VSS Can type selected: %d", type);
 			return unexpected;
@@ -100,6 +103,10 @@ float processBMW_e90(const CANRxFrame& frame) {
 	return 0.1f * getTwoBytesLsb(frame, 0);
 }
 
+float processHarley_124(const CANRxFrame& frame) {
+	return 0.1f * getTwoBytesMsb(frame, 0);
+}
+
 float processW202(const CANRxFrame& frame) {
   // todo: reuse one of the getTwoBytes methods!
 	uint16_t tmp = (frame.data8[2] << 8);
@@ -141,6 +148,8 @@ expected<float> processCanRxVssImpl(const CANRxFrame& frame, efitick_t nowNt) {
 			return processHyundai(frame, nowNt);
 		case NISSAN_350:
 			return processNissan(frame);
+		case HARLEY_124
+			return processHarley_124(frame);
 		default:
 			efiPrintf("vss unsupported can option selected %x", engineConfiguration->canVssNbcType );
 	}
