@@ -148,7 +148,7 @@ expected<float> processCanRxVssImpl(const CANRxFrame& frame, efitick_t nowNt) {
 			return processHyundai(frame, nowNt);
 		case NISSAN_350:
 			return processNissan(frame);
-		case HARLEY_124
+		case HARLEY_124:
 			return processHarley_124(frame);
 		default:
 			efiPrintf("vss unsupported can option selected %x", engineConfiguration->canVssNbcType );
