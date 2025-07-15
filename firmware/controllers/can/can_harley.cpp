@@ -70,7 +70,7 @@ static void handleHarleyCAN(CanCycle cycle) {
     {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_RPM_ID);
       msg.setShortValueMsb(Sensor::getOrZero(SensorType::Rpm), CAN_HD_RPM_OFFSET);
-      msg.setShortValueMsb(Sensor::getOrZero(SensorType::VehicleSpeed), CAN_HD_VSS_OFFSET);
+      msg.setShortValueMsb(Sensor::getOrZero(SensorType::VehicleSpeed) * 10.f, CAN_HD_VSS_OFFSET);
       msg[CAN_HD_GEAR_OFFSET] = calculateHarleyGearValue();
       msg[6] = frameCounter142;
       msg[7] = crc8(msg.getFrame()->data8, 7);
