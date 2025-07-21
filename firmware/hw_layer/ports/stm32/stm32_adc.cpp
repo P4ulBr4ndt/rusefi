@@ -40,7 +40,6 @@ static const struct {
     { Gpio::F4,  EFI_ADC_38,                   BIT(2) }, //ADC3 only
     { Gpio::C5,  EFI_ADC_15, BIT(0) | BIT(1)          },
     { Gpio::F5,  EFI_ADC_39,                   BIT(2) }, //ADC3 only
-    /* TODO: add ADC3 channels */
 };
 
 brain_pin_e getAdcChannelBrainPin(const char *msg, adc_channel_e hwChannel) {

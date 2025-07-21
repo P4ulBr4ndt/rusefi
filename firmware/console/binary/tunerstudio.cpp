@@ -964,6 +964,9 @@ void startTunerStudioConnectivity() {
   addConsoleActionSSS("bluetooth_jdy31", [](const char *baudRate, const char *name, const char *pinCode) {
 		bluetoothStart(BLUETOOTH_JDY_31, baudRate, name, pinCode);
 	});
+  addConsoleActionSS("bluetooth_RNBD451", [](const char *baudRate, const char *name, const char *pinCode) {
+		bluetoothStart(BLUETOOTH_RNBD451, baudRate, name, pinCode);
+	});
 #endif /* EFI_BLUETOOTH_SETUP */
 }
 

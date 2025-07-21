@@ -8,7 +8,7 @@ TUNERSTUDIO_SRC_CPP = $(PROJECT_DIR)/console/binary/tunerstudio_io.cpp \
 	$(PROJECT_DIR)/console/binary/tuner_detector_utils.cpp \
 	$(PROJECT_DIR)/console/binary/tunerstudio.cpp \
 	$(PROJECT_DIR)/console/binary/tunerstudio_commands.cpp \
-	$(PROJECT_DIR)/console/binary/bluetooth.cpp \
+	$(PROJECT_DIR)/console/binary/bluetooth_RNBD451.cpp \
 	$(PROJECT_DIR)/console/binary/signature.cpp \
 	$(PROJECT_DIR)/console/binary/trigger_scope.cpp \
 
