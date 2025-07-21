@@ -164,7 +164,7 @@ static void runCommands(SerialTsChannelBase* tsChannel) {
 
   // Now reset module to apply new settings
   btWrite(tsChannel, "R,1\r");
-  if (btWaitOk(tsChannel) != 0) {
+  if (btWaitReboot(tsChannel) != 0) {
     efiPrintf("BT failed to reset");
   }
 
