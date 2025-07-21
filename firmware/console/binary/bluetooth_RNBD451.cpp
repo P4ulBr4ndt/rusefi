@@ -68,7 +68,7 @@ static int btReadLine(TsChannelBase* tsChannel, char *str, size_t max_len) {
 			efiPrintf("Timeout waiting for BT reply after %d byte(s)", len);
 			return -1;
 		}
-	} while (str[len++] != '\n');
+	} while (str[len++] != '\r');
 
 	/* termination */
 	if (len < max_len)
@@ -122,7 +122,7 @@ static void runCommands(SerialTsChannelBase* tsChannel) {
 
   // In order to run any commands on the RNBD451, we need to enter the command mode by sending $$$
   btWrite(tsChannel, "$$$");
-  chThdSleepMilliseconds(5); // TODO: proper wait for "CMD>" without linefeed
+  chThdSleepMilliseconds(50); // TODO: proper wait for "CMD>" without linefeed
 
 #if EFI_BLUETOOTH_SETUP_DEBUG
 		/* Debug, gets a lot of information in a single command */
