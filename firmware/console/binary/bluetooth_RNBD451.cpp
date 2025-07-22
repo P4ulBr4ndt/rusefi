@@ -98,32 +98,32 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
   return true;
 }
 
-static bool btRNBDEnterCmdMode(void) {
+static bool btRNBDEnterCmdMode(SerialTsChannelBase* tsChannel) {
   const char cmdRequest[] = { '$', '$', '$' };
   const char cmdModeResponse[] = { 'C', 'M', 'D', '>', ' ' };
-  return btRNBDSendCommandReceiveResponse(cmdRequest, 3U, cmdModeResponse, 5U);
+  return btRNBDSendCommandReceiveResponse(tsChannel, cmdRequest, 3U, cmdModeResponse, 5U);
 }
 
-static bool btRNBDSetName(void) {
+static bool btRNBDSetName(SerialTsChannelBase* tsChannel) {
 	char cmd[64];
   const char response[] = { 'A', 'O', 'K', '\r', '\n', 'C', 'M', 'D', '>', ' ' };
   chsnprintf(cmd, sizeof(cmd), "S-,%s\r\n", btName);
 
-  return btRNBDSendCommandReceiveResponse(cmd, strlen(btName) + 5U, response, 10U);
+  return btRNBDSendCommandReceiveResponse(tsChannel, cmd, strlen(btName) + 5U, response, 10U);
 }
 
-static bool btRNBDAppOptions(void) {
+static bool btRNBDAppOptions(SerialTsChannelBase* tsChannel) {
   const char cmdRequest[] = "SR,1001\r\n";
   const char response[] = { 'A', 'O', 'K', '\r', '\n', 'C', 'M', 'D', '>', ' ' };
-  return btRNBDSendCommandReceiveResponse(cmdRequest, 9, response, 10U);
+  return btRNBDSendCommandReceiveResponse(tsChannel, cmdRequest, 9, response, 10U);
 }
 
-static bool btRNBDReboot(void) {
+static bool btRNBDReboot(SerialTsChannelBase* tsChannel) {
   bool rebootStatus = false;
   const char cmdRequest[] = "R,1\r\n";
   const char rebootResponse[] = { 'R', 'e', 'b', 'o', 'o', 't', 'i', 'n', 'g', '\r', '\n' };
 
-  rebootStatus = btRNBDSendCommandReceiveResponse(cmdRequest, 5U, rebootResponse, 11U);
+  rebootStatus = btRNBDSendCommandReceiveResponse(tsChannel, cmdRequest, 5U, rebootResponse, 11U);
   chThdSleepMilliseconds(250);
   return rebootStatus;
 }
@@ -131,22 +131,22 @@ static bool btRNBDReboot(void) {
 // Main communication code
 // We assume that the user has disconnected the software before starting the code.
 static void runCommands(SerialTsChannelBase* tsChannel) {
-  if (!btRNBDEnterCmdMode()) {
+  if (!btRNBDEnterCmdMode(tsChannel)) {
 	  efiPrintf("Reboot failed");
     return;
   }
 
-  if (!btRNBDSetName()) {
+  if (!btRNBDSetName(tsChannel)) {
 	  efiPrintf("Setting name failed");
     return;
   }
 
-  if (!btRNBDAppOptions()) {
+  if (!btRNBDAppOptions(tsChannel)) {
 	  efiPrintf("Setting Application Options failed");
     return;
   }
 
-  if (!btRNBDReboot()) {
+  if (!btRNBDReboot(tsChannel)) {
 	  efiPrintf("BT Rebooting failed");
     return;
   }
