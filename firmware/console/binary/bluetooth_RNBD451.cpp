@@ -46,137 +46,117 @@ static char btPinCode[4 + 1];
 
 static const int btModuleTimeout = TIME_MS2I(2500);
 
-static void btWrite(TsChannelBase* tsChannel, const char *str)
+// There might be some stuff still pending
+// Let's just read until there is nothing left = timeout
+static void btReadIntoVoid(TsChannelBase* tsChannel)
+{
+  uint8_t buf = 0x0;
+  while (true) {
+    if (tsChannel->readTimeout(&buf, 1, btModuleTimeout) != 1) {
+			return;
+		}
+  }
+}
+
+static void btWrite(TsChannelBase* tsChannel, const char *cmd, uint8_t cmdLen)
 {
 	/* Just a wrapper for debug purposes */
 #if EFI_BLUETOOTH_SETUP_DEBUG
-	efiPrintf("sending %s", str);
+	efiPrintf("sending %s", cmd);
 #endif
-	tsChannel->write((uint8_t *)str, strlen(str));
+	tsChannel->write((uint8_t *)cmd, cmdLen);
 }
 
-static int btReadLine(TsChannelBase* tsChannel, char *str, size_t max_len) {
-	size_t len = 0;
+// https://github.com/MicrochipTech/RNBD451_BLE_ARDUINO_LIBRARY/blob/main/src/rnbd.cpp
+static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const char *cmdMsg, uint8_t cmdLen, const char *responseMsg, uint8_t responseLen) {
+  unsigned int responseRead = 0, responseCheck = 0;
+	char response[16];
+  
+  // Clear anything unread
+  btReadIntoVoid(tsChannel);
 
-	/* read until end of line */
-	do {
-		if (len >= max_len) {
-			efiPrintf("BT reply is unexpectedly long");
-			return -1;
+  // Sending Command to UART
+  btWrite(tsChannel, cmdMsg, cmdLen);
+
+  // Read until timeout or full message received
+  while(responseRead < responseLen) {
+		if (tsChannel->readTimeout((uint8_t *)&response[responseRead], 1, btModuleTimeout) != 1) {
+			efiPrintf("Timeout waiting for BT reply after %d byte(s), expected %d byte(s)", responseRead, responseLen);
+			return false;
 		}
-		if (tsChannel->readTimeout((uint8_t *)&str[len], 1, btModuleTimeout) != 1) {
-			efiPrintf("Timeout waiting for BT reply after %d byte(s)", len);
-			return -1;
-		}
-	} while (str[len++] != '\r');
-
-	/* termination */
-	if (len < max_len)
-		str[len] = 0;
-	else
-		str[max_len - 1] = 0;
-
-#if EFI_BLUETOOTH_SETUP_DEBUG
-	if (len) {
-		efiPrintf("Received %d %s", len, str);
-	}
-#endif
-
-	return len;
+    responseRead++;
+  }
+  // Comparing the Response with expected result
+  for (responseCheck = 0; responseCheck < responseRead; responseCheck++) {
+    if (resp[responseCheck] != responsemsg[responseCheck]) {
+      // Termination for printing
+      response[responseRead] = 0x0;
+			efiPrintf("Unexpected response: %s", response);
+      return false;
+    }
+  }
+  return true;
 }
 
-static int btWaitOk(SerialTsChannelBase* tsChannel) {
-	int len;
-	int ret = -1;
-	char tmp[16];
-
-	/* wait for 'AOK\r\n' */
-	len = btReadLine(tsChannel, tmp, sizeof(tmp));
-	if (len == 5) {
-		if (strncmp(tmp, "AOK", 3) == 0)
-			ret = 0;
-	}
-
-	return ret;
+static bool btRNBDEnterCmdMode(void) {
+  const char cmdRequest[] = { '$', '$', '$' };
+  const char cmdModeResponse[] = { 'C', 'M', 'D', '>', ' ' };
+  return RNBD_SendCommand_ReceiveResponse(cmdRequest, 3U, cmdModeResponse, 5U);
 }
 
-static int btWaitReboot(SerialTsChannelBase* tsChannel) {
-	int len;
-	int ret = -1;
-	char tmp[16];
+static bool btRNBDSetName(void) {
+	char cmd[64];
+  const char response[] = { 'A', 'O', 'K', '\r', '\n', 'C', 'M', 'D', '>', ' ' };
+  chsnprintf(cmd, sizeof(cmd), "S-,%s\r\n", btName);
 
-	/* wait for '%REBOOT%\r\n' */
-	len = btReadLine(tsChannel, tmp, sizeof(tmp));
-	if (len == 10) {
-		if (strncmp(tmp, "%REBOOT%", 8) == 0)
-			ret = 0;
-	}
+  return RNBD_SendCommand_ReceiveResponse(cmdBuf, strlen(btName) + 5U, response, 10U);
+}
 
-	return ret;
+static bool btRNBDAppOptions(void) {
+  const char cmdRequest[] = "SR,1001\r\n";
+  const char response[] = { 'A', 'O', 'K', '\r', '\n', 'C', 'M', 'D', '>', ' ' };
+  return RNBD_SendCommand_ReceiveResponse(cmdRequest, 9, response, 10U);
+}
+
+static bool btRNBDReboot(void) {
+  bool rebootStatus = false;
+  const char cmdRequest[] = "R,1\r\n";
+  const char rebootResponse[] = { 'R', 'e', 'b', 'o', 'o', 't', 'i', 'n', 'g', '\r', '\n' };
+
+  rebootStatus = RNBD_SendCommand_ReceiveResponse(cmdRequest, 5U, rebootResponse, 11U);
+  chThdSleepMilliseconds(250);
+  return rebootStatus;
 }
 
 // Main communication code
 // We assume that the user has disconnected the software before starting the code.
 static void runCommands(SerialTsChannelBase* tsChannel) {
-	char tmp[255];
+  if (!btRNBDEnterCmdMode()) {
+	  efiPrintf("Reboot failed");
+    return;
+  }
 
-  // In order to run any commands on the RNBD451, we need to enter the command mode by sending $$$
-  btWrite(tsChannel, "$$$");
-  chThdSleepMilliseconds(50); // TODO: proper wait for "CMD>" without linefeed
+  if (!btRNBDSetName()) {
+	  efiPrintf("Setting name failed");
+    return;
+  }
 
-#if EFI_BLUETOOTH_SETUP_DEBUG
-		/* Debug, gets a lot of information in a single command */
-		btWrite(tsChannel, "D\r");
-		btReadLine(tsChannel, tmp, sizeof(tmp));
-#endif
+  if (!btRNBDAppOptions()) {
+	  efiPrintf("Setting Application Options failed");
+    return;
+  }
 
-  /*
-  Set Device Name With Address (S-,<text>)
-  Format: S-,<text>
-  This command sets a serialized Bluetooth name for the device, where <text> is up to 15
-  alphanumeric characters. This command automatically appends the last two bytes of the Bluetooth
-  MAC address along with _ (underscore) to the name, which is useful for generating a custom
-  name with unique numbering. This command does not have a corresponding get command.
-  Default: N/A
-  Example: S-,MyDevice // Set the device name to MyDevice_XXXX
-  Response: AOK // Success
-  Err // Syntax error or invalid parameter
-  Note: This parameter is stored in PDS and is effective after restarting advertisement.
-  */
-  chsnprintf(tmp, sizeof(tmp), "S-,%s\r", btName);
-	btWrite(tsChannel, tmp);
-	if (btWaitOk(tsChannel) != 0) {
-		goto cmdFailed;
-	}
-
-  /*
-  Set Application Options (SR,<hex16>)
-  Format: SR,<hex16>
-  This command sets the supported feature of the RNBD451 module. The input parameter is a 16-bit
-  bitmap that indicates the supported features.
-  Note: After changing the features, a reboot is necessary to make the changes effective.
-  */
-	chsnprintf(tmp, sizeof(tmp), "SR,1001\r"); // 0x1001 = enable all the status LEDS
-	btWrite(tsChannel, tmp);
-	if (btWaitOk(tsChannel) != 0) {
-		goto cmdFailed;
-	}
-
-  // Now reset module to apply new settings
-  btWrite(tsChannel, "R,1\r");
-  if (btWaitReboot(tsChannel) != 0) {
-    efiPrintf("BT failed to reset");
+  if (!btRNBDReboot()) {
+	  efiPrintf("BT Rebooting failed");
+    return;
   }
 
 	efiPrintf("SUCCESS! All commands passed to the Bluetooth module!");
 	return;
-
-cmdFailed:
-	efiPrintf("FAIL! Command %s failed", tmp);
 }
 
 void bluetoothStart(bluetooth_module_e moduleType, const char *baudRate, const char *name, const char *pinCode) {
-	static const char *usage = "Usage: bluetooth_<hc05/hc06/bk/jdy/RNBD451> <baud> <name> <pincode>";
+	static const char *usage = "Usage: bluetooth_rnbd451 <baud> <name> <pincode>";
 
 	if ((baudRate == nullptr) || (name == nullptr) || (pinCode == nullptr)) {
 		efiPrintf("%s", usage);
