@@ -91,7 +91,7 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
     if (response[responseCheck] != responseMsg[responseCheck]) {
       // Termination for printing
       response[responseRead] = 0x0;
-			efiPrintf("Unexpected response: %s", response);
+			efiPrintf("Unexpected response (len:%d): %s", responseRead, response);
       return false;
     }
   }
@@ -99,7 +99,7 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
 }
 
 static bool btRNBDEnterCmdMode(SerialTsChannelBase* tsChannel) {
-  const char cmdRequest[] = { '$', '$', '$' };
+  const char cmdRequest[] = { '$', '$', '$', '\0'}; // termination only for printing, not sent!
   const char cmdModeResponse[] = { 'C', 'M', 'D', '>', ' ' };
   return btRNBDSendCommandReceiveResponse(tsChannel, cmdRequest, 3U, cmdModeResponse, 5U);
 }
@@ -132,7 +132,7 @@ static bool btRNBDReboot(SerialTsChannelBase* tsChannel) {
 // We assume that the user has disconnected the software before starting the code.
 static void runCommands(SerialTsChannelBase* tsChannel) {
   if (!btRNBDEnterCmdMode(tsChannel)) {
-	  efiPrintf("Reboot failed");
+	  efiPrintf("Entering CMD Mode failed");
     return;
   }
 
