@@ -88,7 +88,7 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
   }
   // Comparing the Response with expected result
   for (responseCheck = 0; responseCheck < responseRead; responseCheck++) {
-    if (resp[responseCheck] != responsemsg[responseCheck]) {
+    if (response[responseCheck] != responseMsg[responseCheck]) {
       // Termination for printing
       response[responseRead] = 0x0;
 			efiPrintf("Unexpected response: %s", response);
@@ -101,7 +101,7 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
 static bool btRNBDEnterCmdMode(void) {
   const char cmdRequest[] = { '$', '$', '$' };
   const char cmdModeResponse[] = { 'C', 'M', 'D', '>', ' ' };
-  return RNBD_SendCommand_ReceiveResponse(cmdRequest, 3U, cmdModeResponse, 5U);
+  return btRNBDSendCommandReceiveResponse(cmdRequest, 3U, cmdModeResponse, 5U);
 }
 
 static bool btRNBDSetName(void) {
@@ -109,13 +109,13 @@ static bool btRNBDSetName(void) {
   const char response[] = { 'A', 'O', 'K', '\r', '\n', 'C', 'M', 'D', '>', ' ' };
   chsnprintf(cmd, sizeof(cmd), "S-,%s\r\n", btName);
 
-  return RNBD_SendCommand_ReceiveResponse(cmdBuf, strlen(btName) + 5U, response, 10U);
+  return btRNBDSendCommandReceiveResponse(cmd, strlen(btName) + 5U, response, 10U);
 }
 
 static bool btRNBDAppOptions(void) {
   const char cmdRequest[] = "SR,1001\r\n";
   const char response[] = { 'A', 'O', 'K', '\r', '\n', 'C', 'M', 'D', '>', ' ' };
-  return RNBD_SendCommand_ReceiveResponse(cmdRequest, 9, response, 10U);
+  return btRNBDSendCommandReceiveResponse(cmdRequest, 9, response, 10U);
 }
 
 static bool btRNBDReboot(void) {
@@ -123,7 +123,7 @@ static bool btRNBDReboot(void) {
   const char cmdRequest[] = "R,1\r\n";
   const char rebootResponse[] = { 'R', 'e', 'b', 'o', 'o', 't', 'i', 'n', 'g', '\r', '\n' };
 
-  rebootStatus = RNBD_SendCommand_ReceiveResponse(cmdRequest, 5U, rebootResponse, 11U);
+  rebootStatus = btRNBDSendCommandReceiveResponse(cmdRequest, 5U, rebootResponse, 11U);
   chThdSleepMilliseconds(250);
   return rebootStatus;
 }
