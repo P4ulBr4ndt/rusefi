@@ -84,6 +84,7 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
 			efiPrintf("Timeout waiting for BT reply after %d byte(s), expected %d byte(s)", read, responseLen);
 			return false;
 		}
+    efiPrintf("Read byte: 0x%02X '%c'", response[read], response[read]);
     read++;
   }
   // Comparing the Response with expected result
