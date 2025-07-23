@@ -69,7 +69,7 @@ static void btWrite(TsChannelBase* tsChannel, const char *cmd, uint8_t cmdLen)
 
 // https://github.com/MicrochipTech/RNBD451_BLE_ARDUINO_LIBRARY/blob/main/src/rnbd.cpp
 static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const char *cmdMsg, uint8_t cmdLen, const char *responseMsg, uint8_t responseLen) {
-  unsigned int responseRead = 0, responseCheck = 0;
+  unsigned int read = 0, i = 0;
 	char response[16];
   
   // Clear anything unread
@@ -79,19 +79,17 @@ static bool btRNBDSendCommandReceiveResponse(TsChannelBase* tsChannel, const cha
   btWrite(tsChannel, cmdMsg, cmdLen);
 
   // Read until timeout or full message received
-  while(responseRead < responseLen) {
-		if (tsChannel->readTimeout((uint8_t *)&response[responseRead], 1, btModuleTimeout) != 1) {
-			efiPrintf("Timeout waiting for BT reply after %d byte(s), expected %d byte(s)", responseRead, responseLen);
+  while(read < responseLen) {
+		if (tsChannel->readTimeout((uint8_t *)&response[read], 1, btModuleTimeout) != 1) {
+			efiPrintf("Timeout waiting for BT reply after %d byte(s), expected %d byte(s)", read, responseLen);
 			return false;
 		}
-    responseRead++;
+    read++;
   }
   // Comparing the Response with expected result
-  for (responseCheck = 0; responseCheck < responseRead; responseCheck++) {
-    if (response[responseCheck] != responseMsg[responseCheck]) {
-      // Termination for printing
-      response[responseRead] = 0x0;
-			efiPrintf("Unexpected response (len:%d): %s", responseRead, response);
+  for (i = 0; i < responseLen; i++) {
+    if (response[i] != responseMsg[i]) {
+			efiPrintf("Unexpected response (len:%d): %s", read, response);
       return false;
     }
   }
