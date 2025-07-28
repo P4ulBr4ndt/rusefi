@@ -529,6 +529,20 @@ static int tsProcessOne(TsChannelBase* tsChannel) {
 		return -1;
 	}
 
+#define EFI_RNBD_STATUS_EVENT_HANDLING 1
+#if EFI_RNBD_STATUS_EVENT_HANDLING // If we receive a status event indicated by a frame starting with '%' read until next '%' or timeout...
+  if (firstByte == '%') { // 0x25 = '%'
+    uint8_t rnbdStatusEventByte = 0x0;
+    while (true) {
+      received = tsChannel->readTimeout(&rnbdStatusEventByte, 1, TS_COMMUNICATION_TIMEOUT_SHORT);
+      if (rnbdStatusEventByte == '%' || received != 1) {
+        break;
+      }
+    }
+    return 0;
+  }
+#endif //EFI_RNBD_STATUS_EVENT_HANDLING
+
 	if (tsInstance.handlePlainCommand(tsChannel, firstByte)) {
 		return 0;
 	}
