@@ -539,6 +539,7 @@ static int tsProcessOne(TsChannelBase* tsChannel) {
         break;
       }
     }
+    efiPrintf("HANDLED RNBD451 STATUS EVENT");
     return 0;
   }
 #endif //EFI_RNBD_STATUS_EVENT_HANDLING
