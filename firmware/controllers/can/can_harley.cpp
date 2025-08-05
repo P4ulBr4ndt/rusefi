@@ -120,8 +120,8 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[1] = running ? 0x2A : 0x04; // MILES VS KM & DISPLAY RANGE POPUP,  16 = KM 17= MI, 0x18 = OIL LAMP
       msg[2] = 0x54;
       msg[3] = 0x00; // BATTERY RED LED, REMAINING RANGE MSB
-      msg[4] = 21.0f * Sensor::getOrZero(SensorType::AuxLinear2) * (100.0f / 5.0f); // REMAINING RANGE LSB in KM. 5.0f = l/100km 21.0f = tank volume TODO: Make tank volume and fuel usage somewhat dynamic
-      msg[5] = Sensor::getOrZero(SensorType::AuxLinear2); //TODO Fuel Level Sensor in %
+      msg[4] = 21.0f * Sensor::getOrZero(SensorType::FuelLevel) * (100.0f / 5.0f); // REMAINING RANGE LSB in KM. 5.0f = l/100km 21.0f = tank volume TODO: Make tank volume and fuel usage somewhat dynamic
+      msg[5] = Sensor::getOrZero(SensorType::FuelLevel); //TODO Fuel Level Sensor in %
       msg[6] = frameCounter146_342;
       msg[7] = crc8(msg.getFrame()->data8, 7);
     }
@@ -208,7 +208,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[2] = 0x2B; // ODOMETER
       msg[3] = 0x55; // ODOMETER
       msg[4] = 0x00;
-      msg[5] = 0x4F; // AAT indicated
+      msg[5] = Sensor::getOrZero(SensorType::AmbientTemperature);
       msg[6] = 0x80;
       msg[7] = 0x00;
     }
