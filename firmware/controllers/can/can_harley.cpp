@@ -242,7 +242,7 @@ void boardUpdateDash(CanCycle cycle) {
 void boardProcessCanRxMessage(const size_t busIndex, const CANRxFrame &frame, efitick_t nowNt) {
   UNUSED(busIndex);
   UNUSED(nowNt);
-  if (CAN_SID(CANRxFrame) == 0x500) {
+  if (CAN_SID(frame) == 0x500) {
     harleyKeepAlive = frame.data8[0];
   }
 }
