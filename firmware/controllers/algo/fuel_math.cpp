@@ -448,14 +448,8 @@ float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
   if (cylinderNumber == 1) { // rear cylinder. Front cylinder is 0
     auto veFront = veMap.getValue(rpm, fuelLoad);
     auto veRear = veRearMap.getValue(rpm, fuelLoad);
-    return veRear / veRear;
+    return veRear / veFront;
   }
-
-	auto trimPercent = interpolate3d(
-		config->fuelTrims[cylinderNumber].table,
-		config->fuelTrimLoadBins, fuelLoad,
-		config->fuelTrimRpmBins, rpm
-	);
 
 	return 1.0f;
 #else
