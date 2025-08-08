@@ -35,6 +35,7 @@
 #include "lua_hooks.h"
 
 extern ve_Map3D_t veMap;
+extern ve_Map3D_t veRearMap;
 static mapEstimate_Map3D_t mapEstimationTable{"mape"};
 
 #if EFI_ENGINE_CONTROL
@@ -441,22 +442,28 @@ float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
   // Little bit of a dirty hack here?
   // Since base fuel mass can not be configured per cylinder 
   // But in V-Twin world we need per cylinder fuel
-  // And we want to VE Tables and not Fuel Trim
+  // And we want full seperate VE Tables and not Fuel Trim
   // Calculate Front vs Rear Factor here and set it as trim
 
   if (cylinderNumber == 1) { // rear cylinder. Front cylinder is 0
     auto veFront = interpolate3d(
-      config->veTable
+      veMap
       config->veLoadBins, fuelLoad
       config->veRpmBins, rpm
     );
     auto veRear = interpolate3d(
-      config->veRearTable
+      veRearMap
       config->veLoadBins, fuelLoad
       config->veRpmBins, rpm
     );
     return veRear / veRear;
   }
+
+	auto trimPercent = interpolate3d(
+		config->fuelTrims[cylinderNumber].table,
+		config->fuelTrimLoadBins, fuelLoad,
+		config->fuelTrimRpmBins, rpm
+	);
 
 	return 1.0f;
 #else

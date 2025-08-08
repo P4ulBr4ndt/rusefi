@@ -17,6 +17,7 @@
 #define rpmMax 8000
 
 ve_Map3D_t veMap{"ve"};
+ve_Map3D_t veRearMap{"ver"};
 
 #define tpMin 0
 #define tpMax 100
@@ -107,4 +108,5 @@ temperature_t IFuelComputer::getTCharge(float rpm, float tps) {
 
 void initSpeedDensity() {
 	veMap.initTable(config->veTable, config->veRpmBins, config->veLoadBins);
+	veRearMap.initTable(config->veRearTable, config->veRpmBins, config->veLoadBins);
 }
