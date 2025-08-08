@@ -436,6 +436,30 @@ float getStandardAirCharge() {
 
 PUBLIC_API_WEAK_SOMETHING_WEIRD
 float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
+#define EFI_HARLEY_FRONT_REAR_FUEL_TRIM 1
+#ifdef EFI_HARLEY_FRONT_REAR_FUEL_TRIM
+  // Little bit of a dirty hack here?
+  // Since base fuel mass can not be configured per cylinder 
+  // But in V-Twin world we need per cylinder fuel
+  // And we want to VE Tables and not Fuel Trim
+  // Calculate Front vs Rear Factor here and set it as trim
+
+  if (cylinderNumber == 1) { // rear cylinder. Front cylinder is 0
+    auto veFront = interpolate3d(
+      config->veTable
+      config->veLoadBins, fuelLoad
+      config->veRpmBins, rpm
+    );
+    auto veRear = interpolate3d(
+      config->veRearTable
+      config->veLoadBins, fuelLoad
+      config->veRpmBins, rpm
+    );
+    return veRear / veRear;
+  }
+
+	return 1.0f;
+#else
 	auto trimPercent = interpolate3d(
 		config->fuelTrims[cylinderNumber].table,
 		config->fuelTrimLoadBins, fuelLoad,
@@ -446,6 +470,7 @@ float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
 	// 5% -> 1.05
 	// possible optimization: remove division by moving this scaling to TS level
 	return (100 + trimPercent) / 100;
+#endif
 }
 
 static Hysteresis stage2Hysteresis;
