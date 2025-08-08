@@ -5,11 +5,14 @@
 #include "can_harley.h"
 #include "can_msg_tx.h" // CanTxMessage
 #include "engine_configuration.h" // engineConfiguration->vinNumber
+#include "unused.h"
 
-uint8_t frameCounter142 = 0x0;
-uint8_t frameCounter144 = 0x0;
-uint8_t frameCounter146_342 = 0x0;
-uint8_t frameCounter148 = 0x40;
+static uint8_t frameCounter142 = 0x0;
+static uint8_t frameCounter144 = 0x0;
+static uint8_t frameCounter146_342 = 0x0;
+static uint8_t frameCounter148 = 0x40;
+
+static bool harleyKeepAlive = true;
 
 /*
 TODO CLUTCH looks like 0xD0
@@ -21,8 +24,8 @@ N: 0.872V => 17.44% => 0xA0
 5: 3.643V => 72,96% => 0x50
 6: 4.439V => 88,78% => 0x60
 */
-float harleyGearValues[] = { 17.44f, 9.86f, 25.24f, 41.96f, 57.48f, 72.96f, 88.78f };
-uint8_t calculateHarleyGearValue() {
+static float harleyGearValues[] = { 17.44f, 9.86f, 25.24f, 41.96f, 57.48f, 72.96f, 88.78f };
+static uint8_t calculateHarleyGearValue() {
   float sensorValue = Sensor::getOrZero(SensorType::AuxLinear1);
   float bestMatch = 0.0f;
   uint8_t bestOffs = 0;
@@ -227,13 +230,21 @@ static void handleHarleyCAN(CanCycle cycle) {
 
     {
       CanTxMessage msg(CanCategory::NBC, CAN_HD_ECM_PING_ID, 0x1/* DLC */);
-      msg[0] = 0x1;
+      msg[0] = harleyKeepAlive;
     }
   }
 }
 
 void boardUpdateDash(CanCycle cycle) {
   handleHarleyCAN(cycle);
+}
+
+void boardProcessCanRxMessage(const size_t busIndex, const CANRxFrame &frame, efitick_t nowNt) {
+  UNUSED(busIndex);
+  UNUSED(nowNt);
+  if (CAN_SID(CANRxFrame) == 0x500) {
+    harleyKeepAlive = frame.data8[0];
+  }
 }
 
 #endif // EFI_CAN_SUPPORT
