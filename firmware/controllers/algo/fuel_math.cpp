@@ -446,16 +446,8 @@ float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
   // Calculate Front vs Rear Factor here and set it as trim
 
   if (cylinderNumber == 1) { // rear cylinder. Front cylinder is 0
-    auto veFront = interpolate3d(
-      veMap
-      config->veLoadBins, fuelLoad
-      config->veRpmBins, rpm
-    );
-    auto veRear = interpolate3d(
-      veRearMap
-      config->veLoadBins, fuelLoad
-      config->veRpmBins, rpm
-    );
+    auto veFront = veMap.getValue(rpm, fuelLoad);
+    auto veRear = veRearMap.getValue(rpm, fuelLoad);
     return veRear / veRear;
   }
 
