@@ -132,8 +132,8 @@ static void handleHarleyCAN(CanCycle cycle) {
     {
       CanTxMessage msg(CanCategory::NBC, 0x344);
       msg[0] = 0x00;
-      msg[1] = Sensor::getOrZero(SensorType::OilTemperature); // ENGINE TEMPERATURE
-      msg[2] = Sensor::getOrZero(SensorType::Clt); // CLT WHEN AVAILABLE
+      msg[1] = Sensor::getOrZero(SensorType::OilTemperature + 40); // ENGINE TEMPERATURE
+      msg[2] = Sensor::getOrZero(SensorType::Clt + 40); // CLT WHEN AVAILABLE
       msg[3] = 0xFF;
       msg[4] = 0xCC; // Mostly 0xCC, in the end of log 0xCB, Ambient Pressure * 2 ?? 204 / 2 = 102 = 1020hPa?
       msg[5] = 0x21;
@@ -145,11 +145,11 @@ static void handleHarleyCAN(CanCycle cycle) {
 
   if (cycle.isInterval(CI::_200ms)) {
     {
-      CanTxMessage msg(CanCategory::NBC, 0x540);
-      msg[0] = 0x00;
-      msg[1] = 0x22;
-      msg[2] = 0x91;
-      msg[3] = 0x29;
+      CanTxMessage msg(CanCategory::NBC, 0x540); // THIS IS ODOMETER AS WELL
+      msg[0] = 0x00; // ODOMETER 0x000A8658 = 689752 Displayed as 689.8KM on PAM AMERICA ST
+      msg[1] = 0x0A; // ODOMETER
+      msg[2] = 0x86; // ODOMETER
+      msg[3] = 0x58; // ODOMETER
       msg[4] = 0x00;
       msg[5] = 0x00;
       msg[6] = 0x00;
@@ -207,11 +207,11 @@ static void handleHarleyCAN(CanCycle cycle) {
     {
       CanTxMessage msg(CanCategory::NBC, 0x346);
       msg[0] = 0x00; // ODOMETER 0x000A8658 = 689752 Displayed as 689.8KM on PAM AMERICA ST
-      msg[1] = 0x1A; // ODOMETER
-      msg[2] = 0x2B; // ODOMETER
-      msg[3] = 0x55; // ODOMETER
+      msg[1] = 0x0A; // ODOMETER
+      msg[2] = 0x86; // ODOMETER
+      msg[3] = 0x58; // ODOMETER
       msg[4] = 0x00;
-      msg[5] = Sensor::getOrZero(SensorType::AmbientTemperature);
+      msg[5] = Sensor::getOrZero(SensorType::AmbientTemperature + 40);
       msg[6] = 0x80;
       msg[7] = 0x00;
     }

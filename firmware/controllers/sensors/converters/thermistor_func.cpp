@@ -63,7 +63,7 @@ void ThermistorFunc::configure(thermistor_conf_s &cfg) {
 #if EFI_UNIT_TEST
   throw std::logic_error("Bad thermistor configuration at the left");
 #endif
-  	  criticalError("Thermistor configuration has failed 10% test");
+  	  criticalError("Thermistor configuration has failed 10%% test");
 	}
 
 	float resistance90percent = cfg.resistance_2 + 0.9 * (cfg.resistance_3 - cfg.resistance_2);
@@ -72,6 +72,6 @@ void ThermistorFunc::configure(thermistor_conf_s &cfg) {
 #if EFI_UNIT_TEST
   throw std::logic_error("Bad thermistor configuration at the right");
 #endif
-  	  criticalError("Thermistor configuration has failed 90% test");
+  	  criticalError("Thermistor configuration has failed 90%% test");
 	}
 }
