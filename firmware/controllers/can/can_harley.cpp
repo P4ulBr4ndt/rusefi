@@ -211,7 +211,7 @@ static void handleHarleyCAN(CanCycle cycle) {
       msg[2] = 0x86; // ODOMETER
       msg[3] = 0x58; // ODOMETER
       msg[4] = 0x00;
-      msg[5] = Sensor::getOrZero(SensorType::AmbientTemperature) + 40;
+      msg[5] = Sensor::getOrZero(SensorType::AmbientTemperature) * 2 + 80;
       msg[6] = 0x80;
       msg[7] = 0x00;
     }
