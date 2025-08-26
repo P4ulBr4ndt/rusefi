@@ -1451,6 +1451,12 @@ float getOutputValueByName(const char *name) {
 // lua.torqueReductionState
 		case -1605036797:
 			return engine->engineState.lua.torqueReductionState;
+// lua.jssState
+		case -447134234:
+			return engine->engineState.lua.jssState;
+// lua.opsState
+		case -1682720760:
+			return engine->engineState.lua.opsState;
 // sd.tCharge
 		case -893334680:
 			return engine->engineState.sd.tCharge;
@@ -1481,6 +1487,12 @@ float getOutputValueByName(const char *name) {
 // brakePedalState
 		case -705383759:
 			return engine->engineState.brakePedalState;
+// jssState
+		case -134069226:
+			return engine->engineState.jssState;
+// opsState
+		case -1369655752:
+			return engine->engineState.opsState;
 // startStopState
 		case 897099930:
 			return engine->engineState.startStopState;
