@@ -88,3 +88,5 @@ EngineState * getEngineState();
 
 bool getClutchDownState();
 bool getBrakePedalState();
+bool getJSSState();
+bool getOPSState();

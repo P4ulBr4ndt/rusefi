@@ -198,6 +198,8 @@ public:
 	SwitchedState clutchUpSwitchedState;
    	SwitchedState brakePedalSwitchedState;
    	SwitchedState acButtonSwitchedState;
+   	SwitchedState jssSwitchedState;
+   	SwitchedState opsSwitchedState;
   SimpleSwitchedState luaDigitalInputState[LUA_DIGITAL_INPUT_COUNT];
 
 #if EFI_LAUNCH_CONTROL
