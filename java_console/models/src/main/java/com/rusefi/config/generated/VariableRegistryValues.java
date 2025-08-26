@@ -176,6 +176,7 @@ public class VariableRegistryValues {
 	public static final String CAN_RX_PREFIX = "CAN_rx";
 	public static final int can_vss_nbc_e_BMW_e46 = 0;
 	public static final int can_vss_nbc_e_BMW_e90 = 2;
+	public static final int can_vss_nbc_e_HARLEY_124 = 6;
 	public static final int can_vss_nbc_e_HONDA_CIVIC9 = 5;
 	public static final int can_vss_nbc_e_HYUNDAI_PB = 4;
 	public static final int can_vss_nbc_e_NISSAN_350 = 3;
@@ -1340,6 +1341,7 @@ public class VariableRegistryValues {
 	public static final int SentInput_INPUT6 = 6;
 	public static final int SentInput_INPUT7 = 7;
 	public static final int SentInput_NONE = 0;
+	public static final int SIGNATURE_HASH = 253182362;
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME = "generated/simulator_tune_image.bin";
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX = "generated/simulator_tune_image";
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX = ".bin";
@@ -1620,11 +1622,11 @@ public class VariableRegistryValues {
 	public static final int TS_RESPONSE_UNDERRUN = 0x80;
 	public static final int TS_RESPONSE_UNRECOGNIZED_COMMAND = 0x83;
 	public static final char TS_SET_LOGGER_SWITCH = 'l';
-	public static final String TS_SIGNATURE = "rusEFI master.2025.05.23.frankenso_na6.3111424996";
+	public static final String TS_SIGNATURE = "rusEFI master.2025.08.26.stm32f767_nucleo.253182362";
 	public static final char TS_SIMULATE_CAN = '>';
 	public static final char TS_SINGLE_WRITE_COMMAND = 'W';
 	public static final char TS_TEST_COMMAND = 't';
-	public static final int TS_TOTAL_OUTPUT_SIZE = 1932;
+	public static final int TS_TOTAL_OUTPUT_SIZE = 1936;
 	public static final String TS_TRIGGER_SCOPE_CHANNEL_1_NAME = "Channel 1";
 	public static final String TS_TRIGGER_SCOPE_CHANNEL_2_NAME = "Channel 2";
 	public static final int TS_TRIGGER_SCOPE_DISABLE = 5;

@@ -1,6 +1,6 @@
 #include "global.h"
 #include "rusefi_enums.h"
-// was generated automatically by rusEFI tool  from rusefi_enums.h // by enum_to_string.jar tool on Thu May 22 16:42:39 UTC 2025
+// was generated automatically by rusEFI tool  from rusefi_enums.h // by enum_to_string.jar tool on Tue Aug 26 12:41:45 UTC 2025
 // see also gen_config_and_enums.bat
 
 
@@ -353,6 +353,8 @@ case BMW_e46:
   return "BMW_e46";
 case BMW_e90:
   return "BMW_e90";
+case HARLEY_124:
+  return "HARLEY_124";
 case HONDA_CIVIC9:
   return "HONDA_CIVIC9";
 case HYUNDAI_PB:

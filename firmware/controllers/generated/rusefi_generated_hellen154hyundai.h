@@ -202,9 +202,10 @@
 #define can_nbc_e_CAN_BUS_NISSAN_VQ 9
 #define can_nbc_e_CAN_BUS_W202_C180 5
 #define CAN_RX_PREFIX "CAN_rx"
-#define can_vss_nbc_e_auto_enum 0="BMW_e46",2="BMW_e90",5="HONDA_CIVIC9",4="HYUNDAI_PB",3="NISSAN_350",1="W202"
+#define can_vss_nbc_e_auto_enum 0="BMW_e46",2="BMW_e90",6="HARLEY_124",5="HONDA_CIVIC9",4="HYUNDAI_PB",3="NISSAN_350",1="W202"
 #define can_vss_nbc_e_BMW_e46 0
 #define can_vss_nbc_e_BMW_e90 2
+#define can_vss_nbc_e_HARLEY_124 6
 #define can_vss_nbc_e_HONDA_CIVIC9 5
 #define can_vss_nbc_e_HYUNDAI_PB 4
 #define can_vss_nbc_e_NISSAN_350 3
@@ -1435,7 +1436,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 2423375774
+#define SIGNATURE_HASH 3709265451
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -1952,14 +1953,14 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI master.2025.05.23.hellen154hyundai.2423375774"
+#define TS_SIGNATURE "rusEFI master.2025.08.26.hellen154hyundai.3709265451"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'
 #define TS_SINGLE_WRITE_COMMAND_char W
 #define TS_TEST_COMMAND 't'
 #define TS_TEST_COMMAND_char t
-#define TS_TOTAL_OUTPUT_SIZE 1932
+#define TS_TOTAL_OUTPUT_SIZE 1936
 #define TS_TRIGGER_SCOPE_CHANNEL_1_NAME "Channel 1"
 #define TS_TRIGGER_SCOPE_CHANNEL_2_NAME "Channel 2"
 #define TS_TRIGGER_SCOPE_DISABLE 5
