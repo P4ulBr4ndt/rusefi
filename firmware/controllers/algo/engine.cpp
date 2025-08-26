@@ -261,7 +261,7 @@ void Engine::updateSwitchInputs() {
 	engine->clutchUpSwitchedState.update(getClutchUpState());
 	engine->brakePedalSwitchedState.update(getBrakePedalState());
 	engine->jssSwitchedState.update(getJSSState());
-	engine->opsSwitchedState.update(getOPSPedalState());
+	engine->opsSwitchedState.update(getOPSState());
 #if EFI_GPIO_HARDWARE
 	{
 		bool currentState;
