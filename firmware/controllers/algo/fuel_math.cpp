@@ -35,7 +35,9 @@
 #include "lua_hooks.h"
 
 extern ve_Map3D_t veMap;
+#if EFI_HD_DP
 extern ve_Map3D_t veRearMap;
+#endif
 static mapEstimate_Map3D_t mapEstimationTable{"mape"};
 
 #if EFI_ENGINE_CONTROL
@@ -437,8 +439,7 @@ float getStandardAirCharge() {
 
 PUBLIC_API_WEAK_SOMETHING_WEIRD
 float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
-#define EFI_HARLEY_FRONT_REAR_FUEL_TRIM 1
-#ifdef EFI_HARLEY_FRONT_REAR_FUEL_TRIM
+#ifdef EFI_HD_DP
   // Little bit of a dirty hack here?
   // Since base fuel mass can not be configured per cylinder 
   // But in V-Twin world we need per cylinder fuel
