@@ -234,6 +234,7 @@ bool getBrakePedalState() {
 	return engine->engineState.lua.brakePedalState;
 }
 
+#if EFI_HD_DP
 bool getJSSState() {
 #if EFI_GPIO_HARDWARE
 	if (isBrainPinValid(engineConfiguration->jssPin)) {
@@ -253,6 +254,7 @@ bool getOPSState() {
 	// todo: boolean sensors should leverage sensor framework #6342
 	return engine->engineState.lua.opsState;
 }
+#endif
 
 
 void Engine::updateSwitchInputs() {
@@ -260,8 +262,10 @@ void Engine::updateSwitchInputs() {
   engine->engineState.clutchDownState = getClutchDownState();
 	engine->clutchUpSwitchedState.update(getClutchUpState());
 	engine->brakePedalSwitchedState.update(getBrakePedalState());
+#if EFI_HD_DP
 	engine->jssSwitchedState.update(getJSSState());
 	engine->opsSwitchedState.update(getOPSState());
+#endif
 #if EFI_GPIO_HARDWARE
 	{
 		bool currentState;
@@ -289,8 +293,10 @@ extern bool kAcRequestState;
 Engine::Engine()
     : clutchUpSwitchedState(&engineState.clutchUpState),
 	brakePedalSwitchedState(&engineState.brakePedalState),
+#if EFI_HD_DP
   jssSwitchedState(&engineState.jssState),
   opsSwitchedState(&engineState.opsState),
+#endif
 	acButtonSwitchedState(&module<AcController>().unmock().acButtonState)
 
 #if EFI_LAUNCH_CONTROL

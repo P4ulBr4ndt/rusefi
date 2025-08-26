@@ -88,5 +88,7 @@ EngineState * getEngineState();
 
 bool getClutchDownState();
 bool getBrakePedalState();
+#if EFI_HD_DP
 bool getJSSState();
 bool getOPSState();
+#endif
