@@ -35,7 +35,7 @@
 #include "lua_hooks.h"
 
 extern ve_Map3D_t veMap;
-#if EFI_HD_DP
+#ifdef EFI_HD_DP
 extern ve_Map3D_t veRearMap;
 #endif
 static mapEstimate_Map3D_t mapEstimationTable{"mape"};

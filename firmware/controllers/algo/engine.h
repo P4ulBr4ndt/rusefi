@@ -198,7 +198,7 @@ public:
 	SwitchedState clutchUpSwitchedState;
    	SwitchedState brakePedalSwitchedState;
    	SwitchedState acButtonSwitchedState;
-#if EFI_HD_DP
+#ifdef EFI_HD_DP
    	SwitchedState jssSwitchedState;
    	SwitchedState opsSwitchedState;
 #endif

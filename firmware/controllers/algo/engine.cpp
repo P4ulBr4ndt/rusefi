@@ -234,7 +234,7 @@ bool getBrakePedalState() {
 	return engine->engineState.lua.brakePedalState;
 }
 
-#if EFI_HD_DP
+#ifdef EFI_HD_DP
 bool getJSSState() {
 #if EFI_GPIO_HARDWARE
 	if (isBrainPinValid(engineConfiguration->jssPin)) {
@@ -262,7 +262,7 @@ void Engine::updateSwitchInputs() {
   engine->engineState.clutchDownState = getClutchDownState();
 	engine->clutchUpSwitchedState.update(getClutchUpState());
 	engine->brakePedalSwitchedState.update(getBrakePedalState());
-#if EFI_HD_DP
+#ifdef EFI_HD_DP
 	engine->jssSwitchedState.update(getJSSState());
 	engine->opsSwitchedState.update(getOPSState());
 #endif
@@ -293,7 +293,7 @@ extern bool kAcRequestState;
 Engine::Engine()
     : clutchUpSwitchedState(&engineState.clutchUpState),
 	brakePedalSwitchedState(&engineState.brakePedalState),
-#if EFI_HD_DP
+#ifdef EFI_HD_DP
   jssSwitchedState(&engineState.jssState),
   opsSwitchedState(&engineState.opsState),
 #endif
