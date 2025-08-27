@@ -293,11 +293,11 @@ extern bool kAcRequestState;
 Engine::Engine()
     : clutchUpSwitchedState(&engineState.clutchUpState),
 	brakePedalSwitchedState(&engineState.brakePedalState),
-#ifdef EFI_HD_DP
-  jssSwitchedState(&engineState.jssState),
-  opsSwitchedState(&engineState.opsState),
-#endif
 	acButtonSwitchedState(&module<AcController>().unmock().acButtonState)
+#ifdef EFI_HD_DP
+  ,jssSwitchedState(&engineState.jssState),
+  opsSwitchedState(&engineState.opsState)
+#endif
 
 #if EFI_LAUNCH_CONTROL
 
