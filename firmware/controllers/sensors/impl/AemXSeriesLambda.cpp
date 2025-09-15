@@ -37,9 +37,9 @@ bool AemXSeriesWideband::acceptFrame(const CANRxFrame& frame) const {
 	uint32_t id = CAN_ID(frame);
 
 	if (type == RUSEFI) {
-		// 0th sensor is 0x190 and 0x191, 1st sensor is 0x192 and 0x193
-		uint32_t rusefiBaseId = rusefi_base + 2 * (engineConfiguration->flipWboChannels ? (1 - m_sensorIndex) : m_sensorIndex);
-		return ((id == rusefiBaseId) || (id == rusefiBaseId + 1));
+		// 0th sensor is 0x190, 1th sensor is 0x191
+		uint32_t rusefiId = rusefi_base + m_sensorIndex;
+		return id == rusefiId;
 	}
 
 	if (type == AEM) {
@@ -113,13 +113,13 @@ void AemXSeriesWideband::decodeFrame(const CANRxFrame& frame, efitick_t nowNt) {
 		uint32_t id = CAN_ID(frame);
 
 		// rusEFI custom format
-		if ((id & 0x1) != 0) {
+		//if ((id & 0x1) != 0) {
 			// low bit is set, this is the "diag" frame
-			decodeRusefiDiag(frame);
-		} else {
+		//	decodeRusefiDiag(frame);
+		//} else {
 			// low bit not set, this is standard frame
 			decodeRusefiStandard(frame, nowNt);
-		}
+		//}
 	} else /* if (sensorType() == AEM) */ {
 		decodeAemXSeries(frame, nowNt);
 	}
