@@ -18,7 +18,7 @@
 
 ve_Map3D_t veMap{"ve"};
 #ifdef EFI_HD_DP
-ve_Map3D_t veRearMap{"ver"};
+ve_Map3D_t veFrontMap{"vef"};
 #endif
 
 #define tpMin 0
@@ -111,6 +111,6 @@ temperature_t IFuelComputer::getTCharge(float rpm, float tps) {
 void initSpeedDensity() {
 	veMap.initTable(config->veTable, config->veRpmBins, config->veLoadBins);
 #ifdef EFI_HD_DP
-	veRearMap.initTable(config->veRearTable, config->veRpmBins, config->veLoadBins);
+	veFrontMap.initTable(config->veFrontTable, config->veRpmBins, config->veLoadBins);
 #endif
 }

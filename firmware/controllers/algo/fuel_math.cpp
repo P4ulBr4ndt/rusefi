@@ -36,7 +36,7 @@
 
 extern ve_Map3D_t veMap;
 #ifdef EFI_HD_DP
-extern ve_Map3D_t veRearMap;
+extern ve_Map3D_t veFrontMap;
 #endif
 static mapEstimate_Map3D_t mapEstimationTable{"mape"};
 
@@ -446,12 +446,16 @@ float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
   // And we want full seperate VE Tables and not Fuel Trim
   // Calculate Front vs Rear Factor here and set it as trim
 
-  if (cylinderNumber == 1) { // rear cylinder. Front cylinder is 0
-    auto veFront = veMap.getValue(rpm, fuelLoad);
-    auto veRear = veRearMap.getValue(rpm, fuelLoad);
-    return veRear / veFront;
+  // So with HD while firing is 1-2 the REAR cylinder is 1 and the Front is 2
+  // So firing order is 1-2 aka Rear Front
+  // And with RUSEFI "cylinderNumber 0" is 1 = REAR and "cylinderNumber 1" is 2 = FRONT
+  if (cylinderNumber == 1) {
+    auto veRear = veMap.getValue(rpm, fuelLoad);
+    auto veFront = veFrontMap.getValue(rpm, fuelLoad);
+    return veFront / veRear;
   }
 
+  // cylinderNumber 0 aka REAR cylinder
 	return 1.0f;
 #else
 	auto trimPercent = interpolate3d(
