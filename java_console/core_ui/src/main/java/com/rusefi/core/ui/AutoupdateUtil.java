@@ -13,6 +13,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,7 +61,14 @@ public class AutoupdateUtil {
             ConnectionAndMeta.downloadFile(localZipFileName, connectionAndMeta, listener);
         } catch (IOException e) {
             if (view.getProgressBar() != null) {
-                JOptionPane.showMessageDialog(view.getProgressBar(), "Error downloading: " + e, "Error", JOptionPane.ERROR_MESSAGE);
+                String message;
+                if (e instanceof UnknownHostException) {
+                    message = "Please fix your internet connection";
+                } else {
+                    message = "Error downloading: " + e;
+                }
+
+                JOptionPane.showMessageDialog(view.getProgressBar(), message, "Error", JOptionPane.ERROR_MESSAGE);
                 throw new ReportedIOException(e);
             } else {
                 throw e;
@@ -119,12 +127,6 @@ public class AutoupdateUtil {
         );
     }
 
-    @Deprecated //
-    public static void trueLayout(Component component) {
-        // todo: inline in Aug of 2025
-        trueLayoutAndRepaint(component);
-    }
-
     public static void trueLayoutAndRepaint(Component component) {
         assertAwtThread();
         if (component == null)
@@ -167,6 +169,7 @@ public class AutoupdateUtil {
         for(StackTraceElement element : e.getStackTrace())
             trace.append(element.toString()).append("\n");
         SwingUtilities.invokeLater(() -> {
+            // todo: reuse ErrorMessageHelper?
             Window w = getSelectedWindow(Window.getWindows());
             JOptionPane.showMessageDialog(w, trace, "Error", JOptionPane.ERROR_MESSAGE);
         });
@@ -174,7 +177,7 @@ public class AutoupdateUtil {
 
     public static boolean hasExistingFile(String zipFileName, long completeFileSize, long lastModified) {
         File file = new File(zipFileName);
-        System.out.println("We have " + file.length() + " " + new Date(file.lastModified()) + " " + file.getAbsolutePath());
+        System.out.println("We have size=" + file.length() + " modified=" + new Date(file.lastModified()) + " " + file.getAbsolutePath());
         return file.length() == completeFileSize && file.lastModified() == lastModified;
     }
 

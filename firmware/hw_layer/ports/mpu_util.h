@@ -18,7 +18,6 @@ void causeHardFault();
 // If mcu can erase/write part of its internal memory without stalling CPU
 bool mcuCanFlashWhileRunning();
 
-bool ramReadProbe(volatile const char *read_address);
 #if defined(STM32F4)
 bool isStm32F42x();
 #endif // STM32F4
@@ -31,6 +30,7 @@ brain_pin_e getAdcChannelBrainPin(const char *msg, adc_channel_e hwChannel);
 bool adcIsMuxedInput(adc_channel_e hwChannel);
 adc_channel_e adcMuxedGetParent(adc_channel_e hwChannel);
 int getAdcInternalChannel(ADC_TypeDef *adc, adc_channel_e hwChannel);
+adc_channel_e getHwChannelForAdcInput(ADC_TypeDef *adc, size_t hwIndex);
 
 // deprecated - migrate to 'getAdcChannelBrainPin'
 ioportid_t getAdcChannelPort(const char *msg, adc_channel_e hwChannel);
@@ -39,6 +39,7 @@ int getAdcChannelPin(adc_channel_e hwChannel);
 
 void portInitAdc();
 float getMcuTemperature();
+float getMcuVrefVoltage();
 // Convert all slow ADC inputs.  Returns true if the conversion succeeded, false if a failure occured.
 bool readSlowAnalogInputs(adcsample_t* convertedSamples);
 #endif
@@ -136,8 +137,8 @@ void HardFaultVector(void);
 #endif /* __cplusplus */
 
 // search:openblt_version
-// ascii 'BL02' in reverse LBS byte order
-#define BLT_CURRENT_VERSION 0x32304C42
+// ascii 'BL03' in reverse LBS byte order
+#define BLT_CURRENT_VERSION 0x33304C42
 #define BLT_BIN_VERSION_ADDR              ((uint32_t)0x08000024U)       /*! 3rd reserved DWORD in vector table search:openblt_version */
 
 #if EFI_USE_OPENBLT

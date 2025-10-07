@@ -21,8 +21,6 @@ public:
 
 static void func(TriggerCallback *callback) {
 	int formIndex = callback->toothIndex % callback->form->getSize();
-	Engine *engine = callback->engine;
-
 
 	TriggerValue value = callback->form->wave.getChannelState(0, formIndex);
 	efitick_t nowNt = getTimeNowNt();
@@ -32,7 +30,6 @@ static void func(TriggerCallback *callback) {
 		handleShaftSignal(0, value == TriggerValue::RISE, nowNt);
 	}
 }
-
 
 static void scheduleTriggerEvents(TriggerWaveform *shape,
 		float timeScale,
@@ -62,12 +59,11 @@ static void scheduleTriggerEvents(TriggerWaveform *shape,
 
 			efitick_t timeNt = efitick_t{US2NT(timeScale * 1000 * angle)};
 
-			engine->scheduler.schedule("test", &param->sched, timeNt, { func, param.get() });
+			engine->scheduler.schedule("test", &param->sched, timeNt, action_s::make<func>(param.get()));
 			totalIndex++;
 		}
 	}
 }
-
 
 TEST(nissan, vq_vvt) {
 	extern bool unitTestTaskPrecisionHack;
@@ -147,5 +143,5 @@ TEST(nissan, vq_vvt) {
 	ASSERT_NEAR(34, tc->vvtPosition[0][0], EPS2D);
 	ASSERT_NEAR(34, tc->vvtPosition[1][0], EPS2D);
 
-	EXPECT_EQ(0, eth.recentWarnings()->getCount());
+	EXPECT_EQ(0u, eth.recentWarnings()->getCount());
 }

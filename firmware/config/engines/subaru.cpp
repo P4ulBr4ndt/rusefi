@@ -21,7 +21,7 @@
  * set engine_type 37
  */
 void setSubaruEJ18_MRE() {
-	engineConfiguration->trigger.type = trigger_type_e::TT_SUBARU_7_WITHOUT_6;
+	engineConfiguration->trigger.type = trigger_type_e::TT_VVT_SUBARU_7_WITHOUT_6;
 
 
 //	engineConfiguration->isDoubleSolenoidIdle = true;
@@ -64,7 +64,7 @@ void setSubaruEG33Defaults() {
 	/* TODO: */
 	engineConfiguration->globalTriggerAngleOffset = 114;	// the end of 19th tooth?
 
-	engineConfiguration->fuelAlgorithm = LM_REAL_MAF;
+	engineConfiguration->fuelAlgorithm = engine_load_mode_e::LM_REAL_MAF;
 
 	engineConfiguration->displacement = 3.30;
 	engineConfiguration->injector.flow = 250;

@@ -14,9 +14,7 @@
 #include "rpm_calculator_api.h"
 #include "trigger_decoder.h"
 
-// we use this value in case of noise on trigger input lines
-#define NOISY_RPM -1
-#define UNREALISTIC_RPM 30000
+#define MAX_ALLOWED_RPM 30000
 
 typedef enum {
 	/**
@@ -142,11 +140,6 @@ private:
 	 float cachedRpmValue = 0;
 
 	/**
-	 * Should be called once we've realized engine is not spinning any more.
-	 */
-	void setStopped();
-
-	/**
 	 * This counter is incremented with each revolution of one of the shafts. Could be
 	 * crankshaft could be camshaft.
 	 */
@@ -167,8 +160,6 @@ private:
 	Timer engineStartTimer;
 };
 
-#define isValidRpm(rpm) ((rpm) > 0 && (rpm) < UNREALISTIC_RPM)
-
 void rpmShaftPositionCallback(trigger_event_e ckpSignalType, uint32_t trgEventIndex, efitick_t edgeTimestamp);
 
 void tdcMarkCallback(
@@ -181,4 +172,4 @@ operation_mode_e lookupOperationMode();
 /**
   * @return tick time of scheduled action
   */
-efitick_t scheduleByAngle(scheduling_s *timer, efitick_t nowNt, angle_t angle, action_s action);
+efitick_t scheduleByAngle(scheduling_s *timer, efitick_t nowNt, angle_t angle, action_s const& action);

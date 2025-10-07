@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "board_overrides.h"
 
 // PB14 is error LED, configured in board.mk
 // Board only has 3 LEDs, so no warning LED
@@ -15,7 +16,7 @@ Gpio getWarningLedPin() {
 	return Gpio::Unassigned;
 }
 
-void preHalInit() {
+static void nucleo_h743_preHalInit() {
 	efiSetPadMode("Ethernet",  Gpio::A1, PAL_MODE_ALTERNATE(0xb));
 	efiSetPadMode("Ethernet",  Gpio::A2, PAL_MODE_ALTERNATE(0xb));
 	efiSetPadMode("Ethernet",  Gpio::A7, PAL_MODE_ALTERNATE(0xb));
@@ -28,4 +29,8 @@ void preHalInit() {
 
 	efiSetPadMode("Ethernet", Gpio::G11, PAL_MODE_ALTERNATE(0xb));
 	efiSetPadMode("Ethernet", Gpio::G13, PAL_MODE_ALTERNATE(0xb));
+}
+
+void setup_custom_board_overrides() {
+	custom_board_preHalInit = nucleo_h743_preHalInit;
 }

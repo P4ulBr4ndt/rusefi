@@ -15,8 +15,8 @@
 using ::testing::FloatNear;
 
 TEST(misc, testFuelMap) {
-	printf("Setting up FORD_ASPIRE_1996\r\n");
-	EngineTestHelper eth(engine_type_e::FORD_ASPIRE_1996);
+	printf("Setting up TEST_ENGINE\r\n");
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
 
 	setFlatInjectorLag(0.2);
 
@@ -126,8 +126,8 @@ static void configureFordAspireTriggerWaveform(TriggerWaveform * s) {
 TEST(misc, testAngleResolver) {
 	printf("*************************************************** testAngleResolver\r\n");
 
-	EngineTestHelper eth(engine_type_e::FORD_ASPIRE_1996);
-
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	eth.setTriggerType(trigger_type_e::TT_FORD_ASPIRE);
 	engineConfiguration->globalTriggerAngleOffset = 175;
 
 	TriggerWaveform * ts = &engine->triggerCentral.triggerShape;
@@ -141,7 +141,7 @@ TEST(misc, testAngleResolver) {
 
 	ASSERT_EQ(4, ts->getTriggerWaveformSynchPointIndex());
 
-	ASSERT_EQ( 10,  ts->getSize()) << "shape size";
+	ASSERT_EQ( 10u,  ts->getSize()) << "shape size";
 
 	TriggerWaveform t;
 	configureFordAspireTriggerWaveform(&t);

@@ -19,12 +19,21 @@ struct CanFrameData {
 	CANRxFrame Frame;
 };
 
-static constexpr size_t canFrameCount = 32;
-static CanFrameData canFrames[canFrameCount];
+#ifndef LUA_canFrameCount
+#if defined(STM32F7) || defined(STM32H7)
+#define LUA_canFrameCount 256
+#else
+#define LUA_canFrameCount 32
+#endif
+#endif
+
+static CanFrameData canFrames[LUA_canFrameCount];
 // CAN frame buffers that are not in use
-static chibios_rt::Mailbox<CanFrameData*, canFrameCount> freeBuffers;
+static chibios_rt::Mailbox<CanFrameData*, LUA_canFrameCount> freeBuffers;
 // CAN frame buffers that are waiting to be processed by the lua thread
-static chibios_rt::Mailbox<CanFrameData*, canFrameCount> filledBuffers;
+static chibios_rt::Mailbox<CanFrameData*, LUA_canFrameCount> filledBuffers;
+
+static size_t dropRxCount = 0;
 
 void processLuaCan(const size_t busIndex, const CANRxFrame& frame) {
 	auto filter = getFilterForId(busIndex, CAN_ID(frame));
@@ -45,7 +54,7 @@ void processLuaCan(const size_t busIndex, const CANRxFrame& frame) {
 
 	if (msg != MSG_OK) {
 		// all buffers are already in use, this frame will be dropped!
-		// TODO: warn the user
+		dropRxCount++;
 		return;
 	}
 
@@ -170,9 +179,13 @@ int doLuaCanRx(LuaHandle& ls) {
 
 void initLuaCanRx() {
 	// Push all CAN frames in to the free buffer
-	for (size_t i = 0; i < canFrameCount; i++) {
+	for (size_t i = 0; i < LUA_canFrameCount; i++) {
 		freeBuffers.post(&canFrames[i], TIME_INFINITE);
 	}
+}
+
+size_t getLuaCanRxDropped() {
+	return dropRxCount;
 }
 
 #endif // EFI_CAN_SUPPORT

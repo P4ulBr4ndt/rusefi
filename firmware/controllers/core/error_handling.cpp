@@ -12,33 +12,30 @@
 #include "error_handling_led.h"
 #include "log_hard_fault.h"
 #include "rusefi/critical_error.h"
+#include "rusefi/efistring.h"
+
+#if EFI_USE_OPENBLT
+/* communication with OpenBLT that is plain C, not to modify external file */
+extern "C" {
+	#include "openblt/shared_params.h"
+};
+#endif
+
+using namespace rusefi::stringutil;
 
 /**
  * Executes the BKPT instruction that causes the debugger to stop.
  */
 #define bkpt() __asm volatile("BKPT #0\n")
 
-// see strncpy man page
-// this implementation helps avoiding following gcc error/warning:
-// error: 'strncpy' output may be truncated copying xxx bytes from a string of length xxx
-
-char *strlncpy(char *dest, const char *src, size_t size)
-{
-	size_t i;
-
-	for (i = 0; (i < (size - 1)) && (src[i] != '\0'); i++)
-		dest[i] = src[i];
-	for ( ; i < size; i++)
-		dest[i] = '\0';
-
-	return dest;
-}
-
 static critical_msg_t warningBuffer;
 static critical_msg_t criticalErrorMessageBuffer;
 static critical_msg_t configErrorMessageBuffer; // recoverable configuration error, non-critical
 
 bool hasCriticalFirmwareErrorFlag = false;
+/**
+ * not critical error: TS would display text error message until clearConfigErrorMessage() is invoked
+ */
 static bool hasConfigErrorFlag = false;
 static bool hasReportFile = false;
 
@@ -68,10 +65,6 @@ void clearConfigErrorMessage() {
 
 bool hasErrorReportFile() {
 	return hasReportFile;
-}
-
-const char* getConfigErrorMessageBuffer() {
-	return configErrorMessageBuffer;
 }
 
 #if EFI_PROD_CODE
@@ -157,6 +150,19 @@ const char *errorCookieToName(ErrorCookie cookie)
 #define printResetReason()											\
 	PRINT("Reset Cause: %s", getMCUResetCause(getMCUResetCause()))
 
+#if EFI_USE_OPENBLT
+#define printWdResetCounter()										\
+	do {															\
+		uint8_t wd_counter = 0;										\
+		SharedParamsReadByIndex(1, &wd_counter);					\
+		PRINT("WD resets: %u", (unsigned int)wd_counter);			\
+	} while (0)
+#else
+#define printWdResetCounter()										\
+	do {} while(0)
+#endif
+
+
 #define printErrorState()											\
 do {																\
 	PRINT("Power cycle count: %lu", bootCount);						\
@@ -228,6 +234,7 @@ void errorHandlerShowBootReasonAndErrors() {
 	#define PRINT(...) efiPrintf(__VA_ARGS__)
 
 	printResetReason();
+	printWdResetCounter();
 
 #if EFI_BACKUP_SRAM
 	backupErrorState *err = &lastBootError;
@@ -302,6 +309,7 @@ void errorHandlerWriteReportFile(FIL *fd) {
 			//this is file print
 			#define PRINT(format, ...) f_printf(fd, format "\r\n", __VA_ARGS__)
 			printResetReason();
+			printWdResetCounter();
 #if EFI_BACKUP_SRAM
 			printErrorState();
 			printErrorStack();
@@ -483,46 +491,50 @@ void chDbgPanic3(const char *msg, const char * file, int line) {
 #endif /* EFI_SIMULATOR || EFI_PROD_CODE */
 
 /**
- * ObdCode::OBD_PCM_Processor_Fault is the general error code for now
- *
  * @returns TRUE in case there were warnings recently
  */
-bool warning(ObdCode code, const char *fmt, ...) {
+bool warningVA(ObdCode code, bool reportToTs, const char *fmt, va_list args) {
 	if (hasCriticalFirmwareErrorFlag) {
 		return true;
 	}
 
 	bool known = engine->engineState.warnings.isWarningNow(code);
 
-	// if known - just reset timer
-	engine->engineState.warnings.addWarningCode(code);
-
-#if EFI_SIMULATOR || EFI_PROD_CODE
-	// we just had this same warning, let's not spam
 	if (known) {
+		// if known - just reset timer
+		engine->engineState.warnings.addWarningCode(code);
+#if EFI_SIMULATOR || EFI_PROD_CODE
+		// we just had this same warning, let's not spam
 		return true;
+#endif
 	}
 
 	// print Pxxxx (for standard OBD) or Cxxxx (for custom) prefix
 	size_t size = snprintf(warningBuffer, sizeof(warningBuffer), "%s%04d: ",
 		code < ObdCode::CUSTOM_NAN_ENGINE_LOAD ? "P" : "C", (int) code);
 
-	va_list ap;
-	va_start(ap, fmt);
-	chvsnprintf(warningBuffer + size, sizeof(warningBuffer) - size, fmt, ap);
-	va_end(ap);
+	chvsnprintf(warningBuffer + size, sizeof(warningBuffer) - size, fmt, args);
 
+	engine->engineState.warnings.addWarningCode(code, reportToTs ? warningBuffer : nullptr);
 	efiPrintf("WARNING: %s", warningBuffer);
-#else
-	printf("unit_test_warning: ");
-	va_list ap;
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-	printf("\r\n");
 
-#endif /* EFI_SIMULATOR || EFI_PROD_CODE */
 	return false;
+}
+
+bool warning(ObdCode code, const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	bool ret = warningVA(code, false, fmt, args);
+	va_end(args);
+	return ret;
+}
+
+bool warningTsReport(ObdCode code, const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	bool ret = warningVA(code, true, fmt, args);
+	va_end(args);
+	return ret;
 }
 
 #if EFI_CLOCK_LOCKS

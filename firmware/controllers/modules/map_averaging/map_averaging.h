@@ -16,8 +16,8 @@
 * TODO: migrate to AngleBasedEvent, see also #7869
 */
 struct mapSampler {
-	scheduling_s startTimer;
-	scheduling_s endTimer;
+	scheduling_s timer;
+	uint8_t cylinderNumber;
 };
 
 #if EFI_MAP_AVERAGING
@@ -28,10 +28,9 @@ void mapAveragingAdcCallback(float instantVoltage);
 
 // allow smoothing up to number of cylinders
 #define MAX_MAP_BUFFER_LENGTH (MAX_CYLINDER_COUNT)
-
-void startMapAveraging(struct mapSampler* s);
 #endif /* EFI_MAP_AVERAGING */
 
+#define SAMPLER_DIMENSION 2
 
 class MapAverager : public StoredValueSensor {
 public:
@@ -40,7 +39,7 @@ public:
 	{
 	}
 
-	void start();
+	void start(uint8_t cylinderNumber);
 	void stop();
 
 	SensorResult submit(float sensorVolts);
@@ -58,18 +57,22 @@ private:
 	size_t m_counter = 0;
 	size_t m_lastCounter = 0;
 	float m_sum = 0;
+	uint8_t m_cylinderNumber = 0;
 };
 
 MapAverager& getMapAvg(size_t idx);
 float filterMapValue(float value);
+void startAveraging(struct mapSampler* s);
 
 class MapAveragingModule : public EngineModule {
 public:
 	void onConfigurationChange(engine_configuration_s const * previousConfig) override;
 
 	void onFastCallback() override;
+    void onEnginePhase(float /*rpm*/, efitick_t edgeTimestamp, float currentPhase, float nextPhase) override;
+
 	void triggerCallback(uint32_t index, efitick_t edgeTimestamp);
 	void init();
 	void submitSample(float voltsMap1, float voltsMap2);
-	mapSampler samplers[MAX_CYLINDER_COUNT][2];
+	mapSampler samplers[MAX_CYLINDER_COUNT];
 };

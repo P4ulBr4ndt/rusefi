@@ -1,10 +1,11 @@
 package com.rusefi.ts_plugin.util;
 
-import com.rusefi.ts_plugin.PluginEntry;
+import com.rusefi.ts_plugin.TsPluginUiImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -25,9 +26,11 @@ public class ManifestHelper {
     @NotNull
     private static String getAttribute(String attributeName) {
         // all this magic below to make sure we are reading manifest of the *our* jar file not TS main jar file
-        Class clazz = PluginEntry.class;
+        Class clazz = TsPluginUiImpl.class;
         String className = clazz.getSimpleName() + ".class";
-        String classPath = clazz.getResource(className).toString();
+        URL resource = clazz.getResource(className);
+        Objects.requireNonNull(resource, "resource");
+        String classPath = resource.toString();
         if (!classPath.startsWith("jar")) {
             // Class not from JAR
             return "Local Run";

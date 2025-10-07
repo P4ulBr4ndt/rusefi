@@ -1,6 +1,6 @@
 #include "global.h"
 #include "engine_type_e.h"
-// was generated automatically by rusEFI tool  from engine_type_e.h // by enum_to_string.jar tool on Wed Mar 26 22:40:59 UTC 2025
+// was generated automatically by rusEFI tool  from engine_type_e.h // by enum_to_string.jar tool on Fri Jul 04 05:12:55 UTC 2025
 // see also gen_config_and_enums.bat
 
 
@@ -31,12 +31,12 @@ case engine_type_e::ET_BOSCH_QUICK_START:
   return "ET_BOSCH_QUICK_START";
 case engine_type_e::ET_TEST_WITH_BOSCH_QUICK_START:
   return "ET_TEST_WITH_BOSCH_QUICK_START";
-case engine_type_e::FERRARI_F136:
-  return "FERRARI_F136";
 case engine_type_e::FORD_ASPIRE_1996:
   return "FORD_ASPIRE_1996";
 case engine_type_e::FORD_COYOTE:
   return "FORD_COYOTE";
+case engine_type_e::FORD_ECOBOOST:
+  return "FORD_ECOBOOST";
 case engine_type_e::FORD_ESCORT_GT:
   return "FORD_ESCORT_GT";
 case engine_type_e::FORD_INLINE_6_1995:
@@ -57,6 +57,8 @@ case engine_type_e::GM_LTG:
   return "GM_LTG";
 case engine_type_e::GM_SBC:
   return "GM_SBC";
+case engine_type_e::GM_SBC_GEN4:
+  return "GM_SBC_GEN4";
 case engine_type_e::GM_SBC_GEN5:
   return "GM_SBC_GEN5";
 case engine_type_e::GY6_139QMB:
@@ -135,10 +137,6 @@ case engine_type_e::MINIMAL_PINS:
   return "MINIMAL_PINS";
 case engine_type_e::MITSUBISHI_3A92:
   return "MITSUBISHI_3A92";
-case engine_type_e::MITSUBISHI_4G93:
-  return "MITSUBISHI_4G93";
-case engine_type_e::MRE_BOARD_NEW_TEST:
-  return "MRE_BOARD_NEW_TEST";
 case engine_type_e::MRE_BODY_CONTROL:
   return "MRE_BODY_CONTROL";
 case engine_type_e::MRE_SECONDARY_CAN:
@@ -147,8 +145,6 @@ case engine_type_e::MRE_SUBARU_EJ18:
   return "MRE_SUBARU_EJ18";
 case engine_type_e::MRE_VW_B6:
   return "MRE_VW_B6";
-case engine_type_e::NISSAN_PRIMERA:
-  return "NISSAN_PRIMERA";
 case engine_type_e::POLARIS:
   return "POLARIS";
 case engine_type_e::POLARIS_RZR:
@@ -157,14 +153,10 @@ case engine_type_e::PROTEUS_ANALOG_PWM_TEST:
   return "PROTEUS_ANALOG_PWM_TEST";
 case engine_type_e::PROTEUS_BMW_M73:
   return "PROTEUS_BMW_M73";
-case engine_type_e::PROTEUS_GM_LS_4:
-  return "PROTEUS_GM_LS_4";
 case engine_type_e::PROTEUS_LUA_DEMO:
   return "PROTEUS_LUA_DEMO";
 case engine_type_e::PROTEUS_NISSAN_VQ35:
   return "PROTEUS_NISSAN_VQ35";
-case engine_type_e::PROTEUS_QC_TEST_BOARD:
-  return "PROTEUS_QC_TEST_BOARD";
 case engine_type_e::PROTEUS_STIM_QC:
   return "PROTEUS_STIM_QC";
 case engine_type_e::PROTEUS_VW_B6:
@@ -207,10 +199,18 @@ case engine_type_e::TOYOTA_2JZ_GTE_VVTi:
   return "TOYOTA_2JZ_GTE_VVTi";
 case engine_type_e::UNUSED102:
   return "UNUSED102";
-case engine_type_e::UNUSED67:
-  return "UNUSED67";
+case engine_type_e::UNUSED31:
+  return "UNUSED31";
+case engine_type_e::UNUSED42:
+  return "UNUSED42";
 case engine_type_e::UNUSED94:
   return "UNUSED94";
+case engine_type_e::UNUSED_105:
+  return "UNUSED_105";
+case engine_type_e::UNUSED_16:
+  return "UNUSED_16";
+case engine_type_e::UNUSED_5:
+  return "UNUSED_5";
 case engine_type_e::UNUSED_97:
   return "UNUSED_97";
 case engine_type_e::VAG_5_CYL:

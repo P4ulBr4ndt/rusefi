@@ -23,7 +23,7 @@ enum class engine_type_e : uint16_t {
 	 */
 	MRE_SECONDARY_CAN = 4,
 
-	NISSAN_PRIMERA = 5,
+	UNUSED_5 = 5,
 	HARLEY = 6,
 	FORD_INLINE_6_1995 = 7,
 	/**
@@ -42,7 +42,7 @@ enum class engine_type_e : uint16_t {
 	FORD_ESCORT_GT = 14,
 	// this is pretty close to body control module/BCM use-case!
 	FUEL_BENCH = 15,
-	MITSUBISHI_4G93 = 16,
+	UNUSED_16 = 16,
 	TCU_4R70W = 17,
 
 	TEST_33816 = 18,
@@ -69,7 +69,7 @@ enum class engine_type_e : uint16_t {
 
 	TEST_ENGINE = 26,
 
-	PROTEUS_GM_LS_4 = 27,
+	GM_SBC_GEN4 = 27,
 
 	TEST_CRANK_ENGINE = 28,
 
@@ -78,7 +78,7 @@ enum class engine_type_e : uint16_t {
 
 	PROTEUS_ANALOG_PWM_TEST = 30,
 
-	MRE_BOARD_NEW_TEST = 31,
+	UNUSED31 = 31,
 
 	VW_ABA = 32,
 
@@ -99,7 +99,7 @@ enum class engine_type_e : uint16_t {
   // used by unit tests and HW CI
 	FRANKENSO_BMW_M73_F = 40,
 
-	PROTEUS_QC_TEST_BOARD = 42,
+	UNUSED42 = 42,
 
 	HONDA_600 = 43,
 
@@ -138,7 +138,7 @@ enum class engine_type_e : uint16_t {
 	DODGE_RAM = 64,
 	GM_LNF = 65,
 	HONDA_OBD1 = 66,
-	UNUSED67 = 67,
+	FORD_ECOBOOST = 67,
 	MERCEDES_M111 = 68,
 
 	MAZDA_MIATA_NB2 = 69,
@@ -205,7 +205,7 @@ enum class engine_type_e : uint16_t {
 
     // both Proteus and 4chan/8chan
 	HYUNDAI_PB = 104,
-  FERRARI_F136 = 105,
+  UNUSED_105 = 105,
 
 // board_engine_types_tag
 

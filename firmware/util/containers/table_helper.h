@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <math.h>
+#include <cmath>
+#include <array>
 #include "efi_interpolation.h"
 #include "efilib.h"
 #include "efi_ratio.h"
@@ -31,6 +32,9 @@ public:
  * this helper class brings together 3D table with two 2D axis curves
  * TODO: explicitly spell out why do we have this template and when exactly is it useful (useful with scaled content?)
  * todo: improve interpolate3d to handle scaling?
+ * A recommended use is if a class depends on a table and this can be shared with several classes but only one is instantiated, see for example airmass.h
+ * It can also be used if you need to test the behavior of a calculated X/Y => table value, but it is advisable to do those expects externally and/or only test the result of the get,
+ * since interpotalate3d is easier to use and does not require initiation.
  * *** WARNING *** https://en.wikipedia.org/wiki/KISS_principle
  * *** WARNING *** this helper requires initialization, make sure that helper is useful any time you consider using it
  * *** WARNING *** we had too many bugs where we were not initializing, often just using the underlying interpolate3d is the way to go
@@ -133,7 +137,7 @@ private:
 };
 
 typedef Map3D<VE_RPM_COUNT, VE_LOAD_COUNT, uint16_t, uint16_t, uint16_t> ve_Map3D_t;
-typedef Map3D<PEDAL_TO_TPS_SIZE, PEDAL_TO_TPS_SIZE, uint8_t, uint8_t, uint8_t> pedal2tps_t;
+typedef Map3D<PEDAL_TO_TPS_RPM_SIZE, PEDAL_TO_TPS_SIZE, uint8_t, uint8_t, uint8_t> pedal2tps_t;
 typedef Map3D<MAP_EST_RPM_COUNT, MAP_EST_LOAD_COUNT, uint16_t, uint16_t, uint16_t> mapEstimate_Map3D_t;
 
 /**
@@ -170,6 +174,19 @@ constexpr void setTable(TElement (&dest)[N][M], const VElement value) {
 
 template <typename TDest, typename TSource, size_t N, size_t M>
 constexpr void copyTable(TDest (&dest)[N][M], const TSource (&source)[N][M], float multiply = 1.0f) {
+	for (size_t n = 0; n < N; n++) {
+		for (size_t m = 0; m < M; m++) {
+			dest[n][m] = source[n][m] * multiply;
+		}
+	}
+}
+
+template <typename TDest, typename TSource, size_t N, size_t M>
+constexpr void copyTable(
+	TDest (&dest)[N][M],
+	const std::array<std::array<TSource, M>, N>& source,
+	float multiply = 1.0f
+) {
 	for (size_t n = 0; n < N; n++) {
 		for (size_t m = 0; m < M; m++) {
 			dest[n][m] = source[n][m] * multiply;

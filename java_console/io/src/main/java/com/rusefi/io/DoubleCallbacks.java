@@ -27,9 +27,24 @@ public class DoubleCallbacks implements UpdateOperationCallbacks {
         two.error();
     }
 
+
+    @Override
+    public void warning() {
+        one.warning();
+        two.warning();
+    }
+
     @Override
     public void clear() {
         one.clear();
         two.clear();
+    }
+
+    @Override
+    public String toString() {
+        return "DoubleCallbacks{" +
+            "one=" + one +
+            ", two=" + two +
+            '}';
     }
 }

@@ -11,6 +11,7 @@
 #include "pch.h"
 #include "hellen_meta.h"
 #include "defaults.h"
+#include "board_overrides.h"
 
 static OutputPin alphaCrankPPullUp;
 
@@ -72,7 +73,7 @@ static void setupDefaultSensorInputs() {
 	engineConfiguration->iat.adcChannel = MM176_IN_IAT_ANALOG;
 }
 
-void boardInitHardware() {
+static void alphax_8chan_boardInitHardware() {
   // technically same thing as setHellenMegaEnPin() since underlying pin E10 is same as H144_GP8
 	setHellenEnPin(Gpio::MM176_EN_PIN);
 
@@ -97,12 +98,10 @@ void boardOnConfigurationChange(engine_configuration_s * /*previousConfiguration
 	tempPullUp.setValue(config->boardUseTempPullUp);
 }
 
-void setBoardConfigOverrides() {
+static void alphax_8chan_boardConfigOverrides() {
 	hellenMegaModule();
 	setHellenCan();
-
-	engineConfiguration->can2RxPin = Gpio::B12;
-	engineConfiguration->can2TxPin = Gpio::B13;
+	setHellenCan2();
 }
 
 /**
@@ -111,7 +110,7 @@ void setBoardConfigOverrides() {
  * See also setDefaultEngineConfiguration
  *
  */
-void setBoardDefaultConfiguration() {
+static void alphax_8chan_defaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 	setupTLE9201(/*controlPin*/Gpio::MM176_OUT_PWM9, Gpio::MM176_GP6, Gpio::MM176_GP7);
@@ -150,6 +149,22 @@ void boardPrepareForStop() {
 	// Wake on the CAN RX pin
 	palEnableLineEvent(PAL_LINE(GPIOD, 0), PAL_EVENT_MODE_RISING_EDGE);
 }
+
+static Gpio OUTPUTS_GM_GEN4[] = {
+	Gpio::MM176_INJ1, // 1D - Injector 1
+	Gpio::MM176_INJ2, // 2D - Injector 2
+	Gpio::MM176_INJ3, // 3D - Injector 3
+	Gpio::MM176_INJ4, // 4D - Injector 4
+
+	Gpio::MM176_INJ5, // 5D - Injector 5
+	Gpio::MM176_INJ6, // 6D - Injector 6
+	Gpio::MM176_INJ7, // 7D - Injector 7
+	Gpio::MM176_INJ8, // 13D - Injector 8
+
+  Gpio::MM176_GP1, // 11D - Main Relay
+	Gpio::MM176_GP2, // 10D - Fan
+//	Gpio::MM176_OUT_PWM1, // 8D - VVT 1
+};
 
 static Gpio OUTPUTS[] = {
 	Gpio::MM176_INJ1, // 1D - Injector 1
@@ -210,17 +225,68 @@ static Gpio OUTPUTS[] = {
 };
 
 int getBoardMetaOutputsCount() {
+    if (engineConfiguration->engineType == engine_type_e::GM_SBC_GEN4) {
+        return efi::size(OUTPUTS_GM_GEN4);
+    }
     return efi::size(OUTPUTS);
 }
 
 int getBoardMetaLowSideOutputsCount() {
+    if (engineConfiguration->engineType == engine_type_e::GM_SBC_GEN4) {
+      return getBoardMetaOutputsCount();
+    }
     return getBoardMetaOutputsCount() - 6;
 }
 
 Gpio* getBoardMetaOutputs() {
+    if (engineConfiguration->engineType == engine_type_e::GM_SBC_GEN4) {
+      return OUTPUTS_GM_GEN4;
+    }
     return OUTPUTS;
 }
 
 int getBoardMetaDcOutputsCount() {
+    if (engineConfiguration->engineType == engine_type_e::GM_SBC_GEN4) {
+      // STATIC_BOARD_ID_PLATINUM_GM_GEN4
+        return 1;
+    }
     return 2;
+}
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = alphax_8chan_boardInitHardware;
+	custom_board_DefaultConfiguration = alphax_8chan_defaultConfiguration;
+	custom_board_ConfigOverrides = alphax_8chan_boardConfigOverrides;
+}
+
+int boardGetAnalogInputDiagnostic(adc_channel_e hwChannel, float voltage) {
+	/* we do not check voltage for valid ragne yet */
+	(void)voltage;
+
+	switch (hwChannel) {
+		/* inputs that may be affected by incorrect reference voltage */
+		case MM176_IN_TPS_ANALOG:
+		case MM176_IN_TPS2_ANALOG:
+		case MM176_IN_PPS1_ANALOG:
+		case MM176_IN_PPS2_ANALOG:
+		case MM176_IN_IAT_ANALOG:
+		case MM176_IN_AT1_ANALOG:
+		case MM176_IN_CLT_ANALOG:
+		case MM176_IN_AT2_ANALOG:
+		//case MM176_IN_O2S_ANALOG:
+		//case MM176_IN_O2S2_ANALOG:
+		case MM176_IN_MAP1_ANALOG:
+		case MM176_IN_MAP2_ANALOG:
+		case MM176_IN_AUX1_ANALOG:
+		case MM176_IN_AUX2_ANALOG:
+		case MM176_IN_AUX3_ANALOG:
+		case MM176_IN_AUX4_ANALOG:
+			/* TODO: more? */
+			return (boardGetAnalogDiagnostic() == ObdCode::None) ? 0 : -1;
+		/* all other inputs should not rely on output 5V */
+		default:
+			return 0;
+	}
+
+	return 0;
 }

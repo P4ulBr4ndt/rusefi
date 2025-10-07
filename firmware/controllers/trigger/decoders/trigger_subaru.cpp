@@ -156,12 +156,92 @@ static void initializeSubaru7_6(TriggerWaveform *s, bool withCrankWheel) {
 	s->useOnlyPrimaryForSync = withCrankWheel;
 }
 
-void initializeSubaruOnly7(TriggerWaveform *s) {
-	initializeSubaru7_6(s, false);
-}
-
 void initializeSubaru7_6(TriggerWaveform *s) {
 	initializeSubaru7_6(s, true);
+}
+
+void initializeSubaru7_6_camOnly(TriggerWaveform *s) {
+	s->initialize(FOUR_STROKE_CAM_SENSOR, SyncEdge::RiseOnly);
+
+	const float width = 1;
+	const float offset = 720 - (3 * 180 + 20);
+
+	s->tdcPosition = 180 + offset;
+
+	#define SUBARU76_CAMONLY_PULSE(cyl, subtooth) \
+		s->addEventAngle(offset + (180 * (cyl)) + 20 + (15 * (subtooth)) - width, TriggerValue::RISE, TriggerWheel::T_PRIMARY);	\
+		s->addEventAngle(offset + (180 * (cyl)) + 20 + (15 * (subtooth)), TriggerValue::FALL, TriggerWheel::T_PRIMARY)
+
+	// CYL1
+	// 5, 20, 35
+	SUBARU76_CAMONLY_PULSE(0, -1);
+	SUBARU76_CAMONLY_PULSE(0,  0);
+	SUBARU76_CAMONLY_PULSE(0, +1);
+
+	// CYL3
+	// 200
+	SUBARU76_CAMONLY_PULSE(1,  0);
+
+	// CYL2
+	// 380, 395
+	SUBARU76_CAMONLY_PULSE(2,  0);
+	SUBARU76_CAMONLY_PULSE(2, +1);
+
+	// CYL4
+	// 560
+	SUBARU76_CAMONLY_PULSE(3,  0);
+
+	// Tooths positions, deltas and gap ratios
+	//  (5,  20,  35, 200, 380, 395, 560) 725...
+	//      (15,  15, 165, 180,  15, 165, 165)  15...
+	// K:  0.09,   1,  11,1.09,0.08,  11,   1)0.09
+
+	// Gaps: 1, 0.09, 1, 11 at 560
+	//s->setTriggerSynchronizationGap3(0,  0.50,  1.50);
+	//s->setTriggerSynchronizationGap3(0,  0.04,  0.15);
+	//s->setTriggerSynchronizationGap3(1,  0.50,  1.50);
+	//s->setTriggerSynchronizationGap3(2,  7.00, 15.00);
+
+	s->setTriggerSynchronizationGap3(/*index*/0, 6.53 * TRIGGER_GAP_DEVIATION_LOW, 15);
+	s->setTriggerSynchronizationGap3(/*index*/1, 0.3, 1 * TRIGGER_GAP_DEVIATION_HIGH);
+	s->setTriggerSynchronizationGap3(/*index*/2, 0.08, 0.3);
+}
+
+void initializeSubaruOnly7(TriggerWaveform *s) {
+	//initializeSubaru7_6(s, false);
+	initializeSubaru7_6_camOnly(s);
+}
+
+void initializeSubaru7_6_crankOnly(TriggerWaveform *s) {
+	/**
+	 * Note how we use 0..180 range while defining FOUR_STROKE_SYMMETRICAL_CRANK_SENSOR trigger
+	 * Note that only half of the physical wheel is defined here!
+	 */
+	s->initialize(FOUR_STROKE_SYMMETRICAL_CRANK_SENSOR, SyncEdge::RiseOnly);
+
+	const float width = 1;
+	const float offset = 10;
+
+	s->tdcPosition = 65;
+
+	// BTDC: 97, 65, 10
+	// Distances: 93, 32, 55
+	s->addEventAngle(180 + offset - 97 - width, TriggerValue::RISE, TriggerWheel::T_PRIMARY);
+	s->addEventAngle(180 + offset - 97, TriggerValue::FALL, TriggerWheel::T_PRIMARY);
+
+	s->addEventAngle(180 + offset - 65 - width, TriggerValue::RISE, TriggerWheel::T_PRIMARY);
+	s->addEventAngle(180 + offset - 65, TriggerValue::FALL, TriggerWheel::T_PRIMARY);
+
+	s->addEventAngle(180 + offset - 10 - width, TriggerValue::RISE, TriggerWheel::T_PRIMARY);
+	s->addEventAngle(180 + offset - 10, TriggerValue::FALL, TriggerWheel::T_PRIMARY);
+
+	// Nominal gaps:
+	// 55 / 32 = 1.7187
+	//s->setTriggerSynchronizationGap2(0.85f, 3.43f);
+	// 93 / 55 = 1.6909
+	//s->setTriggerSynchronizationGap2(0.84f, 3.38);
+	// 32 / 93 = 0.344
+	s->setTriggerSynchronizationGap2(0.172f, 0.688f);
 }
 
 /*

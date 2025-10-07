@@ -21,7 +21,7 @@
  */
 
 #include "pch.h"
-
+#include "transition_events.h"
 #include "speed_density.h"
 #include "flash_main.h"
 
@@ -63,7 +63,12 @@
 #include "tunerstudio.h"
 #endif
 
+#include "board_overrides.h"
+
 #define TS_DEFAULT_SPEED 38400
+
+std::optional<setup_custom_board_overrides_type> custom_board_DefaultConfiguration;
+std::optional<setup_custom_board_overrides_type> custom_board_ConfigOverrides;
 
 /**
  * Current engine configuration. On firmware start we assign empty configuration, then
@@ -92,7 +97,7 @@ void rememberCurrentConfiguration() {
     hasRememberedConfiguration = true;
 }
 
-static void wipeString(char *string, int size) {
+static void fillAfterString(char *string, int size) {
 	// we have to reset bytes after \0 symbol in order to calculate correct tune CRC from MSQ file
 	for (int i = std::strlen(string) + 1; i < size; i++) {
 		string[i] = 0;
@@ -100,12 +105,13 @@ static void wipeString(char *string, int size) {
 }
 
 static void wipeStrings() {
-	wipeString(engineConfiguration->engineMake, sizeof(vehicle_info_t));
-	wipeString(engineConfiguration->engineCode, sizeof(vehicle_info_t));
-	wipeString(engineConfiguration->vehicleName, sizeof(vehicle_info_t));
+	fillAfterString(engineConfiguration->engineMake, sizeof(vehicle_info_t));
+	fillAfterString(engineConfiguration->engineCode, sizeof(vehicle_info_t));
+	fillAfterString(engineConfiguration->vehicleName, sizeof(vehicle_info_t));
 }
 
 void onBurnRequest() {
+  onTransitionEvent(TransitionEvent::BurnRequest);
 	wipeStrings();
 
 	incrementGlobalConfigurationVersion("burn");
@@ -128,14 +134,15 @@ PUBLIC_API_WEAK void boardOnConfigurationChange(engine_configuration_s* /*previo
  * See 'preCalculate' or 'startHardware' which are invoked BOTH on start and configuration change
  */
 void incrementGlobalConfigurationVersion(const char * msg) {
+  onTransitionEvent(TransitionEvent::GlobalConfigurationVersion);
     assertStackVoid("increment", ObdCode::STACK_USAGE_MISC, EXPECTED_REMAINING_STACK);
     if (!hasRememberedConfiguration) {
         criticalError("too early to invoke incrementGlobalConfigurationVersion %s", msg);
     }
 	engine->globalConfigurationVersion++;
-#if EFI_DEFAILED_LOGGING
+#if EFI_DETAILED_LOGGING
 	efiPrintf("set globalConfigurationVersion=%d", globalConfigurationVersion);
-#endif /* EFI_DEFAILED_LOGGING */
+#endif /* EFI_DETAILED_LOGGING */
 
 	applyNewHardwareSettings();
 
@@ -421,7 +428,6 @@ static void setDefaultEngineConfiguration() {
 	setDefaultEtbBiasCurve();
 #endif /* EFI_ELECTRONIC_THROTTLE_BODY */
 
-	engineConfiguration->mafSensorType = Bosch0280218037;
 	setBosch0280218037();
 
 	engineConfiguration->mapMinBufferLength = 1;
@@ -481,7 +487,7 @@ static void setDefaultEngineConfiguration() {
     // is this same old setCommonNTCSensor?
 	engineConfiguration->clt.config = {0, 23.8889, 48.8889, 9500, 2100, 1000, 1500};
 
-    setCommonNTCSensor(&engineConfiguration->iat, 2700);
+    setCommonNTCSensorParameters(&engineConfiguration->iat);
 
 	// wow unit tests have much cooler setDefaultLaunchParameters method
 	engineConfiguration->launchRpm = 3000;
@@ -512,7 +518,7 @@ static void setDefaultEngineConfiguration() {
 	// set idle_position 50
 	setDefaultIdleOpenLoopParameters();
 //	engineConfiguration->idleMode = IM_AUTO;
-	engineConfiguration->idleMode = IM_MANUAL;
+	engineConfiguration->idleMode = idle_mode_e::IM_MANUAL;
 
 	engineConfiguration->useStepperIdle = false;
 
@@ -647,7 +653,7 @@ void loadConfiguration() {
 #endif /* EFI_CONFIGURATION_STORAGE */
 
 	// Force any board configuration options that humans shouldn't be able to change
-	setBoardConfigOverrides();
+	call_board_override(custom_board_ConfigOverrides);
 }
 
 void resetConfigurationExt(configuration_callback_t boardCallback, engine_type_e engineType) {
@@ -670,9 +676,9 @@ void resetConfigurationExt(configuration_callback_t boardCallback, engine_type_e
 	}
 
 #if EFI_PROD_CODE
-	// call overrided board-specific configuration setup, if needed (for custom boards only)
-	setBoardDefaultConfiguration();
-	setBoardConfigOverrides();
+	// call board-specific configuration setup, if needed (for custom boards only)
+	call_board_override(custom_board_DefaultConfiguration);
+	call_board_override(custom_board_ConfigOverrides);
 #endif // EFI_PROD_CODE
 
 	engineConfiguration->engineType = engineType;
@@ -715,10 +721,12 @@ void commonFrankensoAnalogInputs() {
 	engineConfiguration->vbattAdcChannel = EFI_ADC_14;
 }
 
-// These symbols are weak so that a board_configuration.cpp file can override them
-PUBLIC_API_WEAK void setBoardDefaultConfiguration() { }
-// specific firmware builds are meant for specific hardware. In order to provide best user experience on well-known boards sometimes we reduce user flexibility.
-PUBLIC_API_WEAK_SOMETHING_WEIRD void setBoardConfigOverrides() { }
+void setBoardDefaultConfiguration() {
+  // custom_board_DefaultConfiguration
+}
+void setBoardConfigOverrides() {
+  // time to force migration to custom_board_ConfigOverrides
+}
 
 PUBLIC_API_WEAK int hackHellenBoardId(int detectedId) { return detectedId; }
 

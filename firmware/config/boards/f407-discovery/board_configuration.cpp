@@ -3,6 +3,7 @@
  */
 
 #include "pch.h"
+#include "board_overrides.h"
 
 static void setDefaultFrankensoStepperIdleParameters() {
 	engineConfiguration->idle.stepperDirectionPin = Gpio::E10;
@@ -23,7 +24,7 @@ Gpio getWarningLedPin() {
 }
 
 Gpio getCommsLedPin() {
-#ifdef HW_NOT_COMMUNITY_FRANKENSO
+#if defined(HW_NOT_COMMUNITY_FRANKENSO) || defined(EFI_BOOTLOADER)
   // not f407-discovery but f407-discovery while reusing board file
   return Gpio::D15;
 #else
@@ -52,7 +53,7 @@ static void configureAccelerometerPins() {
 /**
  * @brief	Hardware board-specific default configuration (GPIO pins, ADC channels, SPI configs etc.)
  */
-void setBoardDefaultConfiguration() {
+static void f407_discovery_DefaultConfiguration() {
 	setDefaultFrankensoStepperIdleParameters();
 	setCanFrankensoDefaults();
 
@@ -112,14 +113,19 @@ void setBoardDefaultConfiguration() {
 	engineConfiguration->is_enabled_spi_3 = true;
 }
 
-// weak linkage
-void boardInitHardware() {
+void f407_discovery_boardInitHardware() {
 
 static const struct mc33810_config mc33810 = {
 	.spi_bus = &SPID3,
 	.spi_config = {
 		.circular = false,
-		.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+		.end_cb = nullptr,
+#else
+		.slave = false,
+		.data_cb = nullptr,
+		.error_cb = nullptr,
+#endif
 		// todo: use engineConfiguration->mc33810_cs
 		.ssport = GPIOC,
 		.sspad = 5,
@@ -168,4 +174,9 @@ static const struct mc33810_config mc33810 = {
 	    });
 #endif // EFI_BOOTLOADER
 	}
+}
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = f407_discovery_boardInitHardware;
+	custom_board_DefaultConfiguration = f407_discovery_DefaultConfiguration;
 }

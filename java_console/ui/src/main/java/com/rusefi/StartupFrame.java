@@ -1,11 +1,11 @@
 package com.rusefi;
 
 import com.devexperts.logging.Logging;
+import com.opensr5.ini.PrimeTunerStudioCache;
 import com.rusefi.core.net.ConnectionAndMeta;
 import com.rusefi.core.preferences.storage.PersistentConfiguration;
 import com.rusefi.core.ui.AutoupdateUtil;
 import com.rusefi.core.ui.FrameHelper;
-import com.rusefi.io.LinkManager;
 import com.rusefi.io.serial.BaudRateHolder;
 import com.rusefi.maintenance.*;
 import com.rusefi.ui.BasicLogoHelper;
@@ -28,8 +28,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.devexperts.logging.Logging.getLogging;
+import static com.rusefi.SerialPortType.EcuWithOpenblt;
+import static com.rusefi.SerialPortType.OpenBlt;
 import static com.rusefi.core.preferences.storage.PersistentConfiguration.getConfig;
 import static com.rusefi.ui.util.UiUtils.*;
 import static javax.swing.JOptionPane.YES_NO_OPTION;
@@ -66,6 +69,7 @@ public class StartupFrame {
             return new Dimension(Math.max(size.width, realHardwarePanel.getPreferredSize().width), size.height);
         }
     };
+    private final ConnectivityContext connectivityContext;
     /**
      * this flag tells us if we are closing the startup frame in order to proceed with console start or if we are
      * closing the application.
@@ -73,8 +77,11 @@ public class StartupFrame {
     private boolean isProceeding;
     private final JLabel noPortsMessage = new JLabel();
     private final StatusAnimation status;
+    private ProgramSelector selector;
+    private boolean firstTimeHasEcuWithOpenBlt = true;
 
-    public StartupFrame() {
+    public StartupFrame(ConnectivityContext connectivityContext) {
+        this.connectivityContext = connectivityContext;
         String title = UiProperties.getWhiteLabel() + " console " + Launcher.CONSOLE_VERSION;
         log.info(title);
         noPortsMessage.setForeground(Color.red);
@@ -95,6 +102,7 @@ public class StartupFrame {
                 }
             }
         });
+        new NamedThreadFactory("ecuDef primer").newThread(PrimeTunerStudioCache::primeWithLocalFile).start();
     }
 
     public void showUi() {
@@ -167,7 +175,7 @@ public class StartupFrame {
         realHardwarePanel.add(noPortsMessage, "right, wrap");
         noPortsMessage.setToolTipText("Check you cables. Check your drivers. Do you want to start simulator maybe?");
 
-        ProgramSelector selector = new ProgramSelector(portsComboBox.getComboPorts());
+        selector = new ProgramSelector(connectivityContext, portsComboBox.getComboPorts());
 
         realHardwarePanel.add(new HorizontalLine(), "right, wrap");
         realHardwarePanel.add(selector.getControl(), "right, wrap");
@@ -186,13 +194,15 @@ public class StartupFrame {
             //realHardwarePanel.add(new EraseChip().getButton(), "right, wrap");
         }
 
-        SerialPortScanner.INSTANCE.addListener(currentHardware -> SwingUtilities.invokeLater(() -> {
+        connectivityContext.getSerialPortScanner().addListener(currentHardware -> SwingUtilities.invokeLater(() -> {
             status.stop();
             selector.apply(currentHardware);
             applyKnownPorts(currentHardware);
             frame.pack();
         }));
 
+        /*
+        LOG_VIEWER is a bit dead, is not it?
         final JButton buttonLogViewer = new JButton();
         buttonLogViewer.setText("Start " + LinkManager.LOG_VIEWER);
         buttonLogViewer.addActionListener(new ActionListener() {
@@ -205,7 +215,7 @@ public class StartupFrame {
 
         miscPanel.add(buttonLogViewer, "wrap");
         miscPanel.add(new HorizontalLine(), "wrap");
-
+*/
         miscPanel.add(SimulatorHelper.createSimulatorComponent(this));
 
         JPanel rightPanel = new JPanel(new VerticalFlowLayout());
@@ -315,7 +325,7 @@ public class StartupFrame {
     }
 
     private void applyKnownPorts(AvailableHardware currentHardware) {
-        List<SerialPortScanner.PortResult> ports = currentHardware.getKnownPorts();
+        List<PortResult> ports = currentHardware.getKnownPorts();
         log.info("Rendering available ports: " + ports);
         connectPanel.setVisible(!ports.isEmpty());
 
@@ -329,8 +339,13 @@ public class StartupFrame {
 
         noPortsMessage.setVisible(ports.isEmpty() || !hasEcuOrBootloader);
 
+        boolean hasEcuWithOpenBlt = !currentHardware.getKnownPorts().stream().filter(portResult -> portResult.type == EcuWithOpenblt).collect(Collectors.toList()).isEmpty();
+        if (hasEcuWithOpenBlt && firstTimeHasEcuWithOpenBlt) {
+            selector.setMode(UpdateMode.OPENBLT_AUTO);
+            firstTimeHasEcuWithOpenBlt = false;
+        }
 
-        AutoupdateUtil.trueLayout(connectPanel);
+        AutoupdateUtil.trueLayoutAndRepaint(connectPanel);
     }
 
     public static void setFrameIcon(Frame frame) {
@@ -340,7 +355,7 @@ public class StartupFrame {
 
     private void connectButtonAction(JComboBox<String> comboSpeeds) {
         BaudRateHolder.INSTANCE.baudRate = Integer.parseInt((String) comboSpeeds.getSelectedItem());
-        SerialPortScanner.PortResult selectedPort = ((SerialPortScanner.PortResult)portsComboBox.getComboPorts().getSelectedItem());
+        PortResult selectedPort = ((PortResult)portsComboBox.getComboPorts().getSelectedItem());
         disposeFrameAndProceed();
         new ConsoleUI(selectedPort.port);
     }
@@ -379,17 +394,17 @@ public class StartupFrame {
         isProceeding = true;
         frame.dispose();
         status.stop();
-        SerialPortScanner.INSTANCE.stopTimer();
+        connectivityContext.getSerialPortScanner().stopTimer();
     }
 
-    private static boolean applyPortSelectionToUIcontrol(JComboBox<SerialPortScanner.PortResult> comboPorts, List<SerialPortScanner.PortResult> ports) {
+    private static boolean applyPortSelectionToUIcontrol(JComboBox<PortResult> comboPorts, List<PortResult> ports) {
         comboPorts.removeAllItems();
         boolean hasEcuOrBootloader = false;
-        for (final SerialPortScanner.PortResult port : ports) {
+        for (final PortResult port : ports) {
             comboPorts.addItem(port);
-            if (port.type == SerialPortScanner.SerialPortType.Ecu ||
-                port.type == SerialPortScanner.SerialPortType.EcuWithOpenblt ||
-                port.type == SerialPortScanner.SerialPortType.OpenBlt) {
+            if (port.type == SerialPortType.Ecu ||
+                port.type == SerialPortType.EcuWithOpenblt ||
+                port.type == SerialPortType.OpenBlt) {
                 hasEcuOrBootloader = true;
             }
         }
@@ -398,7 +413,7 @@ public class StartupFrame {
             comboPorts.setSelectedItem(defaultPort);
         }
 
-        AutoupdateUtil.trueLayout(comboPorts);
+        AutoupdateUtil.trueLayoutAndRepaint(comboPorts);
         return hasEcuOrBootloader;
     }
 

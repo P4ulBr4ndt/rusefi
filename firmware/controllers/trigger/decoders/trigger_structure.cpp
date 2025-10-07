@@ -38,6 +38,25 @@
 #include "trigger_vw.h"
 #include "trigger_universal.h"
 #include "trigger_mercedes.h"
+#include "engine_state.h"
+
+void wrapAngle(angle_t& angle, const char* msg, ObdCode code) {
+	if (std::isnan(angle)) {
+		firmwareError(ObdCode::CUSTOM_ERR_ANGLE, "a NaN %s", msg);
+		angle = 0;
+	}
+
+	assertAngleRange(angle, msg, code);
+	float engineCycle = getEngineState()->engineCycle;
+
+	while (angle < 0) {
+		angle += engineCycle;
+	}
+
+	while (angle >= engineCycle) {
+		angle -= engineCycle;
+	}
+}
 
 TriggerWaveform::TriggerWaveform() {
 	initialize(OM_NONE, SyncEdge::Rise);
@@ -251,7 +270,7 @@ void TriggerWaveform::addEventAngle(angle_t angle, TriggerValue const state, Tri
 void TriggerWaveform::addEvent(angle_t angle, TriggerValue const state, TriggerWheel const channelIndex) {
 	efiAssertVoid(ObdCode::CUSTOM_OMODE_UNDEF, operationMode != OM_NONE, "operationMode not set");
 
-	if (channelIndex == TriggerWheel:: T_SECONDARY) {
+	if (channelIndex == TriggerWheel::T_SECONDARY) {
 		needSecondTriggerInput = true;
 	}
 
@@ -716,6 +735,10 @@ void TriggerWaveform::initializeTriggerWaveform(operation_mode_e triggerOperatio
 		configureChryslerNGC_36_2_2(this);
 		break;
 
+	case trigger_type_e::TT_JEEP_EVD_36_2_2:
+		configureJeepEVD_36_2_2(this);
+		break;
+
 	case trigger_type_e::TT_DODGE_RAM:
 		initDodgeRam(this);
 		break;
@@ -786,7 +809,7 @@ void TriggerWaveform::initializeTriggerWaveform(operation_mode_e triggerOperatio
 		initGmLS24_3deg(this);
 		break;
 
-	case trigger_type_e::TT_SUBARU_7_WITHOUT_6:
+	case trigger_type_e::TT_VVT_SUBARU_7_WITHOUT_6:
 		initializeSubaruOnly7(this);
 		break;
 
@@ -801,6 +824,15 @@ void TriggerWaveform::initializeTriggerWaveform(operation_mode_e triggerOperatio
 	case trigger_type_e::TT_SUBARU_SVX_CAM_VVT:
 		initializeSubaru_SVX(this);
 		break;
+
+	case trigger_type_e::TT_JEEPRENIX_66_2_2_2:
+		initializeJeepRenix66_2_2(this);
+		break;
+
+	case trigger_type_e::TT_SUBARU_7_6_CRANK:
+		initializeSubaru7_6_crankOnly(this);
+		break;
+
 
 	default:
 	  customTrigger(triggerOperationMode, this, triggerType.type);

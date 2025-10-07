@@ -4,6 +4,7 @@
 
 #pragma once
 #include <array>
+#include "arrays_util.h"
 #include "batt_lag_corr_curve.h"
 
 using torqueReductionCutTable = std::array<std::array<int8_t, TORQUE_TABLE_Y_SIZE>, TORQUE_TABLE_X_SIZE>;
@@ -22,12 +23,12 @@ namespace engine_configuration_defaults {
     constexpr torqueReductionActivationMode_e TORQUE_REDUCTION_ACTIVATION_MODE = TORQUE_REDUCTION_BUTTON;
     constexpr switch_input_pin_e TORQUE_REDUCTION_TRIGGER_PIN = Gpio::Unassigned;
     constexpr pin_input_mode_e TORQUE_REDUCTION_TRIGGER_PIN_MODE = PI_DEFAULT;
-    constexpr torqueReductionTimeTable TORQUE_REDUCTION_TIME = { { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } };
+    constexpr torqueReductionTimeTable TORQUE_REDUCTION_TIME = { { {0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f} } };
     constexpr bool LIMIT_TORQUE_REDUCTION_TIME = false;
     constexpr float TORQUE_REDUCTION_ARMING_RPM = 0.0f;
     constexpr float TORQUE_REDUCTION_ARMING_APP = 0.0f;
-    constexpr torqueReductionCutTable TORQUE_REDUCTION_IGNITION_CUT = { { 0, 0 } };
-    constexpr torqueReductionTable TORQUE_REDUCTION_IGNITION_RETARD = { { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } };
+    constexpr torqueReductionCutTable TORQUE_REDUCTION_IGNITION_CUT = { { { 0, 0 } } };
+    constexpr torqueReductionTable TORQUE_REDUCTION_IGNITION_RETARD = { { {0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f} } };
 
     /* Other Sensor Inputs: */
     constexpr switch_input_pin_e CLUTCH_DOWN_PIN = Gpio::Unassigned;
@@ -46,13 +47,33 @@ namespace engine_configuration_defaults {
     /* Injector */
     constexpr bool INJECTOR_FLOW_AS_MASS_FLOW = false;
     constexpr float INJECTOR_FLOW = 200.0f;
-    constexpr BattLagCorrTable INJECTOR_BATT_LAG_CURR { { 4.240, 2.483, 1.739, 1.501, 1.308, 1.149, 0.964, 0.913 } };
+
+    // we use `initTableFromAnotherTable` template function to handle cases when `VBAT_INJECTOR_CURVE_SIZE` is not 8 or
+    // `VBAT_INJECTOR_CURVE_PRESSURE_SIZE` is not 2
+    constexpr BattLagCorrTable INJECTOR_BATT_LAG_CURR = initTableFromAnotherTable<
+        float,
+        8,
+        2,
+        VBAT_INJECTOR_CURVE_SIZE,
+        VBAT_INJECTOR_CURVE_PRESSURE_SIZE
+    >(
+        { {
+#if (VBAT_INJECTOR_CURVE_PRESSURE_SIZE == 2) && (VBAT_INJECTOR_CURVE_SIZE == 8)
+            { 4.240f, 2.483f, 1.739f, 1.501f, 1.308f, 1.149f, 0.964f, 0.913f },
+            { 3.084f, 1.641f, 1.149f, 1.194f, 0.992f, 0.759f, 0.637f, 0.603f },
+#else //(VBAT_INJECTOR_CURVE_PRESSURE_SIZE == 2) && (VBAT_INJECTOR_CURVE_SIZE == 8)
+            { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+            { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+#endif //(VBAT_INJECTOR_CURVE_PRESSURE_SIZE == 2) && (VBAT_INJECTOR_CURVE_SIZE == 8)
+        } },
+        0.0f
+    );
     constexpr float FUEL_REFERENCE_PRESSURE = 300.0f;
     constexpr injector_compensation_mode_e INJECTOR_COMPENSATION_MODE = ICM_None;
 
     /* Secondary injector: */
     constexpr float INJECTOR_SECONDARY_FLOW = INJECTOR_FLOW;
-    constexpr BattLagCorrTable INJECTOR_SECONDARY_BATT_LAG_CURR { { 4.240, 2.483, 1.739, 1.501, 1.308, 1.149, 0.964, 0.913 } };
+    constexpr BattLagCorrTable INJECTOR_SECONDARY_BATT_LAG_CURR = INJECTOR_BATT_LAG_CURR;
     constexpr float SECONDARY_INJECTOR_FUEL_REFERENCE_PRESSURE = 0.0f;
     constexpr injector_compensation_mode_e SECONDARY_INJECTOR_COMPENSATION_MODE = INJECTOR_COMPENSATION_MODE;
 

@@ -24,10 +24,10 @@ Gpio getCommsLedPin() {
 	return Gpio::Unassigned;
 }
 
-void setBoardDefaultConfiguration() {
+static void cypressBoardDefaultConfiguration() {
 	setCrankOperationMode();
 
-	setAlgorithm(LM_SPEED_DENSITY);
+	setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
 
 	engineConfiguration->cylindersCount = 4;
 	engineConfiguration->firingOrder = FO_1_3_4_2;
@@ -84,4 +84,8 @@ void setBoardDefaultConfiguration() {
 
 void setAdcChannelOverrides() {
 	addAdcChannelForTrigger();
+}
+
+void setup_custom_board_overrides() {
+	custom_board_ConfigOverrides = cypressBoardDefaultConfiguration;
 }

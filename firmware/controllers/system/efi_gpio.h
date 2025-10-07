@@ -90,6 +90,7 @@ public:
 	RegisteredOutputPin acRelay;
 	RegisteredOutputPin fuelPumpRelay;
 	RegisteredOutputPin nitrousRelay;
+	RegisteredOutputPin vvlRelay;
 #if EFI_HD_ACR
 	RegisteredNamedOutputPin harleyAcr;
 	RegisteredOutputPin harleyAcr2;
@@ -133,6 +134,10 @@ public:
 	OutputPin tcuTccPwmSolenoid;
 	OutputPin tcuPcSolenoid;
 	OutputPin tcu32Solenoid;
+
+#ifdef EFI_UNIT_TEST
+	void resetForUnitTest();
+#endif
 
 private:
 	void startInjectionPins();

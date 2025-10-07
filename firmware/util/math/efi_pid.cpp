@@ -28,17 +28,25 @@ void Pid::initPidClass(pid_s *p_parameters) {
 	Pid::reset();
 }
 
+static bool isClose(float a, float b) {
+  bool result = (a == b);
+  if (!result) {
+      efiPrintf("PID: not same %f %f", a, b);
+  }
+  return result;
+}
+
 bool Pid::isSame(const pid_s *p_parameters) const {
 	if (!parameters) {
 		// this 'null' could happen on first execution during initialization
 		return false;
 	}
-	efiAssert(ObdCode::OBD_PCM_Processor_Fault, p_parameters != NULL, "PID::isSame NULL", false);
-	return parameters->pFactor == p_parameters->pFactor
-			&& parameters->iFactor == p_parameters->iFactor
-			&& parameters->dFactor == p_parameters->dFactor
-			&& parameters->offset == p_parameters->offset
-			&& parameters->periodMs == p_parameters->periodMs;
+	efiAssert(ObdCode::OBD_PCM_Processor_Fault, p_parameters != nullptr, "PID::isSame nullptr", false);
+	return isClose(parameters->pFactor, p_parameters->pFactor)
+			&& isClose(parameters->iFactor, p_parameters->iFactor)
+			&& isClose(parameters->dFactor, p_parameters->dFactor)
+			&& isClose(parameters->offset, p_parameters->offset)
+			&& isClose(parameters->periodMs, p_parameters->periodMs);
 }
 
 /**
@@ -46,6 +54,7 @@ bool Pid::isSame(const pid_s *p_parameters) const {
  * @returns Output from the PID controller / the input to the process
  */
 float Pid::getOutput(float p_target, float p_input) {
+  efiAssert(ObdCode::OBD_PCM_Processor_Fault, parameters != nullptr, "PID::getOutput nullptr", 0);
 	float dTime = MS2SEC(GET_PERIOD_LIMITED(parameters));
 	return getOutput(p_target, p_input, dTime);
 }
@@ -216,13 +225,13 @@ void PidCic::updateITerm(float value) {
 	totalItermCnt++;
 	int localBufPos = (totalItermCnt >> PID_AVG_BUF_SIZE_SHIFT) % PID_AVG_BUF_SIZE;
 	int localPrevBufPos = ((totalItermCnt - 1) >> PID_AVG_BUF_SIZE_SHIFT) % PID_AVG_BUF_SIZE;
-	
+
 	// reset old buffer cell
 	if (localPrevBufPos != localBufPos)
 		iTermBuf[localBufPos] = 0;
 	// integrator stage
 	iTermBuf[localBufPos] += value;
-	
+
 	// return moving average of all sums, to smoothen the result
 	float iTermSum = 0;
 	for (int i = 0; i < PID_AVG_BUF_SIZE; i++) {
@@ -250,13 +259,13 @@ float PidIndustrial::getOutput(float p_target, float p_input, float dTime) {
 		ad = Td / (Td + dTime / derivativeFilterLoss);
 		bd = parameters->pFactor * ad / derivativeFilterLoss;
 	} else {
-		// According to the Theory of limits, if p.derivativeFilterLoss -> 0, then 
+		// According to the Theory of limits, if p.derivativeFilterLoss -> 0, then
 		//   lim(ad) = 0; lim(bd) = p.pFactor * Td / dTime = p.dFactor / dTime
 		//   i.e. dTerm becomes equal to Pid's
 		ad = 0.0f;
 		bd = parameters->dFactor / dTime;
 	}
-	
+
 	// (error - previousError) = (target-input) - (target-prevousInput) = -(input - prevousInput)
 	dTerm = dTerm * ad + (error - previousError) * bd;
 
@@ -269,10 +278,10 @@ float PidIndustrial::getOutput(float p_target, float p_input, float dTime) {
 	// apply the integrator anti-windup on top of the "normal" iTerm change above
 	// If p.antiwindupFreq = 0, then iTerm is equal to PidParallelController's
 	iTerm += dTime * antiwindupFreq * (limitedOutput - l_output);
-	
+
 	// update the state
 	previousError = error;
-	
+
 	return limitedOutput;
 }
 

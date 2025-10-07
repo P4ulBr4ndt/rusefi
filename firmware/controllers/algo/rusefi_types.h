@@ -42,15 +42,15 @@ using efitimems_t = uint32_t;
 using efidur_t = efitick_t;
 
 // date-time struct a la ctime struct tm
-typedef struct {
-	uint32_t year = 0;
-	uint8_t month;
-	uint8_t day;
-	uint8_t hour;
-	uint8_t minute;
-	uint8_t second;
+struct efidatetime_t {
+	uint32_t year{};
+	uint8_t month{};
+	uint8_t day{};
+	uint8_t hour{};
+	uint8_t minute{};
+	uint8_t second{};
 	// uint16_t millisecond;
-} efidatetime_t;
+};
 
 using angle_t = float;
 
@@ -84,6 +84,10 @@ using brain_pin_e = Gpio;
 using egt_cs_array_t = brain_pin_e[EGT_CHANNEL_COUNT];
 
 using pwm_freq_t = int16_t;
+
+// special type to represent voltage as if it was readed by 10bit ADC with 5V reference
+// also see convertVoltageTo10bitADC()
+using tps_limit_t = int16_t;
 
 using script_setting_t = float;
 

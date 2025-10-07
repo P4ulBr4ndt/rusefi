@@ -11,6 +11,7 @@
 #include "smart_gpio.h"
 #include "drivers/gpio/mc33810.h"
 #include "device_mpu_util.h"
+#include "board_overrides.h"
 
 Gpio getCommsLedPin() {
 	return Gpio::G6;	/* LD1 - green */
@@ -39,7 +40,7 @@ static void setSerialConfigurationOverrides() {
  * @brief   Board-specific configuration defaults.
 
  */
-void setBoardDefaultConfiguration() {
+static void subaru_eg33_boardDefaultConfiguration() {
 	setSerialConfigurationOverrides();
 
 	/* Battery voltage */
@@ -208,13 +209,13 @@ void setBoardDefaultConfiguration() {
 	engineConfiguration->triggerSimulatorPins[0] = Gpio::H2;
 	engineConfiguration->triggerSimulatorPins[1] = Gpio::H3;
 
-	if (engineConfiguration->fuelAlgorithm == LM_REAL_MAF)
-		setAlgorithm(LM_SPEED_DENSITY);
-	if (engineConfiguration->fuelAlgorithm == LM_ALPHA_N)
-		setAlgorithm(LM_ALPHA_N);
+	if (engineConfiguration->fuelAlgorithm == engine_load_mode_e::LM_REAL_MAF)
+		setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
+	if (engineConfiguration->fuelAlgorithm == engine_load_mode_e::LM_ALPHA_N)
+		setAlgorithm(engine_load_mode_e::LM_ALPHA_N);
 }
 
-void setBoardConfigOverrides() {
+static void subaru_eg33_boardConfigOverrides() {
 	/* Optional SPI display */
 	engineConfiguration->spi2sckPin = Gpio::I1;
 	engineConfiguration->spi2misoPin = Gpio::I2;
@@ -247,13 +248,13 @@ void setBoardConfigOverrides() {
 static const struct mc33810_config mc33810_odd = {
 	.spi_bus = &SPID5,
 	.spi_config = {
-		.circular = false,
+	.circular = false,
 #ifdef _CHIBIOS_RT_CONF_VER_6_1_
-		.end_cb = NULL,
+	.end_cb = nullptr,
 #else
-        .slave = false,
-        .data_cb = NULL,
-        .error_cb = NULL,
+	.slave = false,
+	.data_cb = nullptr,
+	.error_cb = nullptr,
 #endif
 		.ssport = GPIOF,
 		.sspad = 1,
@@ -298,13 +299,13 @@ static const struct mc33810_config mc33810_odd = {
 static const struct mc33810_config mc33810_even = {
 	.spi_bus = &SPID5,
 	.spi_config = {
-		.circular = false,
+	.circular = false,
 #ifdef _CHIBIOS_RT_CONF_VER_6_1_
-	.end_cb = NULL,
+	.end_cb = nullptr,
 #else
-        .slave = false,
-        .data_cb = NULL,
-        .error_cb = NULL,
+	.slave = false,
+	.data_cb = nullptr,
+	.error_cb = nullptr,
 #endif
 		.ssport = GPIOF,
 		.sspad = 2,
@@ -365,4 +366,9 @@ static void board_init_ext_gpios()
  */
 void boardInit() {
 	board_init_ext_gpios();
+}
+
+void setup_custom_board_overrides() {
+	custom_board_DefaultConfiguration = subaru_eg33_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  subaru_eg33_boardConfigOverrides;
 }

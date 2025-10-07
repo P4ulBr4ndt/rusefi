@@ -23,10 +23,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import static com.devexperts.logging.Logging.getLogging;
 import static com.rusefi.ConfigFieldImpl.unquote;
@@ -54,7 +51,8 @@ public class TuneCanTool {
     // IDE and GHA run from different working folders :(
     // see write_tune.sh for env variable to property mapping
     static final String ENGINE_TUNE_OUTPUT_FOLDER = System.getProperty("ENGINE_TUNE_OUTPUT_FOLDER", "../simulator/generated/");
-    public static String boardPath = "config/boards/hellen/uaefi/";
+    private static final String EXTENSION = ".cpp";
+    public static String boardPath = new File("config/boards/hellen/uaefi/").getAbsolutePath();
 
     protected static IniFileModel ini;
 
@@ -67,6 +65,7 @@ public class TuneCanTool {
         //writeDiffBetweenLocalTuneFileAndDefaultTune("../1.msq");
 
 //        TuneCanToolRunner.initialize("C:\\stuff\\fw\\generated\\tunerstudio\\generated\\rusefi_.ini");
+        RootHolder.ROOT = "../firmware/";
         TuneCanToolHelper.initialize(TuneContext.iniFileName);
 
 //        writeDiffBetweenLocalTuneFileAndDefaultTune("harley", "C:\\stuff\\fw\\fw-\\generated\\simulator_tune_HARLEY.msq",
@@ -125,24 +124,22 @@ public class TuneCanTool {
         new File(REPORTS_OUTPUT_FOLDER).mkdir();
 
         Msq customTune = Msq.readTune(customTuneFileName);
-        File xmlFile = new File(defaultTuneFileName);
-        log.info("Reading " + xmlFile.getAbsolutePath());
-        Msq defaultTune = XmlUtil.readModel(Msq.class, xmlFile);
+        Msq defaultTune = Msq.readTune(defaultTuneFileName);
 
         StringBuilder methods = new StringBuilder();
 
         StringBuilder sb = getTunePatch(defaultTune, customTune, ini, customTuneFileName, methods, defaultTuneFileName, methodNamePrefix);
 
-        String folder = ENGINE_TUNE_OUTPUT_FOLDER + REPORTS_OUTPUT_FOLDER;
+        final String folder = ENGINE_TUNE_OUTPUT_FOLDER + REPORTS_OUTPUT_FOLDER;
         new File(folder).mkdirs();
-        String fileNameMethods = folder + "/" + vehicleName + "_methods.md";
+        String fileNameMethods = folder + "/" + vehicleName + "_methods" + EXTENSION;
         try (FileWriter methodsWriter = new FileWriter(fileNameMethods)) {
             methodsWriter.append(MD_FIXED_FORMATTING);
             methodsWriter.append(methods);
             methodsWriter.append(MD_FIXED_FORMATTING);
         }
 
-        String fileName = ENGINE_TUNE_OUTPUT_FOLDER + REPORTS_OUTPUT_FOLDER + "/" + vehicleName + ".md";
+        String fileName = folder + "/" + vehicleName + EXTENSION;
         File outputFile = new File(fileName);
         log.info("Writing to " + outputFile.getAbsolutePath());
 
@@ -263,7 +260,7 @@ public class TuneCanTool {
                 log.info("Ignoring " + cName);
                 continue;
             }
-            if (TuneCanToolHelper.IGNORE_LIST.contains(cName)) {
+            if (!TuneCanToolHelper.accept(cName)) {
                 log.info("Ignoring " + cName);
                 continue;
             }
@@ -321,7 +318,7 @@ public class TuneCanTool {
 
                 int ordinal;
                 try {
-                    ordinal = TuneTools.resolveEnumByName(customEnum, unquote(customValue.getValue()));
+                    ordinal = TuneTools.resolveEnumByName(customEnum, unquote(customValue.getValue()), ini.getDefines());
                 } catch (IllegalStateException e) {
                     log.info("Looks like things were renamed: " + customValue.getValue() + " not found in " + customEnum);
                     continue;

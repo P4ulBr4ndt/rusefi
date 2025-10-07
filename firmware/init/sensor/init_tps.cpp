@@ -155,6 +155,7 @@ printf("init m_redund.Register() %s\n", getSensorType(m_redund.type()));
 
 	}
 
+  // technical debt: oop violation: this method is specific to PPS usage
 	void updateUnfilteredRawValues() {
 	  engine->outputChannels.rawRawPpsPrimary = m_pri.adc == nullptr ? 0 : m_pri.adc->sensorVolts;
 	  engine->outputChannels.rawRawPpsSecondary = m_sec.adc == nullptr ? 0 : m_sec.adc->sensorVolts;
@@ -183,12 +184,12 @@ SentTps sentTps;
 // Used only in case of weird Ford-style ETB TPS
 static RedundantFordTps fordTps1(SensorType::Tps1, SensorType::Tps1Primary, SensorType::Tps1Secondary);
 static RedundantFordTps fordTps2(SensorType::Tps2, SensorType::Tps2Primary, SensorType::Tps2Secondary);
-static RedundantFordTps fordPps(SensorType::AcceleratorPedal, SensorType::AcceleratorPedalPrimary, SensorType::AcceleratorPedalSecondary);
+static RedundantFordTps fordPps(SensorType::AcceleratorPedalUnfiltered, SensorType::AcceleratorPedalPrimary, SensorType::AcceleratorPedalSecondary);
 
 // Pedal sensors and redundancy
 static FuncSensPair pedalPrimary(1, SensorType::AcceleratorPedalPrimary);
 static FuncSensPair pedalSecondary(1, SensorType::AcceleratorPedalSecondary);
-static RedundantPair pedal(pedalPrimary, pedalSecondary, SensorType::AcceleratorPedal);
+static RedundantPair pedal(pedalPrimary, pedalSecondary, SensorType::AcceleratorPedalUnfiltered);
 
 void updateUnfilteredRawPedal() {
   pedal.updateUnfilteredRawValues();
@@ -196,6 +197,7 @@ void updateUnfilteredRawPedal() {
 
 // This sensor indicates the driver's throttle intent - Pedal if we have one, TPS if not.
 static ProxySensor driverIntent(SensorType::DriverThrottleIntent);
+static ProxySensor ppsFilterSensor(SensorType::AcceleratorPedal);
 
 // These sensors are TPS-like, so handle them in here too
 static FuncSensPair wastegate(1, SensorType::WastegatePosition);
@@ -246,6 +248,17 @@ void initTps() {
 		{ engineConfiguration->throttlePedalPositionSecondAdcChannel, engineConfiguration->throttlePedalSecondaryUpVoltage, engineConfiguration->throttlePedalSecondaryWOTVoltage, minTpsPps, maxTpsPps },
 		engineConfiguration->allowIdenticalPps
 	);
+	ppsFilterSensor.setProxiedSensor(SensorType::AcceleratorPedalUnfiltered);
+	ppsFilterSensor.setConverter([](SensorResult arg) {
+	  if (!arg) {
+	    return arg;
+	  }
+	  static ExpAverage ppsExpAverage;
+	  ppsExpAverage.setSmoothingFactor(engineConfiguration->ppsExpAverageAlpha);
+	  SensorResult result = ppsExpAverage.initOrAverage(arg.Value);
+    return result;
+  });
+	ppsFilterSensor.Register();
 
 		// TPS-like stuff that isn't actually a TPS
 		wastegate.init({ engineConfiguration->wastegatePositionSensor, engineConfiguration->wastegatePositionClosedVoltage, engineConfiguration->wastegatePositionOpenedVoltage, minTpsPps, maxTpsPps });

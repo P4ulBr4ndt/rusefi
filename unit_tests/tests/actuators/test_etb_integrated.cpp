@@ -4,6 +4,8 @@
 #include "live_data.h"
 #include "live_data_ids.h"
 
+extern int ebtResetCounter;
+
 static EtbController * initEtbIntegratedTest() {
 	etbPidReset(); // ETB controlles are global shared instances :(
 
@@ -17,7 +19,7 @@ static EtbController * initEtbIntegratedTest() {
 	Sensor::setMockValue(SensorType::Tps1, 25.0f, true);
 
 	initTps();
-	doInitElectronicThrottle();
+	doInitElectronicThrottle(/*isInit*/true);
 
 	engine->etbControllers[0]->setIdlePosition(0);
 
@@ -26,7 +28,12 @@ static EtbController * initEtbIntegratedTest() {
 
 TEST(etb, integrated) {
 	EngineTestHelper eth(engine_type_e::TEST_ENGINE); // we have a destructor so cannot move EngineTestHelper into utility method
+  etbPidReset();
+  ASSERT_EQ(0, ebtResetCounter);
 	EtbController *etb = initEtbIntegratedTest();
+  ASSERT_EQ(1, ebtResetCounter);
+	doInitElectronicThrottle(/*isInit*/false);
+  ASSERT_EQ(1, ebtResetCounter);
 
 	Sensor::setMockValue(SensorType::AcceleratorPedalPrimary, 40);
 	Sensor::setMockValue(SensorType::AcceleratorPedalSecondary, 40);
@@ -153,7 +160,7 @@ TEST(etb, sentTpsIntegrated) {
 	Sensor::setMockValue(SensorType::Tps1, 25.0f, true);
 
 	initTps();
-	doInitElectronicThrottle();
+	doInitElectronicThrottle(/*isInit*/true);
 }
 
 TEST(etb, sentTpsIntegratedDecode) {

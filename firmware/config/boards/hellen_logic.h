@@ -22,6 +22,7 @@ void hellenMegaAccelerometerPreInitCS2Pin();
 void configureHellenCanTerminator();
 
 void setHellenCan();
+void setHellenCan2();
 void setHellen64Can();
 
 void setHellenAnalogDividers();
@@ -30,7 +31,7 @@ void setHellenVbatt();
 int detectHellenBoardId();
 void detectHellenBoardType();
 
-int boardGetAnalogDiagnostic();
+ObdCode boardGetAnalogDiagnostic();
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"

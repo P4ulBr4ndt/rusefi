@@ -20,17 +20,19 @@ static void setDefaultAlternatorParameters() {
 }
 #endif // EFI_ALTERNATOR_CONTROL
 
-static const float hardCodedHpfpLobeProfileAnglesForThreeLobes[HpfpLobeProfile_SIZE] = {0.0, 7.5, 16.5, 24.0,
+void setHpfpLobeProfileAngle(int lobes) {
+#if HPFP_LOBE_PROFILE_SIZE == 16
+static const float hardCodedHpfpLobeProfileAnglesForThreeLobes[16] = {0.0, 7.5, 16.5, 24.0,
 32.0 , 40.0, 48.0, 56.0,
 64.0 , 72.0, 80.0, 88.0,
 96.0 , 103.5, 112.5, 120.0
 };
 
-void setHpfpLobeProfileAngle(int lobes) {
   float multiplier = 3.0 / lobes;
-	for (size_t i = 0; i < HpfpLobeProfile_SIZE; i++) {
+	for (size_t i = 0; i < HPFP_LOBE_PROFILE_SIZE; i++) {
     config->hpfpLobeProfileAngle[i] = multiplier * hardCodedHpfpLobeProfileAnglesForThreeLobes[i];
 	}
+#endif // HPFP_LOBE_PROFILE_SIZE
 }
 
 static void setDefaultHPFP() {
@@ -130,14 +132,17 @@ void defaultsOrFixOnBurn() {
     setDynoDefaults();
   }
 
-  if (TunerDetectorUtils::isTuningDetectorUndefined()) {
-  	TunerDetectorUtils::setUserEnteredTuningDetector(10);
-  }
+	if (TunerDetectorUtils::isTuningDetectorUndefined()) {
+		TunerDetectorUtils::setUserEnteredTuningDetector(20);
+	}
 
 	if (engineConfiguration->mapExpAverageAlpha <= 0 || engineConfiguration->mapExpAverageAlpha > 1) {
 	  engineConfiguration->mapExpAverageAlpha = 1;
 	}
 
+	if (engineConfiguration->ppsExpAverageAlpha <= 0 || engineConfiguration->ppsExpAverageAlpha > 1) {
+	  engineConfiguration->ppsExpAverageAlpha = 1;
+	}
 	if (engineConfiguration->afrExpAverageAlpha <= 0 || engineConfiguration->afrExpAverageAlpha > 1) {
 	  engineConfiguration->afrExpAverageAlpha = 1;
 	}
@@ -161,7 +166,12 @@ void setDefaultBaseEngine() {
 	// Base Engine Settings
 	engineConfiguration->displacement = 2;
 	engineConfiguration->knockDetectionUseDoubleFrequency = true;
+#if MAX_CYLINDER_COUNT >= 4
 	setInline4();
+#else
+  // todo: invoke more complete one cylinder default?
+  engineConfiguration->cylindersCount = 1;
+#endif
 
   for (size_t i = 0; i < engineConfiguration->cylindersCount; i++) {
     // one knock sensor by default. See also 'setLeftRightBanksNeedBetterName()'
@@ -169,10 +179,15 @@ void setDefaultBaseEngine() {
     engineConfiguration->cylinderBankSelect[i] = 0;
   }
 
+  engineConfiguration->ltft.enabled = true;
+  engineConfiguration->ltft.correctionEnabled = true;
+
 	engineConfiguration->compressionRatio = 9;
 	engineConfiguration->vssFilterReciprocal = VSS_FILTER_MIN;
 	engineConfiguration->boardUseCanTerminator = true;
 	engineConfiguration->acLowRpmLimit = 500;
+
+	engineConfiguration->mafFilterParameter = 1;
 
 #ifdef EFI_KLINE
   engineConfiguration->kLinePeriodUs = 300 /* us*/;
@@ -215,15 +230,13 @@ void setDefaultBaseEngine() {
 
 	mc33810defaults();
 
-	engineConfiguration->fuelAlgorithm = LM_SPEED_DENSITY;
+ 	setRpmTableBin(config->torqueRpmBins);
+ 	setLinearCurve(config->torqueLoadBins, 0, 100, 1);
+
+	engineConfiguration->fuelAlgorithm = engine_load_mode_e::LM_SPEED_DENSITY;
 	// let's have valid default while we still have the field
 	engineConfiguration->debugMode = DBG_EXECUTOR;
 
-	engineConfiguration->boostCutPressure = 300;
-	engineConfiguration->boostCutPressureHyst = 20;
-  engineConfiguration->boostControlMinRpm = 2000;
-  engineConfiguration->boostControlMinTps = 30;
-  engineConfiguration->boostControlMinMap = 110;
 
 	engineConfiguration->primingDelay = 0.5;
 	// this should not be below default rpm! maybe even make them equal?
@@ -255,7 +268,7 @@ void setDefaultBaseEngine() {
 
 	engineConfiguration->ALSMinRPM = 400;
 	engineConfiguration->ALSMaxRPM = 3200;
-	engineConfiguration->ALSMaxDuration = 3.5;
+	engineConfiguration->ALSMaxDuration = 3;
 	engineConfiguration->ALSMaxCLT = 105;
 //	engineConfiguration->alsMinPps = 10;
 	engineConfiguration->alsMinTimeBetween = 5;
@@ -376,11 +389,6 @@ void setDefaultBaseEngine() {
 	engineConfiguration->benchTestOffTime = 500;
 	engineConfiguration->benchTestCount = 3;
 
-	// Fans
-	engineConfiguration->fanOnTemperature = 92;
-	engineConfiguration->fanOffTemperature = 88;
-	engineConfiguration->fan2OnTemperature = 95;
-	engineConfiguration->fan2OffTemperature = 91;
 
 	// Tachometer
 	// 50% duty cycle is the default for tach signal
@@ -416,6 +424,7 @@ void setDefaultBaseEngine() {
 	setRpmTableBin(config->minimumOilPressureBins);
 	setRpmTableBin(config->maximumOilPressureBins);
 
+	engine->engineModules.apply_all([](auto & m) { m.setDefaultConfiguration(); });
   // we invoke this last so that we can validate even defaults
   defaultsOrFixOnBurn();
 }

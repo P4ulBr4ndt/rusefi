@@ -15,6 +15,9 @@ TEST(cranking, realCrankingFromFile) {
 	// this logic data file has first trigger channel in second column and second trigger channel in first column
 	reader.open("tests/trigger/resources/cranking_na_3.csv", REVERSE_ORDER);
 
+	// just to avoid crancking on low battery warning
+	Sensor::setMockValue(SensorType::BatteryVoltage, 13);
+
 	EngineTestHelper eth (engine_type_e::FRANKENSO_MIATA_NA6_MAP);
 	engineConfiguration->alwaysInstantRpm = true;
 
@@ -25,7 +28,7 @@ TEST(cranking, realCrankingFromFile) {
 	}
 
 	EXPECT_EQ(0, round(Sensor::getOrZero(SensorType::Rpm)))<< reader.lineIndex();
-	EXPECT_EQ( 0, eth.recentWarnings()->getCount());
+	EXPECT_EQ(0u, eth.recentWarnings()->getCount());
 
 	// This tooth should be first sync point
 	reader.readLine(&eth);
@@ -47,6 +50,6 @@ TEST(cranking, realCrankingFromFile) {
 		reader.processLine(&eth);
 	}
 
-	EXPECT_EQ(0, eth.recentWarnings()->getCount())<< "warningCounter#realCranking";
+	EXPECT_EQ(0u, eth.recentWarnings()->getCount())<< "warningCounter#realCranking";
 	EXPECT_EQ(191, round(Sensor::getOrZero(SensorType::Rpm)))<< reader.lineIndex();
 }

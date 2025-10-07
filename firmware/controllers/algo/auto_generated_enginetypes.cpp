@@ -1,6 +1,6 @@
 #include "global.h"
 #include "engine_types.h"
-// was generated automatically by rusEFI tool  from engine_types.h // by enum_to_string.jar tool on Thu May 22 16:42:40 UTC 2025
+// was generated automatically by rusEFI tool  from engine_types.h // by enum_to_string.jar tool on Sun Sep 28 19:02:53 UTC 2025
 // see also gen_config_and_enums.bat
 
 
@@ -67,14 +67,32 @@ case HD_ACR:
   return "HD_ACR";
 case HD_ACR2:
   return "HD_ACR2";
+case LTFT_APPLY_TO_VE:
+  return "LTFT_APPLY_TO_VE";
+case LTFT_DEV_POKE:
+  return "LTFT_DEV_POKE";
+case LTFT_RESET:
+  return "LTFT_RESET";
 case LUA_COMMAND_1:
   return "LUA_COMMAND_1";
+case LUA_COMMAND_10:
+  return "LUA_COMMAND_10";
 case LUA_COMMAND_2:
   return "LUA_COMMAND_2";
 case LUA_COMMAND_3:
   return "LUA_COMMAND_3";
 case LUA_COMMAND_4:
   return "LUA_COMMAND_4";
+case LUA_COMMAND_5:
+  return "LUA_COMMAND_5";
+case LUA_COMMAND_6:
+  return "LUA_COMMAND_6";
+case LUA_COMMAND_7:
+  return "LUA_COMMAND_7";
+case LUA_COMMAND_8:
+  return "LUA_COMMAND_8";
+case LUA_COMMAND_9:
+  return "LUA_COMMAND_9";
   }
  return NULL;
 }
@@ -261,10 +279,14 @@ case trigger_type_e::TT_HONDA_K_CAM_4_1:
   return "TT_HONDA_K_CAM_4_1";
 case trigger_type_e::TT_HONDA_K_CRANK_12_1:
   return "TT_HONDA_K_CRANK_12_1";
+case trigger_type_e::TT_JEEPRENIX_66_2_2_2:
+  return "TT_JEEPRENIX_66_2_2_2";
 case trigger_type_e::TT_JEEP_18_2_2_2:
   return "TT_JEEP_18_2_2_2";
 case trigger_type_e::TT_JEEP_4_CYL:
   return "TT_JEEP_4_CYL";
+case trigger_type_e::TT_JEEP_EVD_36_2_2:
+  return "TT_JEEP_EVD_36_2_2";
 case trigger_type_e::TT_KAWA_KX450F:
   return "TT_KAWA_KX450F";
 case trigger_type_e::TT_MAZDA_DOHC_1_4:
@@ -313,8 +335,8 @@ case trigger_type_e::TT_SKODA_FAVORIT:
   return "TT_SKODA_FAVORIT";
 case trigger_type_e::TT_SUBARU_7_6:
   return "TT_SUBARU_7_6";
-case trigger_type_e::TT_SUBARU_7_WITHOUT_6:
-  return "TT_SUBARU_7_WITHOUT_6";
+case trigger_type_e::TT_SUBARU_7_6_CRANK:
+  return "TT_SUBARU_7_6_CRANK";
 case trigger_type_e::TT_SUBARU_EZ30:
   return "TT_SUBARU_EZ30";
 case trigger_type_e::TT_SUBARU_SVX:
@@ -365,6 +387,8 @@ case trigger_type_e::TT_VVT_MITSU_6G72:
   return "TT_VVT_MITSU_6G72";
 case trigger_type_e::TT_VVT_NISSAN_VQ35:
   return "TT_VVT_NISSAN_VQ35";
+case trigger_type_e::TT_VVT_SUBARU_7_WITHOUT_6:
+  return "TT_VVT_SUBARU_7_WITHOUT_6";
 case trigger_type_e::TT_VVT_TOYOTA_3_TOOTH:
   return "TT_VVT_TOYOTA_3_TOOTH";
 case trigger_type_e::TT_VVT_TOYOTA_4_1:
@@ -378,6 +402,8 @@ case COMMAND_X14_UNUSED_0:
   return "COMMAND_X14_UNUSED_0";
 case COMMAND_X14_UNUSED_1:
   return "COMMAND_X14_UNUSED_1";
+case COMMAND_X14_UNUSED_15:
+  return "COMMAND_X14_UNUSED_15";
 case COMMAND_X14_UNUSED_2:
   return "COMMAND_X14_UNUSED_2";
 case COMMAND_X14_UNUSED_3:
@@ -386,10 +412,6 @@ case COMMAND_X14_UNUSED_4:
   return "COMMAND_X14_UNUSED_4";
 case COMMAND_X14_UNUSED_5:
   return "COMMAND_X14_UNUSED_5";
-case COMMAND_X14_UNUSED_9:
-  return "COMMAND_X14_UNUSED_9";
-case TS_BURN_WITHOUT_FLASH:
-  return "TS_BURN_WITHOUT_FLASH";
 case TS_ETB_AUTOCAL_0:
   return "TS_ETB_AUTOCAL_0";
 case TS_ETB_AUTOCAL_0_FAST:
@@ -416,6 +438,10 @@ case TS_GRAB_PEDAL_UP:
   return "TS_GRAB_PEDAL_UP";
 case TS_GRAB_PEDAL_WOT:
   return "TS_GRAB_PEDAL_WOT";
+case TS_GRAB_TPS_CLOSED:
+  return "TS_GRAB_TPS_CLOSED";
+case TS_GRAB_TPS_OPEN:
+  return "TS_GRAB_TPS_OPEN";
 case TS_RESET_MC33810:
   return "TS_RESET_MC33810";
 case TS_RESET_TLE8888:
@@ -430,6 +456,8 @@ case TS_SD_MOUNT_PC:
   return "TS_SD_MOUNT_PC";
 case TS_SD_UNMOUNT:
   return "TS_SD_UNMOUNT";
+case TS_START_STOP_ENGINE:
+  return "TS_START_STOP_ENGINE";
 case TS_TRIGGER_STIMULATOR_DISABLE:
   return "TS_TRIGGER_STIMULATOR_DISABLE";
 case TS_TRIGGER_STIMULATOR_ENABLE:
@@ -447,6 +475,12 @@ case TS_BENCH_CATEGORY:
   return "TS_BENCH_CATEGORY";
 case TS_BOARD_ACTION:
   return "TS_BOARD_ACTION";
+case TS_BOARD_ACTION2:
+  return "TS_BOARD_ACTION2";
+case TS_BOARD_ACTION3:
+  return "TS_BOARD_ACTION3";
+case TS_BOARD_ACTION4:
+  return "TS_BOARD_ACTION4";
 case TS_CLEAR_WARNINGS:
   return "TS_CLEAR_WARNINGS";
 case TS_COMMAND_1:
@@ -495,18 +529,22 @@ case TS_SET_ENGINE_TYPE:
   return "TS_SET_ENGINE_TYPE";
 case TS_SOLENOID_CATEGORY:
   return "TS_SOLENOID_CATEGORY";
+case TS_STOP_ENGINE:
+  return "TS_STOP_ENGINE";
 case TS_UNUSED_23:
   return "TS_UNUSED_23";
 case TS_UNUSED_24:
   return "TS_UNUSED_24";
-case TS_UNUSED_26:
-  return "TS_UNUSED_26";
-case TS_UNUSED_27:
-  return "TS_UNUSED_27";
-case TS_UNUSED_28:
-  return "TS_UNUSED_28";
 case TS_WIDEBAND:
   return "TS_WIDEBAND";
+case TS_WIDEBAND_FLASH_BY_ID:
+  return "TS_WIDEBAND_FLASH_BY_ID";
+case TS_WIDEBAND_PING_BY_ID:
+  return "TS_WIDEBAND_PING_BY_ID";
+case TS_WIDEBAND_SET_IDX_BY_ID:
+  return "TS_WIDEBAND_SET_IDX_BY_ID";
+case TS_WIDEBAND_SET_SENS_BY_ID:
+  return "TS_WIDEBAND_SET_SENS_BY_ID";
 case TS_X14:
   return "TS_X14";
   }

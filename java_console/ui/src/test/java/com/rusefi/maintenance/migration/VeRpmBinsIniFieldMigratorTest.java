@@ -8,15 +8,21 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static com.rusefi.maintenance.migration.TableAddColumnsMigrator.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class VeRpmBinsIniFieldMigratorTest {
     private TestCallbacks testCallbacks;
+    private BinsIniFieldMigrator testMigrator;
+
+    private static final int OLD_VE_TABLE_COLS = 16;
+    private static final int NEW_VE_TABLE_COLS = 24;
 
     @BeforeEach
     void setUp() {
         testCallbacks = new TestCallbacks();
+        testMigrator = new BinsIniFieldMigrator(VE_RPM_BINS_FIELD_NAME, OLD_VE_TABLE_COLS, NEW_VE_TABLE_COLS);
     }
 
     @Test
@@ -26,7 +32,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            16,
+            OLD_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -38,7 +44,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            24,
+            NEW_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -46,7 +52,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             "0"
         );
 
-        final Optional<String> migratedValue = VeRpmBinsIniFieldMigrator.INSTANCE.tryMigrateVeRpmBins(
+        final Optional<String> migratedValue = testMigrator.tryMigrateBins(
             oldVeTableField,
             newVeTableField,
             "\n" +
@@ -107,7 +113,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            16,
+            OLD_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -119,7 +125,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            24,
+            NEW_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -127,7 +133,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             "0"
         );
 
-        final Optional<String> migratedValue = VeRpmBinsIniFieldMigrator.INSTANCE.tryMigrateVeRpmBins(
+        final Optional<String> migratedValue = testMigrator.tryMigrateBins(
             oldVeTableField,
             newVeTableField,
             "\n" +
@@ -188,7 +194,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            16,
+            OLD_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -200,7 +206,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            24,
+            NEW_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -208,7 +214,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             "0"
         );
 
-        final Optional<String> migratedValue = VeRpmBinsIniFieldMigrator.INSTANCE.tryMigrateVeRpmBins(
+        final Optional<String> migratedValue = testMigrator.tryMigrateBins(
             oldVeTableField,
             newVeTableField,
             "\n" +
@@ -269,7 +275,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            16,
+            OLD_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -281,7 +287,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            24,
+            NEW_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -289,7 +295,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             "0"
         );
 
-        final Optional<String> migratedValue = VeRpmBinsIniFieldMigrator.INSTANCE.tryMigrateVeRpmBins(
+        final Optional<String> migratedValue = testMigrator.tryMigrateBins(
             oldVeTableField,
             newVeTableField,
             "\n" +
@@ -350,7 +356,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            16,
+            OLD_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -362,7 +368,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             0,
             FieldType.UINT16,
             1,
-            24,
+            NEW_VE_TABLE_COLS,
             "RPM",
             1,
             "0",
@@ -370,7 +376,7 @@ public class VeRpmBinsIniFieldMigratorTest {
             "0"
         );
 
-        final Optional<String> migratedValue = VeRpmBinsIniFieldMigrator.INSTANCE.tryMigrateVeRpmBins(
+        final Optional<String> migratedValue = testMigrator.tryMigrateBins(
             oldVeTableField,
             newVeTableField,
             "\n" +

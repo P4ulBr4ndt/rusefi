@@ -113,8 +113,10 @@ TEST(AirmassModes, AlphaNFailedTps) {
 }
 
 TEST(AirmassModes, MafNormal) {
-	EngineTestHelper eth(engine_type_e::FORD_ASPIRE_1996);
-	engineConfiguration->fuelAlgorithm = LM_REAL_MAF;
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	engineConfiguration->cylindersCount = 4;
+	engineConfiguration->displacement = 1.3;
+	engineConfiguration->fuelAlgorithm = engine_load_mode_e::LM_REAL_MAF;
 	engineConfiguration->injector.flow = 200;
 
 	MockVp3d veTable;
@@ -224,7 +226,7 @@ TEST(FuelMath, testDifferentInjectionModes) {
 	setInjectionMode((int)IM_SINGLE_POINT);
 	engine->periodicFastCallback();
 	EXPECT_FLOAT_EQ( 40,  engine->engineState.injectionDuration) << "injection while IM_SINGLE_POINT";
-	EXPECT_EQ( 0, eth.recentWarnings()->getCount()) << "warningCounter#testDifferentInjectionModes";
+	EXPECT_EQ( 0u, eth.recentWarnings()->getCount()) << "warningCounter#testDifferentInjectionModes";
 }
 #endif //FUEL_RPM_COUNT == 16
 
@@ -370,4 +372,111 @@ TEST(FuelMath, getCycleFuelMassTest) {
 
 	EXPECT_NEAR(getCycleFuelMass(true, 0.05f), 6.0f, EPS3D);
 	EXPECT_NEAR(engine->engineState.crankingFuel.tpsCoefficient, 1, EPS3D);
+}
+
+TEST(FuelMath, postCrankingFactorAxis){
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	setupSimpleTestEngineWithMafAndTT_ONE_trigger(&eth);
+	engine->periodicFastCallback();
+	setTestFuelCrankingTable(4000 * 1.5f);
+
+	// simulate cranking
+	for (size_t i = 0; i < 30; i++) {
+		engine->rpmCalculator.onNewEngineCycle();
+	}
+	setLinearCurve(config->postCrankingCLTBins, /*from*/-20, /*to*/80, 20);
+	setLinearCurve(config->postCrankingDurationBins, /*from*/0, /*to*/150, 40);
+	setTable(config->postCrankingFactor, 5);
+
+	config->postCrankingFactor[0][0] = 1;
+	config->postCrankingFactor[0][1] = 1;
+
+	Sensor::setMockValue(SensorType::Clt, -20);
+	engine->periodicFastCallback();
+
+	EXPECT_NEAR(engine->fuelComputer.running.postCrankingFuelCorrection, 1, EPS3D);
+
+	Sensor::setMockValue(SensorType::Clt, 70);
+	engine->periodicFastCallback();
+	EXPECT_NEAR(engine->fuelComputer.running.postCrankingFuelCorrection, 5, EPS3D);
+}
+
+
+TEST(AirmassModes, PredictiveMapCalculation) {
+	StrictMock<MockVp3d> veTable;
+	StrictMock<MockVp3d> mapFallback;
+
+	// Configure the mock MAP estimation table to return specific values
+	EXPECT_CALL(mapFallback, getValue(1500, 30.0f))
+		.WillRepeatedly(Return(85.0f)); // Predicted MAP is 85 kPa
+
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+
+	// Configure engine for predictive MAP mode
+	engineConfiguration->accelEnrichmentMode = AE_MODE_PREDICTIVE_MAP;
+
+  // FIXME!  setLinearCurve(config->predictiveMapBlendDurationValues, /*value*/0.5, /*precision*/0.1);
+  	for (auto index = 0;index < efi::size(config->predictiveMapBlendDurationValues);index++) {
+  	  config->predictiveMapBlendDurationValues[index] = 0.5f;
+  	}
+
+	// Create our speed density airmass model
+	SpeedDensityAirmass dut(veTable, mapFallback);
+
+	// Setup TPS sensor
+	Sensor::setMockValue(SensorType::Tps1, 30.0f);
+
+	// Setup MAP sensor
+	Sensor::setMockValue(SensorType::Map, 65.0f);
+
+    auto& tpsAccel = *engine->module<TpsAccelEnrichment>();
+	// Without an acceleration event, we should get the actual MAP sensor value
+	EXPECT_FLOAT_EQ(dut.getMap(1500, false), 65.0f);
+
+	// Now trigger acceleration event
+	tpsAccel.m_accelEventJustOccurred = true;
+
+	// Now the predictive MAP should be used, which is 85 kPa from the map estimation table
+	EXPECT_FLOAT_EQ(dut.getMap(1500, true), 85.0f);
+
+	// Subsequent calls should still give predicted until blend starts
+	EXPECT_FLOAT_EQ(dut.getMap(1500, false), 85.0f);
+
+	// Test at 25% blend progress (75% predicted, 25% actual)
+	// Simulate passing 25% of blend time (125ms)
+	eth.moveTimeForwardMs(125); // 25% of 500ms
+	// Expected: 85 - (85-65) * 0.25 = 85 - 5 = 80
+	EXPECT_NEAR(dut.getMap(1500, false), 80.0f, EPS4D);
+
+	// At 50% blend progress
+	eth.moveTimeForwardMs(125); // Now at 250ms
+	// Expected: 85 - (85-65) * 0.5 = 85 - 10 = 75
+	EXPECT_NEAR(dut.getMap(1500, false), 75.0f, EPS4D);
+
+	// At 75% blend progress
+	eth.moveTimeForwardMs(125); // Now at 375ms
+	// Expected: 85 - (85-65) * 0.75 = 85 - 15 = 70
+	EXPECT_NEAR(dut.getMap(1500, false), 70.0f, EPS4D);
+
+	// Test after blend is complete - should return to sensor value
+	// Move time past blend duration (more than 500ms total)
+	eth.moveTimeForwardMs(125); // Now at 500ms
+	// Should be back to the actual MAP value
+	EXPECT_FLOAT_EQ(dut.getMap(1500, false), 65.0f);
+
+	// Test MAP prediction cancellation
+	tpsAccel.m_accelEventJustOccurred = true;
+	EXPECT_FLOAT_EQ(dut.getMap(1500, false), 85.0f);
+
+	// Now increase the actual MAP to exceed the predicted value
+	Sensor::setMockValue(SensorType::Map, 90.0f);
+
+	// Prediction should be canceled, and we should get the actual MAP
+	EXPECT_FLOAT_EQ(dut.getMap(1500, false), 90.0f);
+
+	// 5. Test with failed MAP sensor
+	Sensor::resetMockValue(SensorType::Map);
+
+	// Should use the fallback MAP from the table
+	EXPECT_FLOAT_EQ(dut.getMap(1500, false), 85.0f);
 }

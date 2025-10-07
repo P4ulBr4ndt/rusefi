@@ -9,13 +9,17 @@
 #include "global.h"
 #include "tunerstudio_io.h"
 
+#define TS_PAGE_SETTINGS			0x0000
+// Issue TS zeroes LSB byte of pageIdentifier
+#define TS_PAGE_SCATTER_OFFSETS		0x0100
+#define TS_PAGE_LTFT_TRIMS			0x0200
+
 typedef struct {
 	int queryCommandCounter;
 	int outputChannelsCommandCounter;
 	int readPageCommandsCounter;
+	int readScatterCommandsCounter;
 	int burnCommandCounter;
-	int pageCommandCounter;
-	int writeValueCommandCounter;
 	int crc32CheckCommandCounter;
 	int writeChunkCommandCounter;
 	int totalCounter;
@@ -40,8 +44,6 @@ void tunerStudioError(TsChannelBase* tsChannel, const char *msg);
 #define DO_NOT_LOG nullptr
 void sendErrorCode(TsChannelBase *tsChannel, uint8_t code, /*empty line by default, use nullptr not to log*/const char *msg="");
 
-uint8_t* getWorkingPageAddr();
-
 void requestBurn();
 
 // Lua script might want to know how long since last TS request to see if unit is being actively monitored
@@ -53,15 +55,23 @@ int getSecondsSinceChannelsRequest();
 
 void updateTunerStudioState();
 
-bool isTuningNow();
+bool isTuningVeNow();
 void startTunerStudioConnectivity();
 bool needToTriggerTsRefresh();
 void onApplyPreset();
 
-typedef struct {
+struct TunerStudioRWChunkRequest {
 	uint16_t offset;
 	uint16_t count;
-} TunerStudioRWChunkRequest;
+} __attribute__((packed));
+static_assert(sizeof(TunerStudioRWChunkRequest) == 4);
+
+struct TunerStudioPageRWChunkRequest {
+	uint16_t page;
+	uint16_t offset;
+	uint16_t count;
+} __attribute__((packed));
+static_assert(sizeof(TunerStudioPageRWChunkRequest) == 6);
 
 #if EFI_PROD_CODE || EFI_SIMULATOR
 #define CONNECTIVITY_THREAD_STACK (3 * UTILITY_THREAD_STACK_SIZE)
@@ -80,5 +90,7 @@ public:
 
 };
 #endif
+
+bool isTouchingArea(uint16_t offset, uint16_t count, int areaStart, int areaSize);
 
 #endif /* EFI_TUNER_STUDIO */

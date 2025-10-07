@@ -46,10 +46,6 @@ uint32_t RpmCalculator::getRevolutionCounterSinceStart(void) const {
 	return revolutionCounterSinceStart;
 }
 
-/**
- * @return -1 in case of isNoisySignal(), current RPM otherwise
- * See NOISY_RPM
- */
 float RpmCalculator::getCachedRpm() const {
 	return cachedRpmValue;
 }
@@ -157,6 +153,10 @@ void RpmCalculator::assignRpmValue(float floatRpmValue) {
 }
 
 void RpmCalculator::setRpmValue(float value) {
+	if (value > MAX_ALLOWED_RPM) {
+		value = 0;
+	}
+
 	assignRpmValue(value);
 	spinning_state_e oldState = state;
 	// Change state
@@ -212,9 +212,9 @@ void RpmCalculator::onSlowCallback() {
 	}
 }
 
-void RpmCalculator::setStopped() {
+void RpmCalculator::setStopSpinning() {
+	isSpinning = false;
 	revolutionCounterSinceStart = 0;
-
 	rpmRate = 0;
 
 	if (cachedRpmValue != 0) {
@@ -224,11 +224,8 @@ void RpmCalculator::setStopped() {
 		efiPrintf("engine stopped");
 	}
 	state = STOPPED;
-}
 
-void RpmCalculator::setStopSpinning() {
-	isSpinning = false;
-	setStopped();
+	engine->onEngineStopped();
 }
 
 void RpmCalculator::setSpinningUp(efitick_t nowNt) {
@@ -280,7 +277,7 @@ void rpmShaftPositionCallback(trigger_event_e ckpSignalType,
 		 */
 			if (!alwaysInstantRpm) {
 				if (periodSeconds == 0) {
-					rpmState->setRpmValue(NOISY_RPM);
+					rpmState->setRpmValue(0);
 					rpmState->rpmRate = 0;
 				} else {
 				  // todo: extract utility method? see duplication with high_pressure_pump.cpp
@@ -290,7 +287,7 @@ void rpmShaftPositionCallback(trigger_event_e ckpSignalType,
 					auto rpmDelta = rpm - rpmState->previousRpmValue;
 					rpmState->rpmRate = rpmDelta / (mult * periodSeconds);
 
-					rpmState->setRpmValue(rpm > UNREALISTIC_RPM ? NOISY_RPM : rpm);
+					rpmState->setRpmValue(rpm);
 				}
 			}
 		} else {
@@ -317,6 +314,8 @@ void rpmShaftPositionCallback(trigger_event_e ckpSignalType,
 		rpmState->assignRpmValue(instantRpm);
 #if 0
 		efiPrintf("** RPM: idx=%d sig=%d iRPM=%d", trgEventIndex, ckpSignalType, instantRpm);
+#else
+		UNUSED(ckpSignalType);
 #endif
 	}
 }
@@ -330,7 +329,7 @@ float RpmCalculator::getSecondsSinceEngineStart(efitick_t nowNt) const {
  * This callback has nothing to do with actual engine control, it just sends a Top Dead Center mark to the rusEfi console
  * digital sniffer.
  */
-static void onTdcCallback(void *) {
+static void onTdcCallback() {
 #if EFI_UNIT_TEST
 	if (!engine->needTdcCallback) {
 		return;
@@ -363,11 +362,11 @@ void tdcMarkCallback(
 		int revIndex2 = getRevolutionCounter() % 2;
 		float rpm = Sensor::getOrZero(SensorType::Rpm);
 		// todo: use tooth event-based scheduling, not just time-based scheduling
-		if (isValidRpm(rpm)) {
+		if (rpm != 0) {
 			angle_t tdcPosition = tdcPosition();
 			// we need a positive angle offset here
 			wrapAngle(tdcPosition, "tdcPosition", ObdCode::CUSTOM_ERR_6553);
-			scheduleByAngle(&engine->tdcScheduler[revIndex2], nowNt, tdcPosition, onTdcCallback);
+			scheduleByAngle(&engine->tdcScheduler[revIndex2], nowNt, tdcPosition, action_s::make<onTdcCallback>());
 		}
 	}
 }
@@ -379,8 +378,7 @@ void tdcMarkCallback(
  *
  * @return tick time of scheduled action
  */
-efitick_t scheduleByAngle(scheduling_s *timer, efitick_t nowNt, angle_t angle,
-		action_s action) {
+efitick_t scheduleByAngle(scheduling_s *timer, efitick_t nowNt, angle_t angle, action_s const& action) {
 	float delayUs = engine->rpmCalculator.oneDegreeUs * angle;
 
 	efitick_t actionTimeNt = sumTickAndFloat(nowNt, USF2NT(delayUs));

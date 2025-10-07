@@ -30,7 +30,7 @@ static void set201xHyundai() {
     setTPS1Calibration(98, 926, 891, 69);
     setEtbPID(8.8944, 70.2307, 0.1855);
    	// Some sensible defaults for other options
-   	setAlgorithm(LM_SPEED_DENSITY);
+   	setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
 
   engineConfiguration->vvtControlMinRpm = 1500;
 }
@@ -98,7 +98,6 @@ void setHyundaiPb() {
 	engineConfiguration->triggerInputPins[1] = Gpio::H144_IN_D_4;
 	engineConfiguration->highPressureFuel.hwChannel = H144_IN_O2S2;
 
-    engineConfiguration->hpfpValvePin = Gpio::H144_OUT_IO6; // E2
 	engineConfiguration->starterControlPin = Gpio::H144_OUT_PWM5; // F1
 	engineConfiguration->startStopButtonPin = Gpio::H144_IN_VSS; // C4
 	config->boardUse2stepPullDown = true; // looks like 1K extra pull-down is needed on the harness?! :(
@@ -106,10 +105,14 @@ void setHyundaiPb() {
 	engineConfiguration->map.sensor.hwChannel = H144_IN_MAP2;
 #endif // HW_HELLEN_4CHAN
 
+#if defined(HW_HELLEN_4CHAN) || EFI_UNIT_TEST
+    engineConfiguration->hpfpValvePin = Gpio::H144_OUT_IO6; // E2
+#endif // HW_HELLEN_4CHAN
+
 #if HW_PROTEUS && EFI_PROD_CODE
 	engineConfiguration->highPressureFuel.hwChannel = PROTEUS_IN_ANALOG_VOLT_4;
-	setCommonNTCSensor(&engineConfiguration->clt, PROTEUS_DEFAULT_AT_PULLUP);
-	setCommonNTCSensor(&engineConfiguration->iat, PROTEUS_DEFAULT_AT_PULLUP);
+	setCommonNTCSensorParameters(&engineConfiguration->clt);
+	setCommonNTCSensorParameters(&engineConfiguration->iat);
 
 //    engineConfiguration->acRelayPin = Gpio::PROTEUS_LS_6;
     engineConfiguration->acSwitch = PROTEUS_DIGITAL_5;

@@ -1,7 +1,6 @@
 #define MAIN_HELP_URL "https://rusefi.com/s/hellen154hyuindai"
 
-
-
+#define LUA_SCRIPT_SIZE 15000
 
 #define ts_show_vbatt false
 #define ts_show_clt_iat_pullup false
@@ -46,3 +45,5 @@
 
 
 #define CLT_UPPER_LIMIT 125
+
+#define CLT_IDLE_TABLE_RPM_SIZE 6

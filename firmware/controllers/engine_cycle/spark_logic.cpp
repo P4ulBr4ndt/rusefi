@@ -42,7 +42,7 @@ static void fireSparkBySettingPinLow(IgnitionEvent *event, IgnitionOutputPin *ou
 
 	if (!output->currentLogicValue && !event->wasSparkLimited) {
 #if SPARK_EXTREME_LOGGING
-		printf("out-of-order coil off %s", output->getName());
+		efiPrintf("out-of-order coil off %s", output->getName());
 #endif /* SPARK_EXTREME_LOGGING */
 		warning(ObdCode::CUSTOM_OUT_OF_ORDER_COIL, "out-of-order coil off %s", output->getName());
 	}
@@ -161,7 +161,7 @@ static void prepareCylinderIgnitionSchedule(angle_t dwellAngleDuration, floatms_
 
 #if FUEL_MATH_EXTREME_LOGGING
 	if (printFuelDebug) {
-		printf("addIgnitionEvent %s angle=%.1f\n", output->getName(), dwellStartAngle);
+		efiPrintf("addIgnitionEvent %s angle=%.1f", output->getName(), dwellStartAngle);
 	}
 	//	efiPrintf("addIgnitionEvent %s ind=%d", output->name, event->dwellPosition->eventIndex);
 #endif /* FUEL_MATH_EXTREME_LOGGING */
@@ -242,8 +242,8 @@ void fireSparkAndPrepareNextSchedule(IgnitionEvent *event) {
 #endif /* SPARK_EXTREME_LOGGING */
 
 		// We can schedule both of these right away, since we're going for "asap" not "particular angle"
-		engine->scheduler.schedule("dwell", &event->dwellStartTimer, nextDwellStart, { &turnSparkPinHighStartCharging, event });
-		engine->scheduler.schedule("firing", &event->sparkEvent.eventScheduling, nextFiring, { fireSparkAndPrepareNextSchedule, event });
+		engine->scheduler.schedule("dwell", &event->dwellStartTimer, nextDwellStart, action_s::make<turnSparkPinHighStartCharging>( event ));
+		engine->scheduler.schedule("firing", &event->sparkEvent.eventScheduling, nextFiring, action_s::make<fireSparkAndPrepareNextSchedule>( event ));
 	} else {
 		if (engineConfiguration->enableTrailingSparks) {
 #if SPARK_EXTREME_LOGGING
@@ -253,7 +253,7 @@ void fireSparkAndPrepareNextSchedule(IgnitionEvent *event) {
 			// Trailing sparks are enabled - schedule an event for the corresponding trailing coil
 			scheduleByAngle(
 				&event->trailingSparkFire, nowNt, engine->ignitionState.trailingSparkAngle,
-				{ &fireTrailingSpark, &enginePins.trailingCoils[event->coilIndex] }
+				action_s::make<fireTrailingSpark>( &enginePins.trailingCoils[event->coilIndex] )
 			);
 		}
 
@@ -346,7 +346,7 @@ void turnSparkPinHighStartCharging(IgnitionEvent *event) {
 		// Trailing sparks are enabled - schedule an event for the corresponding trailing coil
 		scheduleByAngle(
 			&event->trailingSparkCharge, nowNt, engine->ignitionState.trailingSparkAngle,
-			{ &chargeTrailingSpark, output }
+			action_s::make<chargeTrailingSpark>( output )
 		);
 	}
 }
@@ -354,6 +354,7 @@ void turnSparkPinHighStartCharging(IgnitionEvent *event) {
 
 static void scheduleSparkEvent(bool limitedSpark, IgnitionEvent *event,
 		float rpm, float dwellMs, float dwellAngle, float sparkAngle, efitick_t edgeTimestamp, float currentPhase, float nextPhase) {
+	UNUSED(rpm);
 
 	float angleOffset = dwellAngle - currentPhase;
 	if (angleOffset < 0) {
@@ -384,7 +385,7 @@ static void scheduleSparkEvent(bool limitedSpark, IgnitionEvent *event,
 		 * This way we make sure that coil dwell started while spark was enabled would fire and not burn
 		 * the coil.
 		 */
-		chargeTime = scheduleByAngle(&event->dwellStartTimer, edgeTimestamp, angleOffset, { &turnSparkPinHighStartCharging, event });
+		chargeTime = scheduleByAngle(&event->dwellStartTimer, edgeTimestamp, angleOffset, action_s::make<turnSparkPinHighStartCharging>( event ));
 
 #if EFI_UNIT_TEST
 		engine->onScheduleTurnSparkPinHighStartCharging(*event, edgeTimestamp, angleOffset, chargeTime);
@@ -412,7 +413,7 @@ static void scheduleSparkEvent(bool limitedSpark, IgnitionEvent *event,
 	bool isTimeScheduled = engine->module<TriggerScheduler>()->scheduleOrQueue(
 			"spark",
 		&event->sparkEvent, edgeTimestamp, sparkAngle,
-		{ fireSparkAndPrepareNextSchedule, event },
+		action_s::make<fireSparkAndPrepareNextSchedule>( event ),
 		currentPhase, nextPhase);
 
 	if (isTimeScheduled) {
@@ -434,12 +435,12 @@ static void scheduleSparkEvent(bool limitedSpark, IgnitionEvent *event,
 		efiPrintf("scheduling overdwell sparkDown revolution=%d [%s] for id=%d for %d ticks", getRevolutionCounter(), event->getOutputForLoggins()->getName(), event->sparkCounter, fireTime);
 #endif /* SPARK_EXTREME_LOGGING */
 
-      /**
-       * todo: can we please comprehend/document how this even works? we seem to be reusing 'sparkEvent.scheduling' instance
-       * and it looks like current (smart?) re-queuing is effectively cancelling out the overdwell? is that the way this was intended to work?
-       * [tag:overdwell]
-       */
-			engine->scheduler.schedule("overdwell", &event->sparkEvent.eventScheduling, fireTime, { overFireSparkAndPrepareNextSchedule, event });
+			/**
+			* todo: can we please comprehend/document how this even works? we seem to be reusing 'sparkEvent.scheduling' instance
+			* and it looks like current (smart?) re-queuing is effectively cancelling out the overdwell? is that the way this was intended to work?
+			* [tag:overdwell]
+			*/
+			engine->scheduler.schedule("overdwell", &event->sparkEvent.eventScheduling, fireTime, action_s::make<overFireSparkAndPrepareNextSchedule>( event ));
 
 #if EFI_UNIT_TEST
 			engine->onScheduleOverFireSparkAndPrepareNextSchedule(*event, fireTime);
@@ -451,7 +452,7 @@ static void scheduleSparkEvent(bool limitedSpark, IgnitionEvent *event,
 
 #if EFI_UNIT_TEST
 	if (verboseMode) {
-		printf("spark dwell@ %.1f spark@ %.2f id=%d sparkCounter=%d\r\n", event->dwellAngle,
+		efiPrintf("spark dwell@ %.1f spark@ %.2f id=%d sparkCounter=%d", event->dwellAngle,
 			event->sparkEvent.getAngle(),
 			event->coilIndex,
 			event->sparkCounter);

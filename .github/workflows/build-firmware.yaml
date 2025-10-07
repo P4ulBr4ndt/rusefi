@@ -5,10 +5,14 @@ name: Firmware at GHA
 #
 # this github action is the heaviest one we've got, with each run taking around 10 minutes and the matrix which has a few dozens of these runs
 #
-# We have two mechanists to reduce github action runner consumption
+# statement zero: with great powers of github action matrix here we produce two dozens of runs
+# statement one: github actions are technically not free
+# statement three: on top of dollar cost, actions get queued meaning other collaborators have to wait
+# statement three: in case of bad commit/bad PR more than one annoying email is sent
+# in light of above we have two mechanisms to reduce github action runner consumption:
+# * 'only' syntax allow to build only specified configuration, for example 'only:uaefi' line in the commit message would only build 'uaefi' firmware configuration
+# *        for random commits we can build zero firmware jobs if we do 'only:docs' or anything similar
 # * 'skip_rate' ratio in meta-info.env files allows to skip some builds with specific skip percentage
-# * 'only' syntax allow to build only specificed configuration, for example 'only:uaefi' line in the commit message would only build 'uaefi' configuration
-# *        for random commits we can build zero jobs if we do 'only:docs' or anything similar
 #
 
 on:
@@ -30,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -98,7 +102,7 @@ jobs:
 
     - name: Create Release
       if: ${{ env.upload == 'release' }}
-      uses: ncipollo/release-action@v1.16.0
+      uses: ncipollo/release-action@v1.19.1
       with:
         tag: ${{ env.date }}
         name: "Nightly ${{ env.date }}"
@@ -127,7 +131,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set matrix
       id: set-matrix
@@ -159,6 +163,10 @@ jobs:
 #      if: ${{ contains(github.ref_name, '.') }}
 #      run: echo '::error::Branch names must not contain ".", this breaks firmware autoupdates. Branch name is "${{ github.ref_name }}".' && exit 1
 
+    - name: Get current date
+      id: date
+      run: echo "BUNDLE_DATE=$(date +'%Y-%m-%d')">> $GITHUB_ENV
+
     - name: Set run condition variables 2
       run: |
         if [ "${{github.event_name}}" = "schedule" ] && [ "${{github.repository}}" = "rusefi/rusefi" ]; then
@@ -177,16 +185,16 @@ jobs:
           echo "upload=gha_artifact" >> $GITHUB_ENV
         fi
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Checkout Submodules
       run: |
         misc/git_scripts/common_submodule_init.sh
 
-    - uses: actions/setup-java@v4
+    - uses: actions/setup-java@v5
       with:
         distribution: 'zulu'
-        java-version: '11'
+        java-version: '17'
 
     - name: Install multilib, mingw, sshpass and mtools
       run: |
@@ -208,10 +216,11 @@ jobs:
 #
 # Note to humans: on personal devices we have firmware/provide_gcc.sh and setup_linux_environment.sh
 #
-    - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+      # TODO: address `Acquire GCC` version copy paste, maybe a tiny action to acquire specific version?
+    - name: Acquire Arm GNU Toolchain (arm-none-eabi-gcc)
       uses: carlosperate/arm-none-eabi-gcc-action@v1
       with:
-        release: '12.3.Rel1'
+        release: '14.2.Rel1'
 
     # Make sure the compiler we just downloaded works - just print out the version
     - name: Test arm-none-eabi-gcc Compiler
@@ -273,7 +282,7 @@ jobs:
 
     - name: Add Bundles to Release
       if: ${{ env.upload == 'release' }}
-      uses: ncipollo/release-action@v1.16.0
+      uses: ncipollo/release-action@v1.19.1
       with:
         tag: ${{ env.date }}
         name: "Nightly ${{ env.date }}"
@@ -289,7 +298,7 @@ jobs:
       run: |
         source config/boards/common_script_read_meta_env.inc ${{ env.BOARD_META_PATH }}
         cd ${META_OUTPUT_ROOT_FOLDER}tunerstudio/generated
-        ${OLDPWD}/tunerstudio/upload_ini.sh ${{ secrets.RUSEFI_ONLINE_FTP_USER }} "${{ secrets.RUSEFI_ONLINE_FTP_PASS }}" ${{ secrets.RUSEFI_FTP_SERVER }}
+        ${OLDPWD}/tunerstudio/upload_ini.sh "${{ secrets.RUSEFI_ONLINE_FTP_USER }}" "${{ secrets.RUSEFI_ONLINE_FTP_PASS }}" "${{ secrets.RUSEFI_FTP_SERVER }}"
 
 # sad: we have duplication with custom-board-build/action.yaml :(
       # todo: is this insanity? does not gcc produce similar file directly?

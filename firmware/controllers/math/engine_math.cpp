@@ -108,6 +108,8 @@ void prepareOutputSignals() {
 		}
 	}
 
+	EngineCylinders::updateCylinders();
+
 	// Use odd fire wasted spark logic if not two stroke, and an odd fire or odd cylinder # engine
 	getEngineState()->useOddFireWastedSpark = operationMode != TWO_STROKE
 								&& (isOddFire | (engineConfiguration->cylindersCount % 2 == 1));
@@ -159,13 +161,13 @@ void setFlatInjectorLag(float value) {
 BlendResult calculateBlend(blend_table_s& cfg, float rpm, float load) {
 	// If set to 0, skip the math as its disabled
 	if (cfg.blendParameter == GPPWM_Zero) {
-		return { 0, 0, 0 };
+		return { 0, 0, 0, 0 };
 	}
 
 	auto value = readGppwmChannel(cfg.blendParameter);
 
 	if (!value) {
-		return { 0, 0, 0 };
+		return { 0, 0, 0, 0 };
 	}
 
 	// Override Y axis value (if necessary)
@@ -182,7 +184,7 @@ BlendResult calculateBlend(blend_table_s& cfg, float rpm, float load) {
 
 	float blendFactor = interpolate2d(value.Value, cfg.blendBins, cfg.blendValues);
 
-	return { value.Value, blendFactor, 0.01f * blendFactor * tableValue };
+	return { value.Value, blendFactor, 0.01f * blendFactor * tableValue, load };
 }
 
 #endif /* EFI_ENGINE_CONTROL */

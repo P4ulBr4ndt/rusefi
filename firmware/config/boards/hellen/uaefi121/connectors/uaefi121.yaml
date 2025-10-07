@@ -124,24 +124,24 @@ pins:
     meta: MM100_UART8_RX
     class: event_inputs
     ts_name: VR_DISCRETE+
-    function: VR_DISCRETE positive input
+    function: VR_DISCRETE positive input best for low count wheel
     type: vr
 
   - pin: 18a
     ts_name: VR_DISCRETE-
-    function: VR_DISCRETE negative input
+    function: VR_DISCRETE negative input best for low count wheel
     type: vr
 
   - pin: 19a
     meta: MM100_UART8_TX
     class: event_inputs
     ts_name: VR_9924+
-    function: VR_9924 positive input
+    function: VR_9924 positive input best for normal 12+ tooth wheels
     type: vr
 
   - pin: 20a
     ts_name: VR_9924-
-    function: VR_9924 negative input
+    function: VR_9924 negative input best for normal 12+ tooth wheels
     type: vr
 
   - pin: 21a
@@ -149,7 +149,7 @@ pins:
     function: EGT positive input
 
   - pin: 22a
-    ts_name: EGT+
+    ts_name: EGT-
     function: EGT negative input
 
   - pin: 23a
@@ -176,7 +176,7 @@ pins:
   - pin: 27a
     class: outputs
     ts_name: Coil 6
-    function: Coil 6
+    function: Coil 6 second wire to split current per pin
     type: ign
 
   - pin: 28a
@@ -206,7 +206,7 @@ pins:
   - pin: 32a
     class: outputs
     ts_name: Coil 1
-    function: Coil 1
+    function: Coil 1 second wire to split current per pin
     type: ign
 
   - pin: 33a
@@ -223,14 +223,14 @@ pins:
     type: hall
 
   - pin: 35a
-    meta: MM100_IN_D2
+    meta: MEGA_UAEFI_IN_HALL2
     class: event_inputs
     function: CAM Sensor Intake
     ts_name: ___ HALL2
     type: hall
 
   - pin: 36a
-    meta: MM100_IN_D1
+    meta: MEGA_UAEFI_IN_HALL1
     class: event_inputs
     function: VSS / HALL1 Sensor
     ts_name: ___ HALL1 / VSS
@@ -633,6 +633,7 @@ pins:
     meta: MM100_IN_VBATT
     class: analog_inputs
     color: red
+    type: 12v
     function: Ignition Switch / Battery Voltage Analog Input
     ts_name: ___ Voltage From Key
 

@@ -19,6 +19,7 @@
 #define ts_show_vr_threshold_pins false
 #define ts_show_vr_threshold_2 false
 #define ts_show_tps_sent true
+#define ts_show_ign_key_analog_input true
 
 #define ts_show_tcu true
 #define ts_show_gdi true
@@ -28,3 +29,17 @@
 #define FRONTEND_TITLE_BAR_NAME "uaEFI"
 
 #define TIMING_ADJUSTMENT_SIZE 4
+
+! not sure if below works correctly, VCS version of .ini still has ignitionAdvanceCyl9?
+! #define MAX_CYLINDER_COUNT 8
+! #define ts_show_cylinder_9 false
+! #define ts_show_cylinder_10 false
+! #define ts_show_cylinder_11 false
+! #define ts_show_cylinder_12 false
+! #define ts_show_fuel_trim_cylinder_9 false
+! #define ts_show_fuel_trim_cylinder_10 false
+! #define ts_show_fuel_trim_cylinder_11 false
+! #define ts_show_fuel_trim_cylinder_12 false
+
+#define canReWidebandHwIndex_enum "INVALID", "Idx 1", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID"
+

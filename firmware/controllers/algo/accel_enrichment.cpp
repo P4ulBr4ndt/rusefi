@@ -23,27 +23,43 @@
 
 #include "pch.h"
 #include "accel_enrichment.h"
+#include "tunerstudio.h"
 
-static tps_tps_Map3D_t tpsTpsMap{"tps"};
 
 // on this level we do not distinguish between multiplier and 'ms adder' modes
 float TpsAccelEnrichment::getTpsEnrichment() {
 	ScopePerf perf(PE::GetTpsEnrichment);
 
+	// If predictive MAP mode is active, the old "adder" logic is disabled.
+	if (engineConfiguration->accelEnrichmentMode == AE_MODE_PREDICTIVE_MAP) {
+		return 0;
+	}
+
 	if (engineConfiguration->tpsAccelLookback == 0) {
 		// If disabled, return 0.
 		return 0;
 	}
+
+#if EFI_TUNER_STUDIO
+	if (isTuningVeNow()) {
+		return 0;
+	}
+#endif
+
 	float rpm = Sensor::getOrZero(SensorType::Rpm);
-	if (rpm == 0) {
+	if (rpm < engineConfiguration->cranking.rpm) {
 		return 0;
 	}
 
 	if (isAboveAccelThreshold) {
-		valueFromTable = tpsTpsMap.getValue(tpsFrom, tpsTo);
+		valueFromTable = interpolate3d(config->tpsTpsAccelTable,
+			config->tpsTpsAccelToRpmBins, tpsTo,
+			config->tpsTpsAccelFromRpmBins, tpsFrom);
 		extraFuel = valueFromTable;
+		m_timeSinceAccel.reset();
 	} else if (isBelowDecelThreshold) {
 		extraFuel = deltaTps * engineConfiguration->tpsDecelEnleanmentMultiplier;
+		m_timeSinceAccel.reset();
 	} else {
 		extraFuel = 0;
 	}
@@ -116,8 +132,9 @@ void TpsAccelEnrichment::onEngineCycleTps() {
 int TpsAccelEnrichment::getMaxDeltaIndex() {
 	int len = minI(cb.getSize(), cb.getCount());
 	tooShort = len < 2;
-	if (tooShort)
+	if (tooShort) {
 		return 0;
+	}
 	int ci = cb.currentIndex - 1;
 	float maxValue = cb.get(ci) - cb.get(ci - 1);
 	int resultIndex = ci;
@@ -172,8 +189,21 @@ void TpsAccelEnrichment::onNewValue(float currentValue) {
 	// Update threshold detection
 	isAboveAccelThreshold = deltaTps > engineConfiguration->tpsAccelEnrichmentThreshold;
 
+	// If an acceleration event just happened, latch the flag so it can be read once.
+	if (isAboveAccelThreshold) {
+		m_accelEventJustOccurred = true;
+	}
+
 	// TODO: can deltaTps actually be negative? Will this ever trigger?
 	isBelowDecelThreshold = deltaTps < -engineConfiguration->tpsDecelEnleanmentThreshold;
+}
+
+bool TpsAccelEnrichment::isAccelEventTriggered() {
+	// Read the flag
+	bool result = m_accelEventJustOccurred;
+	// Reset it so we only fire once per event
+	m_accelEventJustOccurred = false;
+	return result;
 }
 
 TpsAccelEnrichment::TpsAccelEnrichment() {
@@ -193,9 +223,10 @@ void TpsAccelEnrichment::onConfigurationChange(engine_configuration_s const* /*p
 	setLength(length);
 }
 
-void initAccelEnrichment() {
-	tpsTpsMap.initTable(config->tpsTpsAccelTable, config->tpsTpsAccelToRpmBins, config->tpsTpsAccelFromRpmBins);
-
-	engine->module<TpsAccelEnrichment>()->onConfigurationChange(nullptr);
+float TpsAccelEnrichment::getTimeSinceAcell() const {
+	return m_timeSinceAccel.getElapsedSeconds();
 }
 
+void initAccelEnrichment() {
+	engine->module<TpsAccelEnrichment>()->onConfigurationChange(nullptr);
+}

@@ -331,20 +331,18 @@ void TestEngineConfiguration::configureInjectorFlow(const std::optional<float> f
     }
 }
 
+static_assert(std::tuple_size<BattLagCorrTable> {} == sizeof(engineConfiguration->injector.battLagCorrTable) / sizeof(engineConfiguration->injector.battLagCorrTable[0]));
+
 void TestEngineConfiguration::configureInjectorBattLagCorr(const std::optional<BattLagCorrTable> battLagCorr) {
     if (battLagCorr.has_value()) {
-        for (size_t i = 0; i < VBAT_INJECTOR_CURVE_PRESSURE_SIZE; i++) {
-            std::copy(
-                std::begin(battLagCorr.value()[i]),
-                std::end(battLagCorr.value()[i]),
-                std::begin(engineConfiguration->injector.battLagCorrTable[i])
+        copyTable(engineConfiguration->injector.battLagCorrTable, battLagCorr.value());
+    } else {
+        for (size_t row = 0; row < std::tuple_size<BattLagCorrTable> {}; ++row) {
+            EXPECT_THAT(
+                engineConfiguration->injector.battLagCorrTable[row],
+                testing::ElementsAreArray(engine_configuration_defaults::INJECTOR_BATT_LAG_CURR[row])
             );
         }
-    } else {
-        EXPECT_THAT(
-            engineConfiguration->injector.battLagCorrTable[0],
-            testing::ElementsAreArray(engine_configuration_defaults::INJECTOR_BATT_LAG_CURR[0])
-        );
     }
 }
 void TestEngineConfiguration::configureFuelReferencePressure(const std::optional<float> fuelReferencePressure) {
@@ -392,10 +390,12 @@ void TestEngineConfiguration::configureInjectorSecondaryBattLagCorr(const std::o
             );
         }
     } else {
-       EXPECT_THAT(
-            engineConfiguration->injectorSecondary.battLagCorrTable[0],
-            testing::ElementsAreArray(engine_configuration_defaults::INJECTOR_SECONDARY_BATT_LAG_CURR[0])
-        );
+       for (size_t row = 0; row < std::tuple_size<BattLagCorrTable> {}; ++row) {
+            EXPECT_THAT(
+                engineConfiguration->injector.battLagCorrTable[row],
+                testing::ElementsAreArray(engine_configuration_defaults::INJECTOR_SECONDARY_BATT_LAG_CURR[row])
+            );
+        }
     }
 }
 

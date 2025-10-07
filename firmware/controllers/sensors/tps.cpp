@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "sent.h"
 #include "tunerstudio.h"
+#include "tunerstudio_calibration_channel.h"
 
 /*
 void grabTPSIsClosed() {
@@ -31,17 +32,24 @@ void grabPedalIsUp() {
 	/**
 	 * search for 'maintainConstantValue' to find how this TS magic works
 	 */
-	engine->outputChannels.calibrationMode = (uint8_t)TsCalMode::PedalMin;
-	engine->outputChannels.calibrationValue = Sensor::getRaw(SensorType::AcceleratorPedalPrimary);
-	engine->outputChannels.calibrationValue2 = Sensor::getRaw(SensorType::AcceleratorPedalSecondary);
+	tsCalibrationSetData(TsCalMode::PedalMin, Sensor::getRaw(SensorType::AcceleratorPedalPrimary), Sensor::getRaw(SensorType::AcceleratorPedalSecondary));
 	onGrabPedal();
 }
 
 void grabPedalIsWideOpen() {
-	engine->outputChannels.calibrationMode = (uint8_t)TsCalMode::PedalMax;
-	engine->outputChannels.calibrationValue = Sensor::getRaw(SensorType::AcceleratorPedalPrimary);
-	engine->outputChannels.calibrationValue2 = Sensor::getRaw(SensorType::AcceleratorPedalSecondary);
+	tsCalibrationSetData(TsCalMode::PedalMax, Sensor::getRaw(SensorType::AcceleratorPedalPrimary), Sensor::getRaw(SensorType::AcceleratorPedalSecondary));
 	onGrabPedal();
+}
+
+// In case of cable throttle we need support calibration of primary sensor of first throttle only
+void grapTps1PrimaryIsClosed()
+{
+	tsCalibrationSetData(TsCalMode::Tps1Min, Sensor::getRaw(SensorType::Tps1Primary));
+}
+
+void grapTps1PrimaryIsOpen()
+{
+	tsCalibrationSetData(TsCalMode::Tps1Max, Sensor::getRaw(SensorType::Tps1Primary));
 }
 
 #if EFI_SENT_SUPPORT

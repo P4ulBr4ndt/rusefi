@@ -13,7 +13,38 @@ extern "C" {
 	#include "shared_params.h"
 }
 
+// used externaly by openblt_usb.cpp
+blt_bool stayInBootloader;
+
 static blt_bool waitedLongerThanTimeout = BLT_FALSE;
+static blt_bool rebootLoop;
+static blt_bool wdReset;
+
+static const uint8_t maxWdRebootCounter = 10;
+
+#if (BOOT_COP_HOOKS_ENABLE > 0)
+extern "C" {
+	void CopInitHook(void);
+	void CopServiceHook(void);
+}
+
+// Functions for controlling the watchdog
+void CopInitHook(void) {
+	// Nothing to do...
+}
+
+void CopServiceHook(void) {
+	// We need to reset WDT here
+#if HAL_USE_WDG
+	wdgResetI(&WDGD1);
+#endif // HAL_USE_WDG
+}
+#endif // BOOT_COP_HOOKS_ENABLE
+
+PUBLIC_API_WEAK bool OpenBltIsBoardOk()
+{
+	return true;
+}
 
 class BlinkyThread : public chibios_rt::BaseStaticThread<256> {
 protected:
@@ -69,20 +100,24 @@ protected:
 			palSetPad(greenPort, greenPin);
 		}
 		if (redPort) {
-			palSetPad(redPort, redPin);
+			if (wdReset) {
+				palClearPad(redPort, redPin);
+			} else {
+				palSetPad(redPort, redPin);
+			}
 		}
 
 		while (true) {
 			if (yellowPort) {
 				palTogglePad(yellowPort, yellowPin);
 			}
-			if (bluePort) {
+			if (bluePort && OpenBltIsBoardOk()) {
 				palTogglePad(bluePort, bluePin);
 			}
 			if (greenPort) {
 				palTogglePad(greenPort, greenPin);
 			}
-			if (redPort) {
+			if (redPort && !wdReset) {
 				palTogglePad(redPort, redPin);
 			}
 			// blink 3 times faster if Dual Bank is not enabled
@@ -95,8 +130,6 @@ protected:
 
 static BlinkyThread blinky;
 
-blt_bool stayInBootloader;
-
 static blt_bool checkIfRebootIntoOpenBltRequested(void) {
 	uint8_t value = 0x00;
 	if (SharedParamsReadByIndex(0, &value) && (value == 0x01)) {
@@ -107,18 +140,39 @@ static blt_bool checkIfRebootIntoOpenBltRequested(void) {
 	return BLT_FALSE;
 }
 
+static blt_bool checkIfResetLoop(void) {
+	uint8_t wd_counter = 0;
+	Reset_Cause_t resetCause = getMCUResetCause();
+	if ((resetCause == Reset_Cause_IWatchdog) ||
+		(resetCause == Reset_Cause_WWatchdog)) {
+		// One of watchdogs
+		SharedParamsReadByIndex(1, &wd_counter);
+		wd_counter++;
+		SharedParamsWriteByIndex(1, wd_counter);
+		wdReset = BLT_TRUE;
+	} else if ((resetCause == Reset_Cause_NRST_Pin) ||
+			   (resetCause == Reset_Cause_POR)) {
+		// power on or NRST reset
+		// cleat WD counter
+		SharedParamsWriteByIndex(1, wd_counter);
+	}
+
+	return (wd_counter > maxWdRebootCounter);
+}
+
 int main(void) {
 	halInit();
 	chSysInit();
 
 	baseMCUInit();
 
-	// start the blinky thread
-	blinky.start(NORMALPRIO + 10);
-
 	// Init openblt shared params
 	SharedParamsInit();
-	stayInBootloader = checkIfRebootIntoOpenBltRequested();
+	rebootLoop = checkIfResetLoop();
+	stayInBootloader = checkIfRebootIntoOpenBltRequested() || rebootLoop;
+
+	// start the blinky thread
+	blinky.start(NORMALPRIO + 10);
 
 	// Init openblt itself
 	BootInit();

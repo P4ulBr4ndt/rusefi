@@ -11,6 +11,7 @@
 #include "pch.h"
 #include "hellen_meta.h"
 #include "defaults.h"
+#include "board_overrides.h"
 
 static OutputPin alphaTachPullUp;
 static OutputPin alphaTempPullUp;
@@ -54,7 +55,7 @@ static void setupDefaultSensorInputs() {
 	engineConfiguration->iat.adcChannel = H144_IN_IAT;
 }
 
-void boardInitHardware() {
+static void alphax_2chan_boardInitHardware() {
 
 	alphaTachPullUp.initPin("a-tach", Gpio::H144_OUT_IO1);
 	alphaTempPullUp.initPin("a-temp", Gpio::H144_OUT_IO4);
@@ -84,7 +85,7 @@ static bool isMegaModuleRevision() {
 #endif // EFI_BOOTLOADER
 }
 
-void setBoardConfigOverrides() {
+static void alphax_2chan_ConfigOverrides() {
 	setHellenVbatt();
 #ifndef EFI_BOOTLOADER
     int16_t hellenBoardId = engine->engineState.hellenBoardId;
@@ -123,7 +124,7 @@ void setBoardConfigOverrides() {
  * See also setDefaultEngineConfiguration
  *
  */
-void setBoardDefaultConfiguration() {
+static void  alphax_2chan_defaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -172,3 +173,8 @@ Gpio* getBoardMetaOutputs() {
     return OUTPUTS;
 }
 
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = alphax_2chan_boardInitHardware;
+	custom_board_DefaultConfiguration = alphax_2chan_defaultConfiguration;
+	custom_board_ConfigOverrides = alphax_2chan_ConfigOverrides;
+}

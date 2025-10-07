@@ -6,157 +6,30 @@
 #if EFI_LUA
 
 #include "lua.hpp"
+#include "lua_heap.h"
 #include "lua_hooks.h"
 #include "can_filter.h"
 
 #define TAG "LUA "
 
 static bool withErrorLoading = false;
+static int luaTickPeriodUs;
 
-#if EFI_PROD_CODE || EFI_SIMULATOR
-
-#ifndef LUA_USER_HEAP
-#define LUA_USER_HEAP 1
-#endif // LUA_USER_HEAP
-
-//#ifdef PERSISTENT_LOCATION_TODO
-//#define LUA_HEAD_RAM_SECTION CCM_OPTIONAL
-//#endif
-
-static char luaUserHeap[LUA_USER_HEAP]
-#ifdef EFI_HAS_EXT_SDRAM
-SDRAM_OPTIONAL
-#endif
-#ifdef LUA_HEAD_RAM_SECTION
-LUA_HEAD_RAM_SECTION
-#endif
-;
-
+#if EFI_CAN_SUPPORT
 static int recentRxCount = 0;
 static int totalRxCount = 0;
 static int rxTime;
-
-
-class Heap {
-public:
-	memory_heap_t m_heap;
-
-	size_t m_memoryUsed = 0;
-	size_t m_size;
-	char* m_buffer;
-
-	void* alloc(size_t n) {
-		return chHeapAlloc(&m_heap, n);
-	}
-
-	void free(void* obj) {
-		chHeapFree(obj);
-	}
-
-public:
-	template<size_t TSize>
-	Heap(char (&buffer)[TSize])
-	{
-		reinit(buffer, TSize);
-	}
-
-	void reinit(char *buffer, size_t size) {
-		criticalAssertVoid(m_memoryUsed == 0, "Too late to reinit Lua heap");
-
-		m_size = size;
-		m_buffer = buffer;
-
-		reset();
-	}
-
-	void* realloc(void* ptr, size_t osize, size_t nsize) {
-		if (nsize == 0) {
-			// requested size is zero, free if necessary and return nullptr
-			if (ptr) {
-				free(ptr);
-				m_memoryUsed -= osize;
-			}
-
-			return nullptr;
-		}
-
-		void *new_mem = alloc(nsize);
-
-		// Don't count the memory use if not allocated
-		if (new_mem) {
-			m_memoryUsed += nsize;
-		}
-
-		if (!ptr) {
-			// No old pointer passed in, simply return allocated block
-			return new_mem;
-		}
-
-		// An old pointer was passed in, copy the old data in, then free
-		if (new_mem != nullptr) {
-			memcpy(new_mem, ptr, chHeapGetSize(ptr) > nsize ? nsize : chHeapGetSize(ptr));
-			free(ptr);
-			m_memoryUsed -= osize;
-		}
-
-		return new_mem;
-	}
-
-	size_t size() const {
-		return m_size;
-	}
-
-	size_t used() const {
-		return m_memoryUsed;
-	}
-
-	// Use only in case of emergency - obliterates all heap objects and starts over
-	void reset() {
-		chHeapObjectInit(&m_heap, m_buffer, m_size);
-		m_memoryUsed = 0;
-	}
-};
-
-static Heap userHeap(luaUserHeap);
-
-static void printLuaMemoryInfo() {
-	auto heapSize = userHeap.size();
-	auto memoryUsed = userHeap.used();
-	float pct = 100.0f * memoryUsed / heapSize;
-	efiPrintf("Lua memory heap usage: %d / %d bytes = %.1f%%", memoryUsed, heapSize, pct);
-}
-
-static void* myAlloc(void* /*ud*/, void* ptr, size_t osize, size_t nsize) {
-	if (engineConfiguration->debugMode == DBG_LUA) {
-		engine->outputChannels.debugIntField1 = userHeap.used();
-	}
-
-	return userHeap.realloc(ptr, osize, nsize);
-}
-#else // not EFI_PROD_CODE
-// Non-MCU code can use plain realloc function instead of custom implementation
-static void* myAlloc(void* /*ud*/, void* ptr, size_t /*osize*/, size_t nsize) {
-	if (!nsize) {
-		free(ptr);
-		return nullptr;
-	}
-
-	if (!ptr) {
-		return malloc(nsize);
-	}
-
-	return realloc(ptr, nsize);
-}
-#endif // EFI_PROD_CODE
-
-static int luaTickPeriodUs;
+#endif // EFI_CAN_SUPPORT
 
 static int lua_setTickRate(lua_State* l) {
-	float freq = luaL_checknumber(l, 1);
+	float userFreq = luaL_checknumber(l, 1);
 
 	// For instance BMW does 100 CAN messages per second on some IDs, let's allow at least twice that speed
 	// Limit to 1..200 hz
-	freq = clampF(1, freq, 200);
+	float freq = clampF(1, userFreq, 2000);
+	if (freq != userFreq) {
+	  efiPrintf(TAG "clamping tickrate %f", freq);
+	}
 
 	if (freq > 150 && !engineConfiguration->luaCanRxWorkaround) {
 	  efiPrintf(TAG "luaCanRxWorkaround recommended at high tick rate!");
@@ -227,7 +100,7 @@ static bool loadScript(LuaHandle& ls, const char* scriptStr) {
 	efiPrintf(TAG "script loaded successfully!");
 
 #if EFI_PROD_CODE
-	printLuaMemoryInfo();
+	luaHeapPrintInfo();
 #endif // EFI_PROD_CODE
 
 	return true;
@@ -270,6 +143,8 @@ static void doInteractive(LuaHandle& ls) {
 	lua_settop(ls, 0);
 }
 
+static uint32_t maxLuaDuration{};
+
 static void invokeTick(LuaHandle& ls) {
 	ScopePerf perf(PE::LuaTickFunction);
 
@@ -280,8 +155,16 @@ static void invokeTick(LuaHandle& ls) {
 		lua_settop(ls, 0);
 		return;
 	}
+#if EFI_PROD_CODE
+  uint32_t before = port_rt_get_counter_value();
+#endif // EFI_PROD_CODE
 
 	int status = lua_pcall(ls, 0, 0, 0);
+
+#if EFI_PROD_CODE
+  uint32_t duration = port_rt_get_counter_value() - before;
+  maxLuaDuration = std::max(maxLuaDuration, duration);
+#endif // EFI_PROD_CODE
 
 	if (0 != status) {
 		// error calling hook function
@@ -330,7 +213,7 @@ static bool runOneLua(lua_Alloc alloc, const char* script) {
 	}
 
 	// Reset default tick rate
-	luaTickPeriodUs = MS2US(100);
+	luaTickPeriodUs = MS2US(5);
 
 	if (!loadScript(ls, script)) {
 		return false;
@@ -367,9 +250,9 @@ static bool runOneLua(lua_Alloc alloc, const char* script) {
 
 void LuaThread::ThreadTask() {
 	while (!chThdShouldTerminateX()) {
-		bool wasOk = runOneLua(myAlloc, config->luaScript);
+		bool wasOk = runOneLua(luaHeapAlloc, config->luaScript);
 
-		auto usedAfterRun = userHeap.used();
+		auto usedAfterRun = luaHeapUsed();
 		if (usedAfterRun != 0) {
 		  if (!withErrorLoading) {
 			  efiPrintf(TAG "MEMORY LEAK DETECTED: %d bytes used after teardown", usedAfterRun);
@@ -377,7 +260,7 @@ void LuaThread::ThreadTask() {
 
 			// Lua blew up in some terrible way that left memory allocated, reset the heap
 			// so that subsequent runs don't overflow the heap
-			userHeap.reset();
+			luaHeapReset();
 		}
 
 		// Reset any lua adjustments the script made
@@ -393,23 +276,11 @@ void LuaThread::ThreadTask() {
 	}
 }
 
-#if LUA_USER_HEAP > 1
 static LuaThread luaThread;
-#endif
 
 void startLua() {
-#if defined(STM32F4) && !defined(EFI_IS_F42x)
-	// we need this on microRusEFI for sure
-	// definitely should NOT have this on Proteus
-	// on Hellen a bit of open question what's the best track
-	// cute hack: let's check at runtime if you are a lucky owner of microRusEFI with extra RAM and use that extra RAM for extra Lua
-	if (isStm32F42x()) {
-		char *buffer = (char *)0x20020000;
-		userHeap.reinit(buffer, 60000);
-	}
-#endif // STM32F4
+	luaHeapInit();
 
-#if LUA_USER_HEAP > 1
 #if EFI_CAN_SUPPORT
 	initLuaCanRx();
 #endif // EFI_CAN_SUPPORT
@@ -436,14 +307,15 @@ void startLua() {
 	});
 
 	addConsoleAction("luamemory", [](){
-	  efiPrintf("rx total/recent %d %d", totalRxCount,
-	    recentRxCount);
+	  efiPrintf("maxLuaDuration %lu", maxLuaDuration);
+	  maxLuaDuration = 0;
+	  efiPrintf("rx total/recent/dropped %d %d %d", totalRxCount,
+	    recentRxCount, getLuaCanRxDropped());
 	  efiPrintf("luaCycle %luus including luaRxTime %dus", NT2US(engine->outputChannels.luaLastCycleDuration),
 	    NT2US(rxTime));
 
-     printLuaMemoryInfo();
+     luaHeapPrintInfo();
   });
-#endif
 }
 
 #else // not EFI_UNIT_TEST
@@ -454,7 +326,7 @@ void startLua() { }
 #include <string>
 
 static LuaHandle runScript(const char* script) {
-	auto ls = setupLuaState(myAlloc);
+	auto ls = setupLuaState(luaHeapAlloc);
 
 	if (!ls) {
 		throw std::logic_error("Call to setupLuaState failed, returned null");
@@ -520,7 +392,7 @@ int testLuaReturnsInteger(const char* script) {
 }
 
 void testLuaExecString(const char* script) {
-	auto ls = setupLuaState(myAlloc);
+	auto ls = setupLuaState(luaHeapAlloc);
 
 	if (!ls) {
 		throw std::logic_error("Call to setupLuaState failed, returned null");

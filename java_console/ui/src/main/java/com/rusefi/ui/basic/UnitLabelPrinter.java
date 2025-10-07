@@ -2,7 +2,8 @@ package com.rusefi.ui.basic;
 
 import com.devexperts.logging.Logging;
 import com.opensr5.ini.field.IniField;
-import com.rusefi.SerialPortScanner;
+import com.rusefi.ConnectivityContext;
+import com.rusefi.PortResult;
 import com.rusefi.io.UpdateOperationCallbacks;
 import com.rusefi.maintenance.CalibrationsHelper;
 import com.rusefi.maintenance.CalibrationsInfo;
@@ -10,12 +11,13 @@ import com.rusefi.maintenance.CalibrationsInfo;
 import javax.swing.*;
 
 import java.awt.*;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.devexperts.logging.Logging.getLogging;
@@ -33,13 +35,13 @@ public enum UnitLabelPrinter {
 
     public boolean printUnitLabel(
         final JComponent parent,
-        final SerialPortScanner.PortResult ecuPort,
-        final UpdateOperationCallbacks callbacks
+        final PortResult ecuPort,
+        final UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext
     ) {
         boolean result = false;
         final Optional<CalibrationsInfo> currentCalibrations = CalibrationsHelper.readCurrentCalibrations(
-            ecuPort,
-            callbacks
+            ecuPort.port,
+            callbacks, connectivityContext
         );
 
         if (currentCalibrations.isPresent()) {
@@ -52,11 +54,17 @@ public enum UnitLabelPrinter {
                     JOptionPane.YES_NO_OPTION
                 ) == JOptionPane.YES_OPTION) {
                     try {
-                        Desktop.getDesktop().print(unitIdentifiers.writeToTempFile().toFile());
+                        final PrinterJob job = PrinterJob.getPrinterJob();
+                        job.setPrintable(unitIdentifiers);
+                        if (job.printDialog()) {
+                            job.print();
+                        } else {
+                            callbacks.logLine("User closed `Print` dialog...");
+                        }
                         result = true;
-                    } catch (final IOException e) {
-                        log.error("Failed to form temporary file:", e);
-                        callbacks.logLine("Failed to form temporary file");
+                    } catch (final PrinterException e) {
+                        log.error("Failed to print unit identifiers:", e);
+                        callbacks.logLine("Failed to print unit identifiers");
                     }
                 } else {
                     callbacks.logLine("User selected not to print unit label...");
@@ -71,7 +79,7 @@ public enum UnitLabelPrinter {
         return result;
     }
 
-    private static class UnitIdentifiers {
+    private static class UnitIdentifiers implements Printable {
         private static final String UID_SUM_FIELD_NAME = "uidSum";
         private static final String SHORT_UID_FIELD_NAME = "shortUid";
         private static final String HW_REVISION_FIELD_NAME = "hwRevision";
@@ -84,43 +92,41 @@ public enum UnitLabelPrinter {
                 // `IniField.getValue` method returns value as string representation of a double.
                 // Let's parse it back into `Double` to display them to users as integers:
                 final double doubleValue = Double.parseDouble(value);
-                identifiers.put("Long UID", String.format("%.0f", doubleValue));
+                identifiers.put("", String.format("%.0f", doubleValue));
             });
             final Optional<String> shortUid = readFieldValue(SHORT_UID_FIELD_NAME, calibrationsInfo, callbacks);
             shortUid.ifPresent(value -> {
                 // `IniField.getValue` method returns value as string representation of a double.
                 // Let's parse it back into `Double` to display them to users as integers:
                 final double doubleValue = Double.parseDouble(value);
-                identifiers.put("Short UID", String.format("%.0f", doubleValue));
+                identifiers.put("Short", String.format("%.0f", doubleValue));
             });
             final Optional<String> hwRevision = readFieldValue(HW_REVISION_FIELD_NAME, calibrationsInfo, callbacks);
-            hwRevision.ifPresent(value -> identifiers.put("Hardware", value));
+            hwRevision.ifPresent(value -> identifiers.put("HW", value));
         }
 
         boolean isEmpty() {
             return identifiers.isEmpty();
         }
 
-        public Path writeToTempFile() throws IOException {
-            final Path result = Files.createTempFile("unit_id_", ".txt");
-            try (final FileWriter fileWriter = new FileWriter(result.toString(), false);
-                 final BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)
-            ) {
-                for (final Map.Entry<String, String> identifier : identifiers.entrySet()) {
-                    bufferedWriter.write(String.format("%s:\t%s", identifier.getKey(), identifier.getValue()));
-                    bufferedWriter.newLine();
-                }
-            }
-            return result;
-        }
-
         @Override
         public String toString() {
             final StringBuilder result = new StringBuilder();
-            for (final Map.Entry<String, String> identifier : identifiers.entrySet()) {
-                result.append(String.format("%s: %s\n", identifier.getKey(), identifier.getValue()));
-            }
+            write(result::append, () -> result.append("\n"));
             return result.toString();
+        }
+
+        private void write(final Consumer<String> stringWriter, final Runnable endOfLineWriter) {
+            for (final Map.Entry<String, String> identifier : identifiers.entrySet()) {
+                final String idKey = identifier.getKey();
+                final String idValue = identifier.getValue();
+                if (idKey.isEmpty()) {
+                    stringWriter.accept(idValue);
+                } else {
+                    stringWriter.accept(String.format("%s: %s", idKey, idValue));
+                }
+                endOfLineWriter.run();
+            }
         }
 
         private static Optional<String> readFieldValue(
@@ -133,6 +139,21 @@ public enum UnitLabelPrinter {
                 callbacks.logLine(String.format("Calibrations don't contain `%s` field", fieldName));
             }
             return iniField.map(field -> field.getValue(calibrationsInfo.getImage().getConfigurationImage()));
+        }
+
+        @Override
+        public int print(final Graphics graphics, final PageFormat pageFormat, final int pageIndex) {
+            if (pageIndex > 0) {
+                return NO_SUCH_PAGE;
+            }
+            final Graphics2D g2d = (Graphics2D)graphics;
+            g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+            final AtomicInteger intPosY = new AtomicInteger(10);
+            write(
+                line -> graphics.drawString(line, 0, intPosY.get()),
+                () -> intPosY.addAndGet(10)
+            );
+            return PAGE_EXISTS;
         }
     }
 }

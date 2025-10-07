@@ -14,7 +14,7 @@
 #include "can_dash_ms.h"
 #include "can_dash_nissan.h"
 #include "can_dash_haltech.h"
-#include "can_msg_tx.h"
+#include "board_overrides.h"
 #include "can_bmw.h"
 #include "can_vag.h"
 #include "can_dash_honda.h"
@@ -488,8 +488,8 @@ struct Aim5f2 {
 static void populateFrame(Aim5f2& msg) {
 	msg.Iat = Sensor::getOrZero(SensorType::Iat) + 45;
 	msg.Ect = Sensor::getOrZero(SensorType::Clt) + 45;
-	msg.FuelT = Sensor::getOrZero(SensorType::AuxTemp1) + 45;
-	msg.OilT = Sensor::getOrZero(SensorType::AuxTemp2) + 45;
+	msg.FuelT = Sensor::getOrZero(SensorType::FuelTemperature) + 45;
+	msg.OilT = Sensor::getOrZero(SensorType::OilTemperature) + 45;
 }
 
 struct Aim5f3 {
@@ -609,10 +609,17 @@ void canDashboardAim(CanCycle cycle) {
 	// transmitStruct<Aim5fd>(0x5fd, false);
 }
 
-PUBLIC_API_WEAK void boardUpdateDash(CanCycle cycle) {}
+std::optional<board_can_update_dash_type> custom_board_update_dash;
+
+PUBLIC_API_WEAK void boardUpdateDash(CanCycle cycle) { UNUSED(cycle); }
 
 void updateDash(CanCycle cycle) {
-  boardUpdateDash(cycle);
+	// TODO: use call_board_override
+	if (custom_board_update_dash.has_value()) {
+		custom_board_update_dash.value()(cycle);
+	}
+
+	boardUpdateDash(cycle);
 
 	// Transmit dash data, if enabled
 	switch (engineConfiguration->canNbcType) {
@@ -658,7 +665,7 @@ void updateDash(CanCycle cycle) {
 		canDashboardTS(cycle);
 		break;
 	default:
-		criticalError("Nothing for canNbcType %s", getCan_nbc_e(engineConfiguration->canNbcType));
+		criticalError("Nothing for canNbcType %d/%s", engineConfiguration->canNbcType, getCan_nbc_e(engineConfiguration->canNbcType));
 		break;
 	}
 }

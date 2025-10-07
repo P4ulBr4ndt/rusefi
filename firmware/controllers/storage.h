@@ -6,36 +6,76 @@
  * @author Andrey Gusakov
  */
 
-#ifndef EFI_STORAGE_MFS_EXTERNAL
-#define EFI_STORAGE_MFS_EXTERNAL FALSE
-#endif
-
-#ifndef EFI_FLASH_WRITE_THREAD
-#define EFI_FLASH_WRITE_THREAD FALSE
-#endif
-
-// Sanity check
-#if (EFI_STORAGE_MFS_EXTERNAL == TRUE) && (EFI_FLASH_WRITE_THREAD == FALSE)
-	#error EFI_FLASH_WRITE_THREAD should be enabled if MFS is used for external flash
-#endif
+#pragma once
 
 // Storage status
 enum class StorageStatus {
 	Ok,
 	CrcFailed,
 	IncompatibleVersion,
+	NotSupported,
 	// all is well, but we're on a fresh chip with blank memory
 	NotFound,
 	// Write failed
 	Failed
 };
 
-StorageStatus storageWrite(int id, const uint8_t *ptr, size_t size);
-StorageStatus storageRead(int id, uint8_t *ptr, size_t size);
+class SettingStorageBase {
+public:
+	/* is storage ready? */
+	virtual bool isReady() = 0;
+	/* does storage able to srore given ID? */
+	virtual bool isIdSupported(size_t id) = 0;
+	/* store given ID */
+	virtual StorageStatus store(size_t id, const uint8_t *ptr, size_t size) = 0;
+	/* read given ID */
+	virtual StorageStatus read(size_t id, uint8_t *ptr, size_t size) = 0;
+	/* format/esare storage */
+	virtual StorageStatus format() = 0;
+};
 
-void initStorage();
+enum StorageType {
+	STORAGE_INT_FLASH = 0,
+	STORAGE_MFS_INT_FLASH = 1,
+	STORAGE_MFS_EXT_FLASH = 2,
+	STORAGE_SD_CARD = 3,
+
+	STORAGE_TOTAL
+};
 
 // IDs used as MFS record ids and internal RusEFI ids
-// Convert to enum/class
-#define EFI_SETTINGS_RECORD_ID		1
-#define EFI_LTFT_RECORD_ID			2
+enum StorageItemId {
+	/* 0 is reserved due to MFS limitation */
+	EFI_SETTINGS_RECORD_ID = 1,
+	EFI_SETTINGS_BACKUP_RECORD_ID = 2,
+	EFI_LTFT_RECORD_ID = 3,
+
+	EFI_STORAGE_TOTAL_ITEMS
+};
+
+// exported for unit tests only
+bool storageAllowWriteID(StorageItemId id);
+
+// read and write storate item. executed in caller context
+StorageStatus storageWrite(StorageItemId id, const uint8_t *ptr, size_t size);
+StorageStatus storageRead(StorageItemId id, uint8_t *ptr, size_t size);
+
+// request storage manager to read or write given ID from its own context when storage is ready
+bool storageRequestWriteID(StorageItemId id, bool forced);
+bool storageReqestReadID(StorageItemId id);
+
+bool storageRegisterStorage(StorageType type, SettingStorageBase *storage);
+bool storageUnregisterStorage(StorageType type);
+
+bool storageIsStorageRegistered(StorageType type);
+
+// request storage manager to attach or deattach storage from its own context
+bool storagRequestRegisterStorage(StorageType id);
+bool storagRequestUnregisterStorage(StorageType id);
+
+/**
+ * @return true if an persistentState write is pending
+ */
+bool getNeedToWriteConfiguration();
+
+void initStorage();

@@ -14,7 +14,14 @@
 // Values below calculated with http://www.bittiming.can-wiki.info/
 // Pick ST micro bxCAN
 // Clock rate of 42mhz for f4, 54mhz for f7, 80mhz for h7
+
+// CAN_BTR_SJW(n), where n = SJW - 1
+// CAN_BTR_BRP(n), where n = prescaler - 1
+// CAN_BTR_TS1(n), where n = Seg 1 - 1
+// CAN_BTR_TS2(n), where n = Seg 2 - 1
+
 #ifdef STM32F4XX
+#define CAN_BTR_33  (CAN_BTR_SJW(0) | CAN_BTR_BRP(139)| CAN_BTR_TS1(6)  | CAN_BTR_TS2(0)) // sampling point at 88.9%
 // These have an 85.7% sample point
 #define CAN_BTR_50  (CAN_BTR_SJW(0) | CAN_BTR_BRP(59) | CAN_BTR_TS1(10) | CAN_BTR_TS2(1))
 #define CAN_BTR_83  (CAN_BTR_SJW(0) | CAN_BTR_BRP(35) | CAN_BTR_TS1(10) | CAN_BTR_TS2(1))
@@ -24,6 +31,7 @@
 #define CAN_BTR_500 (CAN_BTR_SJW(0) | CAN_BTR_BRP(5)  | CAN_BTR_TS1(10) | CAN_BTR_TS2(1))
 #define CAN_BTR_1k0 (CAN_BTR_SJW(0) | CAN_BTR_BRP(2)  | CAN_BTR_TS1(10) | CAN_BTR_TS2(1))
 #elif defined(STM32F7XX)
+#define CAN_BTR_33  (CAN_BTR_SJW(0) | CAN_BTR_BRP(179)| CAN_BTR_TS1(6)  | CAN_BTR_TS2(0)) // sampling point at 88.9%
 // These have an 88.9% sample point
 #define CAN_BTR_50  (CAN_BTR_SJW(0) | CAN_BTR_BRP(59) | CAN_BTR_TS1(14) | CAN_BTR_TS2(1))
 #define CAN_BTR_83  (CAN_BTR_SJW(0) | CAN_BTR_BRP(35) | CAN_BTR_TS1(14) | CAN_BTR_TS2(1))
@@ -35,6 +43,12 @@
 #elif defined(STM32H7XX)
 // FDCAN driver has different bit timing registers (yes, different format)
 // for the arbitration and data phases
+
+static_assert(STM32_FDCANCLK == 80'000'000, "CANFD baudrates calculated for 80MHz clock!");
+
+// 87.5% sample point
+#define CAN_NBTP_33 0x06950c01
+#define CAN_DBTP_33 0x00950D03   // TODO: validate!
 
 // 66% sample point, not ideal but best we can do without changing CAN clock
 #define CAN_NBTP_50 0x061F1F10
@@ -78,6 +92,11 @@
 
 #define STM32FxMCR (CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP)
 
+static const CANConfig canConfig33 = {
+   .mcr = STM32FxMCR,
+   .btr = CAN_BTR_33
+};
+
 static const CANConfig canConfig50 = {
    .mcr = STM32FxMCR,
    .btr = CAN_BTR_50
@@ -114,57 +133,81 @@ static const CANConfig canConfig1000 = {
 };
 
 #elif defined(STM32H7XX)
+static const CANConfig canConfig33 = {
+   .op_mode = OPMODE_CAN,
+   .NBTP = CAN_NBTP_33,
+   .DBTP = CAN_DBTP_33,
+   .TDCR = 0,
+   .CCCR = 0,
+   .TEST = 0,
+   .RXGFC = 0,
+};
+
 static const CANConfig canConfig50 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_50,
    .DBTP = CAN_DBTP_50,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
 };
 
 static const CANConfig canConfig83 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_83,
    .DBTP = CAN_DBTP_83,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
 };
 
 static const CANConfig canConfig100 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_100,
    .DBTP = CAN_DBTP_100,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
 };
 
 static const CANConfig canConfig125 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_125,
    .DBTP = CAN_DBTP_125,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
 };
 
 static const CANConfig canConfig250 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_250,
    .DBTP = CAN_DBTP_250,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
 };
 
 static const CANConfig canConfig500 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_500,
    .DBTP = CAN_DBTP_500,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
 };
 
 static const CANConfig canConfig1000 = {
+   .op_mode = OPMODE_CAN,
    .NBTP = CAN_NBTP_1k0,
    .DBTP = CAN_DBTP_1k0,
+   .TDCR = 0,
    .CCCR = 0,
    .TEST = 0,
    .RXGFC = 0,
@@ -227,6 +270,8 @@ CANDriver* detectCanDevice(brain_pin_e pinRx, brain_pin_e pinTx) {
 
 const CANConfig * findCanConfig(can_baudrate_e rate) {
    switch (rate) {
+   case B33KBPS:
+      return &canConfig33;
    case B50KBPS:
       return &canConfig50;
    case B83KBPS:
@@ -245,8 +290,7 @@ const CANConfig * findCanConfig(can_baudrate_e rate) {
    }
 }
 
-void canHwInfo(CANDriver* cand)
-{
+void canHwInfo(CANDriver* cand) {
    if (cand == NULL)
       return;
 

@@ -65,6 +65,10 @@ double CsvReader::readTimestampAndValues(double *values) {
 	return timeStamp;
 }
 
+// this is about TS logs generated during trigger tests and viewing these files by humans.
+// Emulate 500Hz refresh rate
+#define TIME_DELTA	(1.0/500.0)
+
 // todo: separate trigger handling from csv file processing, maybe reuse 'readTimestampAndValues'?
 void CsvReader::processLine(EngineTestHelper *eth) {
 	Engine *engine = &eth->engine;
@@ -103,6 +107,15 @@ void CsvReader::processLine(EngineTestHelper *eth) {
 
 	timeStamp += m_timestampOffset;
 
+#ifdef TIME_DELTA
+	// Fill the gap
+	while (lastTimeStamp + TIME_DELTA < timeStamp) {
+		lastTimeStamp += TIME_DELTA;
+		eth->setTimeAndInvokeEventsUs(1'000'000 * lastTimeStamp);
+		writeUnitTestLogLine();
+	}
+#endif
+
 	eth->setTimeAndInvokeEventsUs(1'000'000 * timeStamp);
 	for (size_t index = 0; index < m_triggerCount; index++) {
 		if (currentState[index] == newTriggerState[index]) {
@@ -110,12 +123,7 @@ void CsvReader::processLine(EngineTestHelper *eth) {
 		}
 
 		efitick_t nowNt = getTimeNowNt();
-        bool state;
-		if (index == 0) {
-		    state = newTriggerState[index] ^ flipOnRead ^ engineConfiguration->invertPrimaryTriggerSignal;
-		} else {
-		    state = newTriggerState[index] ^ flipOnRead ^ engineConfiguration->invertSecondaryTriggerSignal;
-		}
+		bool state = newTriggerState[index] ^ flipOnRead;
 		hwHandleShaftSignal(index, state, nowNt);
 
 		currentState[index] = newTriggerState[index];
@@ -127,7 +135,8 @@ void CsvReader::processLine(EngineTestHelper *eth) {
 		}
 
 		efitick_t nowNt = getTimeNowNt();
-		TriggerValue event = newVvtState[vvtIndex] ^ flipVvtOnRead ^ engineConfiguration->invertCamVVTSignal ? TriggerValue::RISE : TriggerValue::FALL;
+		bool state = newVvtState[vvtIndex] ^ flipVvtOnRead;
+
 		// todo: configurable selection of vvt mode - dual bank or dual cam single bank
 		int bankIndex;
 		int camIndex;
@@ -138,12 +147,13 @@ void CsvReader::processLine(EngineTestHelper *eth) {
 			bankIndex = vvtIndex / 2;
 			camIndex = vvtIndex % 2;
 		}
-		hwHandleVvtCamSignal(event, nowNt, bankIndex *2 + camIndex);
+		hwHandleVvtCamSignal(state, nowNt, bankIndex *2 + camIndex);
 
 		currentVvtState[vvtIndex] = newVvtState[vvtIndex];
 
 	}
 	writeUnitTestLogLine();
+	lastTimeStamp = timeStamp;
 }
 
 void CsvReader::readLine(EngineTestHelper *eth) {

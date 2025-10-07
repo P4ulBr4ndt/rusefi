@@ -34,14 +34,14 @@ public abstract class SerialIoStream extends AbstractIoStream {
 
     public SerialIoStream(@NotNull SerialPort sp, String port) {
         this.sp = sp;
-        this.port = port;
+        this.port = Objects.requireNonNull(port);
     }
 
     @Nullable
     protected static SerialPort openSerial(String port) {
         SerialPort serialPort = SerialPort.getCommPort(port);
         serialPort.setBaudRate(BaudRateHolder.INSTANCE.baudRate);
-        boolean openedOk = serialPort.openPort(0);
+        boolean openedOk = serialPort.openPort();
         if (!openedOk) {
             log.error("Error opening " + port + " maybe no permissions?");
             // todo: leverage jSerialComm method once we start using version 2.9+
@@ -73,6 +73,11 @@ public abstract class SerialIoStream extends AbstractIoStream {
         if (written != bytes.length) {
             throw new IOException("write failed: wrote " + written + " but expected " + bytes.length);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "@" + port;
     }
 
     @Override

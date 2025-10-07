@@ -4,6 +4,14 @@ ifeq (,$(BUNDLE_NAME))
   BUNDLE_NAME = $(SHORT_BOARD_NAME)
 endif
 
+ifeq (,$(BUNDLE_DATE))
+  BUNDLE_DATE = yymmdd
+endif
+
+ifeq (,$(GITHUB_SHA))
+  GITHUB_SHA = local
+endif
+
 # If we're running on Windows, we need to call the .exe of hex2dfu
 ifeq ($(UNAME_S),)
 	UNAME_S = $(shell uname -s)
@@ -83,15 +91,19 @@ UPDATE_CONSOLE_FOLDER_SOURCES = \
 CONSOLE_FOLDER_SOURCES = \
   ../misc/console_launcher/rusefi_autoupdate.exe \
   ../misc/console_launcher/rusefi_console.exe \
-  $(wildcard ../java_console/*.dll) \
-  ../firmware/ext/openblt/Host/libopenblt.dll \
-  ../firmware/ext/openblt/Host/BootCommander.exe \
-  ../firmware/ext/openblt/Host/libopenblt.so \
-  ../firmware/ext/openblt/Host/libopenblt.dylib \
-  ../firmware/ext/openblt/Host/openblt_jni.dll \
-  ../firmware/ext/openblt/Host/libopenblt_jni.so \
-  ../firmware/ext/openblt/Host/libopenblt_jni.dylib \
   $(SIMULATOR_EXE)
+
+#  $(wildcard ../java_console/*.dll) \
+
+
+#   ../firmware/ext/openblt/Host/libopenblt.dll \
+#   ../firmware/ext/openblt/Host/BootCommander.exe \
+#   ../firmware/ext/openblt/Host/libopenblt.so \
+#   ../firmware/ext/openblt/Host/libopenblt.dylib \
+#   ../firmware/ext/openblt/Host/openblt_jni.dll \
+#   ../firmware/ext/openblt/Host/libopenblt_jni.so \
+#   ../firmware/ext/openblt/Host/libopenblt_jni.dylib \
+
 
 # yes, this one is inverted
 ifneq ($(DO_NOT_BUNDLE_STM32_PROG),yes)
@@ -109,7 +121,7 @@ BOOTLOADER_HEX = bootloader/blbuild/openblt_$(PROJECT_BOARD).hex
 ifeq ($(USE_OPENBLT),yes)
   BOOTLOADER_HEX_OUT = $(BOOTLOADER_HEX)
   BOOTLOADER_BIN_OUT = $(FOLDER)/openblt.bin
-  SREC_TARGET = $(FOLDER)/rusefi_update.srec
+  SREC_TARGET = $(FOLDER)/rusefi_$(BRANCH_REF_FOR_BUNDLE)_$(BUNDLE_DATE)_$(GITHUB_SHA)_update.srec
 else
   FIRMWARE_OUTPUTS = $(FOLDER)/$(PROJECT).hex
   BINSRC = $(BUILDDIR)/$(PROJECT).bin
@@ -213,7 +225,7 @@ else
 endif
 	@touch $@
 
-OBFUSCATED_SREC = $(FOLDER)/rusefi-obfuscated.srec
+OBFUSCATED_SREC = $(FOLDER)/rusefi-$(BRANCH_REF_FOR_BUNDLE)_$(BUNDLE_DATE)_$(GITHUB_SHA)_obfuscated.srec
 
 OBFUSCATED_OUT = \
   $(FOLDER)/rusefi-obfuscated.bin \
@@ -245,7 +257,7 @@ $(ARTIFACTS)/$(WHITE_LABEL_BUNDLE_NAME)_obfuscated_public.zip:  $(OBFUSCATED_OUT
 	zip -r $@ $(FULL_BUNDLE_CONTENT) $(MOST_COMMON_BUNDLE_FILES) $(OBFUSCATED_SREC)
 	[ -z "$(POST_O_ZIP_SCRIPT)" ] || bash $(POST_O_ZIP_SCRIPT)
 
-# The autopdate zip doesn't have a folder with the bundle contents
+# The autoupdate zip doesn't have a folder with the bundle contents
 $(ARTIFACTS)/$(WHITE_LABEL_BUNDLE_NAME)_autoupdate.zip: $(UPDATE_BUNDLE_FILES) | $(ARTIFACTS)
 	cd $(FOLDER) &&	zip -r ../$@ $(subst $(FOLDER)/,,$(UPDATE_BUNDLE_FILES))
 

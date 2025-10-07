@@ -48,7 +48,7 @@ MEMORY
     flash6 (rx) : org = 0x00000000, len = 0
     flash7 (rx) : org = 0x00000000, len = 0
     shared      : org = 0x20020000, len = _OpenBLT_Shared_Params_Size
-    ram0   (wx) : org = 0x20020000 + _OpenBLT_Shared_Params_Size, len = 384k - _OpenBLT_Shared_Params_Size      /* SRAM1 + SRAM2 */
+    ram0   (wx) : org = 0x20020000 + _OpenBLT_Shared_Params_Size, len = 368k - _OpenBLT_Shared_Params_Size      /* SRAM1 only, SRAM2 is used as no-cached area */
     ram1   (wx) : org = 0x20020000 + _OpenBLT_Shared_Params_Size, len = 368k - _OpenBLT_Shared_Params_Size      /* SRAM1 */
     ram2   (wx) : org = 0x2007C000, len = 16k       /* SRAM2 */
     ram3   (wx) : org = 0x20000000, len = 128k      /* DTCM-RAM */
@@ -102,7 +102,7 @@ REGION_ALIAS("DATA_RAM_LMA", flash0);
 REGION_ALIAS("BSS_RAM", ram0);
 
 /* RAM region to be used for the default heap.*/
-REGION_ALIAS("HEAP_RAM", ram3);
+REGION_ALIAS("HEAP_RAM", ram0);
 
 /* Stack rules inclusion.*/
 INCLUDE rules_stacks.ld
@@ -116,6 +116,9 @@ REGION_ALIAS("NOCACHE_RAM", ram3);
 
 /* RAM region to be used for eth segment.*/
 REGION_ALIAS("ETH_RAM", ram3);
+
+/* RAM region to be used for battery backuped data */
+REGION_ALIAS("BKUP_RAM", ram5);
 
 SECTIONS
 {
@@ -154,6 +157,11 @@ SECTIONS
     _eshared = .;
     __shared_end__ = _eshared;
   } > shared
+
+  .bkup_ram_noinit (NOLOAD):
+  {
+    *(.bkup_ram_noinit)
+  } > BKUP_RAM
 }
 
 /* Code rules inclusion.*/

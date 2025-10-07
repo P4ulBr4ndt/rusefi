@@ -12,8 +12,6 @@
 #include "electronic_throttle.h"
 #include "gppwm_channel_reader.h"
 
-#define NO_PIN_PERIOD 500
-
 #if defined(HAS_OS_ACCESS)
 #error "Unexpected OS ACCESS HERE"
 #endif
@@ -107,6 +105,7 @@ expected<float> BoostController::getSetpoint() {
 		engine->outputChannels.boostClosedLoopBlendParameter[i] = result.BlendParameter;
 		engine->outputChannels.boostClosedLoopBlendBias[i] = result.Bias;
 		engine->outputChannels.boostClosedLoopBlendOutput[i] = result.Value;
+		engine->outputChannels.boostClosedLoopBlendYAxis[i] = result.TableYAxis;
 
 		target += result.Value;
 	}
@@ -139,6 +138,7 @@ expected<percent_t> BoostController::getOpenLoop(float target) {
     efiAssert(ObdCode::OBD_PCM_Processor_Fault, m_iatBoostCorrMap != nullptr, "boost IAT multiplier", unexpected);
 
 	percent_t openLoop = luaOpenLoopAdd + getBoostControlDutyCycleWithTemperatureCorrections(rpm, driverIntent.Value);
+	openLoopYAxis = driverIntent.Value;
 
 #if EFI_ENGINE_CONTROL
 	// Add any blends if configured
@@ -148,6 +148,7 @@ expected<percent_t> BoostController::getOpenLoop(float target) {
 		engine->outputChannels.boostOpenLoopBlendParameter[i] = result.BlendParameter;
 		engine->outputChannels.boostOpenLoopBlendBias[i] = result.Bias;
 		engine->outputChannels.boostOpenLoopBlendOutput[i] = result.Value;
+		engine->outputChannels.boostOpenLoopBlendYAxis[i] = result.TableYAxis;
 
 		openLoop += result.Value;
 	}
@@ -384,6 +385,14 @@ void initBoostCtrl() {
 #if !EFI_UNIT_TEST
 	startBoostPin();
 #endif
+}
+
+void BoostController::setDefaultConfiguration(){
+	engineConfiguration->boostCutPressure = 300;
+	engineConfiguration->boostCutPressureHyst = 20;
+	engineConfiguration->boostControlMinRpm = 2000;
+	engineConfiguration->boostControlMinTps = 30;
+	engineConfiguration->boostControlMinMap = 110;
 }
 
 #endif // EFI_BOOST_CONTROL

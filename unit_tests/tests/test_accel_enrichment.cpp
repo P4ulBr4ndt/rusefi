@@ -15,7 +15,7 @@
 TEST(fuel, testTpsAccelEnrichmentMath) {
 	printf("====================================================================================== testAccelEnrichment\r\n");
 
-	EngineTestHelper eth(engine_type_e::FORD_ASPIRE_1996);
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
 
 	engine->rpmCalculator.setRpmValue(600);
 	engine->periodicFastCallback();
@@ -40,7 +40,7 @@ TEST(fuel, testTpsAccelEnrichmentMath) {
 }
 
 TEST(fuel, testTpsAccelEnrichmentScheduling) {
-	EngineTestHelper eth(engine_type_e::FORD_ASPIRE_1996);
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
 
 	setCrankOperationMode();
 
@@ -97,7 +97,7 @@ static void doFractionalTpsIteration(int period, int divisor, int numCycles, std
 TEST(fuel, testAccelEnrichmentFractionalTps) {
 	printf("====================================================================================== testAccelEnrichmentFractionalTps\r\n");
 
-	EngineTestHelper eth(engine_type_e::FORD_ASPIRE_1996);
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
 
 	// setup
 	engineConfiguration->tpsAccelEnrichmentThreshold = 5;
@@ -143,4 +143,11 @@ TEST(fuel, testAccelEnrichmentFractionalTps) {
 	// we have half-portion for the first two cycles, and 1/4-th portion for the next 2 cycles, and so on...
 	EXPECT_THAT(tpsEnrich, testing::ElementsAre(0.25f, 0.25f, 0.125f, 0.125f)) << "fractionalTps#4";
 
+}
+
+TEST(fuel, testTpsAccelEnrichment) {
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	engineConfiguration->accelEnrichmentMode = AE_MODE_PREDICTIVE_MAP;
+	// should return 0 if we are using predictive map
+	EXPECT_EQ(0, engine->module<TpsAccelEnrichment>()->getTpsEnrichment());
 }

@@ -16,7 +16,9 @@
 #include "hal_mfs.h"
 
 /* Some fields in following struct are used for DMA transfers, so do not cache */
-NO_CACHE SNORDriver snor1;
+/* TODO: can we drop NO_CACHE for snor1 since snor1buf? */
+static NO_CACHE SNORDriver snor1;
+static NO_CACHE snor_nocache_buffer_t snor1buf;
 
 const WSPIConfig WSPIcfg1 = {
 	.end_cb			= NULL,
@@ -40,14 +42,16 @@ const MFSConfig mfsd_nor_config = {
 	.bank1_sectors	= 128U
 };
 
-void boardInitMfs()
+bool boardInitMfs()
 {
 #if SNOR_SHARED_BUS == FALSE
 	wspiStart(&WSPID1, &WSPIcfg1);
 #endif
 	/* Initializing and starting snor1 driver.*/
-	snorObjectInit(&snor1);
+	snorObjectInit(&snor1, &snor1buf);
 	snorStart(&snor1, &snorcfg1);
+
+	return true;
 }
 
 const MFSConfig *boardGetMfsConfig()

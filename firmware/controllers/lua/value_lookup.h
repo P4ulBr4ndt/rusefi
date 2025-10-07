@@ -6,6 +6,8 @@
  */
 
 #pragma once
+#include "pch.h"
+#include "livedata_board_extra.h"
 
 struct plain_get_integer_s {
 	const char *token;
@@ -27,6 +29,9 @@ struct plain_get_float_s {
 	float *value;
 };
 
+float getOutputValueByHash(const int hash);
+
+float getConfigValueByHash(const int hash);
 float getConfigValueByName(const char *name);
 /**
  * @return true if name was recognized, false otherwise

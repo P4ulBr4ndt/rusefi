@@ -1,7 +1,10 @@
-#include "log_field.h"
+#include "mlg_field.h"
 #include "buffered_writer.h"
 
 #include <gmock/gmock.h>
+
+using namespace MLG;
+using namespace MLG::Entries;
 
 using ::testing::_;
 using ::testing::ElementsAre;
@@ -15,7 +18,7 @@ public:
 
 TEST(BinaryLogField, FieldHeader) {
 	scaled_channel<int8_t, 10> channel;
-	LogField field(channel, "name", "units", 2, "category");
+	Field field(channel, "name", "units", 2, "category");
 
 	char buffer[89];
 	StrictMock<MockWriter> bufWriter;
@@ -49,13 +52,13 @@ TEST(BinaryLogField, FieldHeader) {
 
 TEST(BinaryLogField, Value) {
 	scaled_channel<uint32_t, 1> testValue = 12345678;
-	LogField lf(testValue, "test", "unit", 0);
+	Field lf(testValue, "test", "unit", 0);
 
 	char buffer[6];
 	memset(buffer, 0xAA, sizeof(buffer));
 
 	// Should write 4 bytes
-	EXPECT_EQ(4, lf.writeData(buffer, nullptr));
+	EXPECT_EQ(4u, lf.writeData(buffer, nullptr));
 
 	// Check that big endian data was written, and bytes after weren't touched
 	EXPECT_THAT(buffer, ElementsAre(0x00, 0xbc, 0x61, 0x4e, 0xAA, 0xAA));

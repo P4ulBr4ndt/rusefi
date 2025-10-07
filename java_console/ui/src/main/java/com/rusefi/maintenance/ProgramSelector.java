@@ -1,13 +1,9 @@
 package com.rusefi.maintenance;
 
 import com.devexperts.logging.Logging;
-import com.rusefi.AvailableHardware;
-import com.rusefi.SerialPortScanner.PortResult;
-import com.rusefi.UiProperties;
+import com.rusefi.*;
 import com.rusefi.config.generated.Integration;
 import com.rusefi.core.FindFileHelper;
-import com.rusefi.FileLog;
-import com.rusefi.SerialPortScanner;
 import com.rusefi.autodetect.PortDetector;
 import com.rusefi.binaryprotocol.BinaryProtocol;
 import com.rusefi.io.UpdateOperationCallbacks;
@@ -27,10 +23,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.devexperts.logging.Logging.getLogging;
-import static com.rusefi.SerialPortScanner.SerialPortType.OpenBlt;
+import static com.rusefi.SerialPortType.OpenBlt;
 import static com.rusefi.core.preferences.storage.PersistentConfiguration.getConfig;
 import static com.rusefi.maintenance.CalibrationsHelper.*;
 import static com.rusefi.maintenance.UpdateMode.*;
+import static java.lang.Boolean.parseBoolean;
 
 public class ProgramSelector {
     private static final Logging log = getLogging(ProgramSelector.class);
@@ -40,8 +37,17 @@ public class ProgramSelector {
     private final JLabel noHardware = new JLabel("Nothing detected");
     private final JPanel updateModeAndButton = new JPanel(new FlowLayout());
     private final JComboBox<UpdateMode> updateModeComboBox = new JComboBox<>();
+    private final ConnectivityContext connectivityContext;
+    private final static boolean USE_JAVA_SERIAL;
 
-    public ProgramSelector(JComboBox<PortResult> comboPorts) {
+    static {
+        String KEY = "USE_JAVA_OPENBLT_SERIAL";
+        USE_JAVA_SERIAL = parseBoolean(System.getProperty(KEY, "true"));
+        log.info(KEY + "=" + USE_JAVA_SERIAL);
+    }
+
+    public ProgramSelector(ConnectivityContext connectivityContext, JComboBox<PortResult> comboPorts) {
+        this.connectivityContext = connectivityContext;
         content.add(updateModeAndButton, BorderLayout.NORTH);
         content.add(noHardware, BorderLayout.SOUTH);
 
@@ -68,13 +74,13 @@ public class ProgramSelector {
         });
     }
 
-    private static void executeJob(JComponent parent, UpdateMode selectedMode, PortResult selectedPort) {
+    private void executeJob(JComponent parent, UpdateMode selectedMode, PortResult selectedPort) {
         log.info("ProgramSelector " + selectedMode + " " + selectedPort);
         Objects.requireNonNull(selectedMode);
         AsyncJob job;
         switch (selectedMode) {
             case DFU_AUTO:
-                job = new DfuAutoJob(selectedPort, parent);
+                job = new DfuAutoJob(selectedPort, parent, connectivityContext);
                 break;
             case DFU_MANUAL:
                 job = new DfuManualJob();
@@ -98,7 +104,7 @@ public class ProgramSelector {
                 job = new OpenBltManualJob(selectedPort, parent);
                 break;
             case OPENBLT_AUTO:
-                job = new OpenBltAutoJob(selectedPort, parent);
+                job = new OpenBltAutoJob(selectedPort, parent, connectivityContext);
                 break;
             case DFU_ERASE:
                 job = new DfuEraseJob();
@@ -133,7 +139,7 @@ public class ProgramSelector {
             callbacks.logLine("Update completed successfully!");
             callbacks.done();
         } catch (Throwable e) {
-            callbacks.logLine("Error: " + e);
+            callbacks.logLine("OpenbltJni Error: " + e);
             callbacks.error();
         } finally {
             OpenbltJni.stop(cb);
@@ -164,12 +170,12 @@ public class ProgramSelector {
 
     private static boolean waitForEcuPortDisappeared(
         final PortResult ecuPort,
-        final UpdateOperationCallbacks callbacks
+        final UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext
     ) {
         return waitForPredicate(
             String.format("Waiting for ECU on port %s to reboot to OpenBlt for up to " + TOTAL_WAIT_SECONDS + " seconds...", ecuPort),
             () -> {
-                final AvailableHardware availableHardware = SerialPortScanner.INSTANCE.getCurrentHardware();
+                final AvailableHardware availableHardware = connectivityContext.getCurrentHardware();
                 log.info(String.format(
                     "current ports: [%s]",
                     availableHardware.getKnownPorts().stream()
@@ -184,20 +190,20 @@ public class ProgramSelector {
 
     private static List<PortResult> waitForNewOpenBltPortAppeared(
         final List<PortResult> openBltPortsBefore,
-        final UpdateOperationCallbacks callbacks
+        final UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext
     ) {
         final List<PortResult> newPorts = new ArrayList<>();
         waitForPredicate(
             "Waiting for new OpenBlt port to appear...",
             () -> {
-                final AvailableHardware availableHardwareAfter = SerialPortScanner.INSTANCE.getCurrentHardware();
+                final AvailableHardware availableHardwareAfter = connectivityContext.getCurrentHardware();
                 log.info(String.format(
                     "ports after reboot to OpenBlt: [%s]",
                     availableHardwareAfter.getKnownPorts().stream()
                         .map(PortResult::toString)
                         .collect(Collectors.joining(","))
                 ));
-                for (final PortResult p: availableHardwareAfter.getKnownPorts(OpenBlt)) {
+                for (final PortResult p : availableHardwareAfter.getKnownPorts(OpenBlt)) {
                     if (!openBltPortsBefore.contains(p)) {
                         // This item is in the after list but not before list
                         newPorts.add(p);
@@ -213,23 +219,22 @@ public class ProgramSelector {
     public static boolean flashOpenbltSerialAutomatic(
         JComponent parent,
         PortResult ecuPort,
-        UpdateOperationCallbacks callbacks
+        UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext
     ) {
         return updateFirmwareAndRestorePreviousCalibrations(
-            parent,
-            ecuPort,
+            ecuPort.port,
             callbacks,
-            () -> bltUpdateFirmware(parent, ecuPort, callbacks)
+            () -> bltUpdateFirmware(parent, ecuPort, callbacks, connectivityContext), connectivityContext
         );
     }
 
-    private static boolean bltUpdateFirmware(JComponent parent, PortResult ecuPort, UpdateOperationCallbacks callbacks) {
-        final List<PortResult> openBltPortsBefore = SerialPortScanner.INSTANCE.getCurrentHardware().getKnownPorts(OpenBlt);
+    private static boolean bltUpdateFirmware(JComponent parent, PortResult ecuPort, UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext) {
+        final List<PortResult> openBltPortsBefore = connectivityContext.getCurrentHardware().getKnownPorts(OpenBlt);
 
         rebootToOpenblt(parent, ecuPort.port, callbacks);
 
         // invoking blocking method
-        final boolean isEcuPortDisappeared = waitForEcuPortDisappeared(ecuPort, callbacks);
+        final boolean isEcuPortDisappeared = waitForEcuPortDisappeared(ecuPort, callbacks, connectivityContext);
 
         if (!isEcuPortDisappeared) {
             callbacks.logLine("Looks like your ECU still haven't rebooted to OpenBLT");
@@ -239,7 +244,7 @@ public class ProgramSelector {
             return false;
         }
 
-        final List<PortResult> newItems = waitForNewOpenBltPortAppeared(openBltPortsBefore, callbacks);
+        final List<PortResult> newItems = waitForNewOpenBltPortAppeared(openBltPortsBefore, callbacks, connectivityContext);
 
         // Check that exactly one thing appeared in the "after" list
         if (newItems.isEmpty()) {
@@ -260,7 +265,7 @@ public class ProgramSelector {
 
         callbacks.logLine("Serial port " + openbltPort + " appeared, programming firmware...");
 
-        return flashOpenbltSerialJni(parent, openbltPort, callbacks);
+        return flashOpenbltSerial(parent, openbltPort, callbacks);
     }
 
     private static OpenbltJni.OpenbltCallbacks makeOpenbltCallbacks(UpdateOperationCallbacks callbacks) {
@@ -292,7 +297,7 @@ public class ProgramSelector {
             "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    public static boolean flashOpenbltSerialJni(JComponent parent, String port, UpdateOperationCallbacks callbacks) {
+    public static boolean flashOpenbltSerial(JComponent parent, String port, UpdateOperationCallbacks callbacks) {
         if (FileLog.is32bitJava()) {
             showError32bitJava(parent);
             return false;
@@ -307,15 +312,22 @@ public class ProgramSelector {
         }
         try {
             callbacks.logLine("flashSerial " + fileName);
-            OpenbltJni.flashSerial(fileName, port, cb);
+            if (USE_JAVA_SERIAL) {
+                OpenBltFlasher.flashSerial(fileName, port, cb);
+            } else {
+                OpenbltJni.flashSerial(fileName, port, cb);
+            }
 
             callbacks.logLine("Update completed successfully!");
             return true;
         } catch (Throwable e) {
-            callbacks.logLine("Error: " + e);
+            callbacks.logLine("flashOpenbltSerial Error: " + e);
+            log.error("flashOpenbltSerial " + e, e);
             return false;
         } finally {
-            OpenbltJni.stop(cb);
+            if (!USE_JAVA_SERIAL) {
+                OpenbltJni.stop(cb);
+            }
         }
     }
 
@@ -375,12 +387,16 @@ public class ProgramSelector {
             updateModeComboBox.setSelectedItem(updateModeToRestore);
         }
 
-        AutoupdateUtil.trueLayout(updateModeComboBox);
-        AutoupdateUtil.trueLayout(content);
+        AutoupdateUtil.trueLayoutAndRepaint(updateModeComboBox);
+        AutoupdateUtil.trueLayoutAndRepaint(content);
     }
 
-  @NotNull
-  public static JButton createUpdateFirmwareButton() {
-    return new JButton("Update Firmware", AutoupdateUtil.loadIcon("upload48.png"));
-  }
+    @NotNull
+    public static JButton createUpdateFirmwareButton() {
+        return new JButton("Update Firmware", AutoupdateUtil.loadIcon("upload48.png"));
+    }
+
+    public void setMode(UpdateMode updateMode) {
+        updateModeComboBox.setSelectedItem(updateMode);
+    }
 }

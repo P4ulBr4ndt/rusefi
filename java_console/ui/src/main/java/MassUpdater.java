@@ -1,4 +1,5 @@
-import com.rusefi.SerialPortScanner;
+import com.rusefi.ConnectivityContext;
+import com.rusefi.PortResult;
 import com.rusefi.core.rusEFIVersion;
 import com.rusefi.io.UpdateOperationCallbacks;
 import com.rusefi.maintenance.jobs.AsyncJobExecutor;
@@ -16,19 +17,19 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static com.rusefi.SerialPortScanner.SerialPortType.OpenBlt;
+import static com.rusefi.SerialPortType.OpenBlt;
 
 public class MassUpdater {
     private final StatusWindow mainStatus = new StatusWindow();
     private final Set<String> knownBlts = new HashSet<>();
 
-    public MassUpdater() {
+    public MassUpdater(ConnectivityContext connectivityContext) {
         mainStatus.showFrame("Mass Updater " + rusEFIVersion.CONSOLE_VERSION);
 
         final AtomicBoolean previousDfuState = new AtomicBoolean();
         AtomicBoolean isUsingDfu = new AtomicBoolean(); // it seems like DFU detection is not 100% reliable? a work-around to avoid double-DFU
 
-        SerialPortScanner.INSTANCE.addListener(currentHardware -> {
+        connectivityContext.getSerialPortScanner().addListener(currentHardware -> {
 
             if (!isUsingDfu.get() && currentHardware.isDfuFound() != previousDfuState.get()) {
                 mainStatus.getContent().logLine(currentHardware.isDfuFound() ? "I see a DFU device!" : "No DFU...");
@@ -51,6 +52,10 @@ public class MassUpdater {
                         }
 
                         @Override
+                        public void warning() {
+                        }
+
+                        @Override
                         public void clear() {}
                     };
                     SwingUtilities.invokeLater(() -> AsyncJobExecutor.INSTANCE.executeJobWithStatusWindow(
@@ -62,7 +67,7 @@ public class MassUpdater {
                 previousDfuState.set(currentHardware.isDfuFound());
             }
 
-            List<SerialPortScanner.PortResult> currentBltList = currentHardware.getKnownPorts().stream().filter(portResult -> portResult.type == OpenBlt).collect(Collectors.toList());
+            List<PortResult> currentBltList = currentHardware.getKnownPorts().stream().filter(portResult -> portResult.type == OpenBlt).collect(Collectors.toList());
             Set<String> currentSet = currentBltList.stream().map(portResult -> portResult.port).collect(Collectors.toSet());
             for (Iterator<String> it = knownBlts.iterator(); it.hasNext(); ) {
                 String port = it.next();
@@ -71,7 +76,7 @@ public class MassUpdater {
                     it.remove();
                 }
             }
-            for (SerialPortScanner.PortResult openBltPort : currentBltList) {
+            for (PortResult openBltPort : currentBltList) {
                 if (!knownBlts.contains(openBltPort.port)) {
                     knownBlts.add(openBltPort.port);
                     mainStatus.getContent().logLine("New OpenBlt " + openBltPort);
@@ -84,6 +89,6 @@ public class MassUpdater {
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         ToolButtons.showDeviceManager();
-        SwingUtilities.invokeAndWait(MassUpdater::new);
+        SwingUtilities.invokeAndWait(() -> new MassUpdater(ConnectivityContext.INSTANCE));
     }
 }

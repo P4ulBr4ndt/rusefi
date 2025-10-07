@@ -29,18 +29,8 @@ void ClosedLoopFuelCellBase::update(float lambdaDeadband, bool ignoreErrorMagnit
 	float adjust = getIntegratorGain() * lambdaError * integrator_dt
 					+ m_adjustment;
 
-	// Clamp to bounds
-	float minAdjust = getMinAdjustment();
-	float maxAdjust = getMaxAdjustment();
-
-	if (adjust > maxAdjust) {
-		adjust = maxAdjust;
-	} else if (adjust < minAdjust) {
-		adjust = minAdjust;
-	}
-
-	// Save state
-	m_adjustment = adjust;
+	// Clamp to bounds and save
+	m_adjustment = clampF(getMinAdjustment(), adjust, getMaxAdjustment());
 }
 
 float ClosedLoopFuelCellBase::getAdjustment() const {
@@ -66,7 +56,7 @@ float ClosedLoopFuelCellImpl::getMaxAdjustment() const {
 		return 0;
 	}
 
-	float raw = m_config->maxAdd * 0.01f;
+	float raw = 0.01 * m_config->maxAdd;
 	// Don't allow maximum less than 0, or more than maximum adjustment
 	return clampF(0, raw, MAX_ADJ);
 }
@@ -77,7 +67,7 @@ float ClosedLoopFuelCellImpl::getMinAdjustment() const {
 		return 0;
 	}
 
-	float raw = m_config->maxRemove * 0.01f;
+	float raw = -0.01f * m_config->maxRemove;
 	// Don't allow minimum more than 0, or more than maximum adjustment
 	return clampF(-MAX_ADJ, raw, 0);
 }

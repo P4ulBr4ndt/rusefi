@@ -30,6 +30,9 @@ set_board_file BOARD_CONSTANTS_EXTENSIONS_FILE "${BOARD_DIR}/board_constants_ext
 set_board_file BOARD_COMMANDS_FILE "${BOARD_DIR}/board_commands.ini"
 set_board_file BOARD_POPULAR_VEHICLES_FILE "${BOARD_DIR}/board_popular_vehicles.ini"
 set_board_file BOARD_ENGINE_METADATA_FILE "${BOARD_DIR}/board_engine_metadata.ini"
+set_board_file BOARD_VIN_FIELD_FILE "${BOARD_DIR}/board_vin_field.ini"
+set_board_file BOARD_INJECTOR_SETTINGS_FILE "${BOARD_DIR}/board_injector_settings.ini"
+set_board_file BOARD_PRIMING_PULSE_PANEL_FILE "${BOARD_DIR}/board_priming_pulse_panel.ini"
 set_board_file BOARD_CAM_SETTINGS_FILE "${BOARD_DIR}/board_cam_settings.ini"
 set_board_file BOARD_DIAG_PANEL1_FILE "${BOARD_DIR}/board_diag_panel1.ini"
 set_board_file BOARD_DIAG_PANEL2_FILE "${BOARD_DIR}/board_diag_panel2.ini"
@@ -38,7 +41,12 @@ set_board_file BOARD_INJECTION_SETTINGS_FILE "${BOARD_DIR}/board_injection_setti
 set_board_file BOARD_IGNITION_SETTINGS_FILE "${BOARD_DIR}/board_ignition_settings.ini"
 
 
+# most static arguments go first
+# reading into VariableRegistry and overrides go next
+
 COMMON_GEN_CONFIG="
+ -initialize_to_zero false \
+ -with_c_defines false \
  -prepend integration/ts_protocol.txt \
  -readfile OUTPUTS_SECTION_FROM_FILE ${META_OUTPUT_ROOT_FOLDER}console/binary/generated/live_data_fragments.ini \
  -readfile DATALOG_SECTION_FROM_FILE ${META_OUTPUT_ROOT_FOLDER}console/binary/generated/data_logs.ini \
@@ -52,6 +60,9 @@ COMMON_GEN_CONFIG="
  -readfile BOARD_VE_MENU_FROM_FILE ${BOARD_VE_MENU_FILE} \
  -readfile BOARD_IGNITION_ADVANCE_MENU_FROM_FILE ${BOARD_IGNITION_ADVANCE_MENU_FILE} \
  -readfile BOARD_TABLES_FROM_FILE ${BOARD_TABLES_FILE} \
+ -readfile BOARD_VIN_FIELD_FROM_FILE ${BOARD_VIN_FIELD_FILE} \
+ -readfile BOARD_INJECTOR_SETTINGS_FROM_FILE ${BOARD_INJECTOR_SETTINGS_FILE} \
+ -readfile BOARD_PRIMING_PULSE_PANEL_FROM_FILE ${BOARD_PRIMING_PULSE_PANEL_FILE} \
  -readfile BOARD_CURVES_FROM_FILE ${BOARD_CURVES_FILE} \
  -readfile BOARD_CONSTANTS_EXTENSIONS_FROM_FILE ${BOARD_CONSTANTS_EXTENSIONS_FILE} \
  -readfile BOARD_DIAG_PANEL1_FROM_FILE ${BOARD_DIAG_PANEL1_FILE} \
@@ -67,18 +78,19 @@ COMMON_GEN_CONFIG="
  -readfile BOARD_POPULAR_VEHICLES_FILE ${BOARD_POPULAR_VEHICLES_FILE} \
  -readfile BOARD_ENGINE_METADATA_FILE ${BOARD_ENGINE_METADATA_FILE} \
  -readfile BOARD_CAM_SETTINGS_FILE ${BOARD_CAM_SETTINGS_FILE} \
-   -ts_destination tunerstudio \
- -triggerInputFolder ../unit_tests \
- -with_c_defines false \
- -field_lookup_file controllers/lua/generated/value_lookup_generated.cpp controllers/lua/generated/value_lookup_generated.md \
- -java_destination ../java_console/models/src/main/java/com/rusefi/config/generated/ \
- -initialize_to_zero false \
- -signature ${META_OUTPUT_ROOT_FOLDER}tunerstudio/generated/signature_${SHORT_BOARD_NAME}.txt \
- -signature_destination controllers/generated/signature_${SHORT_BOARD_NAME}.h \
- -ts_output_name generated/${INI} \
  -prepend integration/rusefi_config_trigger.txt \
  -prepend ${META_OUTPUT_ROOT_FOLDER}console/binary/generated/total_live_data_generated.h \
  -soft_prepend ${BOARD_DIR}/prepend.txt \
  -soft_prepend ${BOARD_DIR}/prepend_${SHORT_BOARD_NAME}.txt \
  -prepend integration/rusefi_config_shared.txt \
+ -prepend integration/fields_api.txt \
+ -firing_order \
+ controllers/algo/firing_order.h \
+ -ts_destination tunerstudio \
+ -triggerInputFolder ../unit_tests \
+ -field_lookup_file controllers/lua/generated/value_lookup_generated.cpp controllers/lua/generated/value_lookup_generated.md \
+ -java_destination ../java_console/models/src/main/java/com/rusefi/config/generated/ \
+ -signature ${META_OUTPUT_ROOT_FOLDER}tunerstudio/generated/signature_${SHORT_BOARD_NAME}.txt \
+ -signature_destination controllers/generated/signature_${SHORT_BOARD_NAME}.h \
+ -ts_output_name generated/${INI} \
  -board ${BOARD_DIR}"

@@ -60,7 +60,7 @@
  */
 #define EFI_TUNER_STUDIO_VERBOSE FALSE
 
-#define EFI_DEFAILED_LOGGING FALSE
+#define EFI_DETAILED_LOGGING FALSE
 
 /**
  * Dev console support.
@@ -168,16 +168,6 @@
 #ifndef EFI_FILE_LOGGING
 #define EFI_FILE_LOGGING FALSE
 #endif
-
-
-/**
- * While we embed multiple PnP configurations into the same firmware binary, these marcoses give us control
- * over which configurations go into the binary
- */
-#define EFI_SUPPORT_DODGE_NEON FALSE
-#define EFI_SUPPORT_FORD_ASPIRE FALSE
-#define EFI_SUPPORT_NISSAN_PRIMERA FALSE
-#define EFI_SUPPORT_1995_FORD_INLINE_6 FALSE
 
 #define EFI_ENGINE_SNIFFER TRUE
 
@@ -329,9 +319,6 @@
 #define EXTREME_TERM_LOGGING FALSE
 #define EFI_PRINTF_FUEL_DETAILS FALSE
 #define ENABLE_PERF_TRACE FALSE
-
-#define RAM_UNUSED_SIZE 1
-#define CCM_UNUSED_SIZE 1
 
 #define EFI_BACKUP_SRAM FALSE
 

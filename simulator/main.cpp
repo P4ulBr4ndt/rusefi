@@ -24,6 +24,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "board_overrides.h"
+
 #define CONSOLE_WA_SIZE     THD_WORKING_AREA_SIZE(4096)
 
 bool main_loop_started = false;
@@ -137,12 +139,21 @@ bool verboseMode = true;
 
 static virtual_timer_t exitTimer;
 
+// board override demo:
+static inline void myCustomHello(){
+	efiPrintf("custom board hello from simulator");
+}
+
+void setup_custom_board_overrides(){
+	custom_board_boardSayHello = myCustomHello;
+}
+
 /*------------------------------------------------------------------------*
  * Simulator main.                                                        *
  *------------------------------------------------------------------------*/
 int main(int argc, char** argv) {
 	setbuf(stdout, NULL);
-
+	setup_custom_board_overrides();
 	/*
 	 * System initializations.
 	 * - HAL initialization, this also initializes the configured device drivers
@@ -158,7 +169,7 @@ int main(int argc, char** argv) {
 		printf("Running rusEFI simulator for %d seconds, then exiting.\n\n", timeoutSeconds);
 
 		chSysLock();
-		chVTSetI(&exitTimer, MY_US2ST(timeoutSeconds * 1e6), [](void*) { exit(0); }, nullptr);
+		chVTSetI(&exitTimer, MY_US2ST(timeoutSeconds * 1e6), [](ch_virtual_timer*, void*) { exit(0); }, nullptr);
 		chSysUnlock();
 	}
 
@@ -260,14 +271,3 @@ int intFlashWrite(flashaddr_t address, const char* buffer, size_t size) {
 
 	return HAL_SUCCESS;
 }
-
-// Write from file in to memory
-// void simulatorWriteFlash(const persistent_config_container_s& cfg) {
-// 	std::ofstream flash;
-// 	flash.open(simFileName, std::ios::binary | std::ios::trunc);
-
-// 	const char* ptr = reinterpret_cast<const char*>(&cfg);
-// 	flash.write(ptr, sizeof(cfg));
-
-// 	flash.close();
-// }

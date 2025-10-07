@@ -10,7 +10,7 @@ extern "C" {
 
 // CAN1 PB8+PB9 and CAN2 PB5+PB6 pins are commonly used by Hellen.
 // CAN2 PB5+PB13 pins can be used for ST-bootloader compatibility.
-// 
+//
 // Other STM32 CAN pin combinations:
 // CAN1_RX: { PI9, PA11, PH14, PD0, PB8 }, CAN1_TX: { PA12, PH13, PD1, PB9 }
 // CAN2_RX: { PB5, PB12 }, CAN2_TX: { PB6, PB13 }
@@ -106,10 +106,14 @@ extern "C" void CanTransmitPacket(blt_int8u *data, blt_int8u len)
 ** \return    BLT_TRUE is a packet was received, BLT_FALSE otherwise.
 **
 ****************************************************************************************/
+
+#ifdef BOOTLOADER_CAN_LISTENER
+extern void boardCanListener(CANRxFrame *frame);
+#endif
+
 extern "C" blt_bool CanReceivePacket(blt_int8u *data, blt_int8u *len)
 {
 	constexpr blt_int32u rxMsgId = BOOT_COM_CAN_RX_MSG_ID;
-	blt_bool result = BLT_FALSE;
 	CANRxFrame frame;
 
 	if (MSG_OK != canReceiveTimeout(&OPENBLT_CAND, CAN_ANY_MAILBOX, &frame, TIME_IMMEDIATE)) {
@@ -121,19 +125,19 @@ extern "C" blt_bool CanReceivePacket(blt_int8u *data, blt_int8u *len)
 	constexpr bool configuredAsExt = (rxMsgId & 0x80000000) != 0;
 	if (configuredAsExt != frame.IDE) {
 		// Wrong frame type
-		return BLT_FALSE;
+		goto wrong;
 	}
 
 	// Check that the frame's ID matches
 	if (frame.IDE) {
 		if (frame.EID != (rxMsgId & ~0x80000000)) {
 			// Wrong ID
-			return BLT_FALSE;
+			goto wrong;
 		}
 	} else {
 		if (frame.SID != rxMsgId) {
 			// Wrong ID
-			return BLT_FALSE;
+			goto wrong;
 		}
 	}
 
@@ -142,4 +146,12 @@ extern "C" blt_bool CanReceivePacket(blt_int8u *data, blt_int8u *len)
 	memcpy(data, frame.data8, frame.DLC);
 
 	return BLT_TRUE;
+
+wrong:
+
+#ifdef BOOTLOADER_CAN_LISTENER
+	boardCanListener(&frame);
+#endif
+
+	return BLT_FALSE;
 }

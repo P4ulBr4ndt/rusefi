@@ -21,7 +21,7 @@
 #include "rusefi_types.h"
 #include "efi_quote.h"
 
-#include <math.h>
+#include <cmath>
 #include <stdio.h>
 
 #include "auto_generated_enums.h"
@@ -43,9 +43,15 @@
 
 #define EXPECTED_REMAINING_STACK 128
 
-#define EFI_CONFIGURATION_STORAGE	(EFI_STORAGE_INT_FLASH == TRUE) || (EFI_STORAGE_MFS == TRUE)
+#define EFI_CONFIGURATION_STORAGE	(EFI_STORAGE_INT_FLASH == TRUE) || (EFI_STORAGE_MFS == TRUE) || (EFI_STORAGE_SD == TRUE)
 
 #define hasLotsOfRemainingStack() (getCurrentRemainingStack() > EXPECTED_REMAINING_STACK)
 
 // this macro helps locate all board Public API methods
+// DEPRECATED that's a bad pattern - weak linking is extremely fragile, we risk changing method signature
+// and loosing magic
+// open question what's best way?
+//
+// better option one: listeners
+// better option two: required per-board method, like what we do for getWarningLedPin() etc
 #define PUBLIC_API_WEAK __attribute__((weak))

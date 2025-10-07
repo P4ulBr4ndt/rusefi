@@ -21,12 +21,11 @@
 #define ts_show_check_engine true
 
 
-#define show_2chan_presets true
-
-
 #define ts_show_cylinder_7 false
 #define ts_show_cylinder_8 false
 #define ts_show_cylinder_9 false
 #define ts_show_cylinder_10 false
 #define ts_show_cylinder_11 false
 #define ts_show_cylinder_12 false
+
+#define TRUE_FALSE_COUNT_LIMIT 366

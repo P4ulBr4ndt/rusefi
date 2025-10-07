@@ -148,7 +148,7 @@ public class EngineSnifferPanel {
             /**
              * We have scroll pane size which depends on zoom, that's a long chain of dependencies
              */
-            AutoupdateUtil.trueLayout(imagePanel.getParent());
+            AutoupdateUtil.trueLayoutAndRepaint(imagePanel.getParent());
         };
 
         resetImagePanel();
@@ -222,7 +222,7 @@ public class EngineSnifferPanel {
         }
 
         // Repaint now that we've updated state
-        SwingUtilities.invokeLater(() -> AutoupdateUtil.trueLayout(imagePanel));
+        SwingUtilities.invokeLater(() -> AutoupdateUtil.trueLayoutAndRepaint(imagePanel));
     }
 
     public JPanel getPanel() {
@@ -266,7 +266,7 @@ public class EngineSnifferPanel {
 
     private void saveImage() {
         int rpm = RpmModel.getInstance().getValue();
-        double maf = SensorCentral.getInstance().getValue(Sensor.MAF);
+        double maf = SensorCentral.getInstance().getValue(Sensor.MAFMEASURED);
         String fileName = FileLog.getDate() + "rpm_" + rpm + "_maf_" + maf + ".png";
 
         UiUtils.saveImageWithPrompt(fileName, mainPanel, imagePanel);

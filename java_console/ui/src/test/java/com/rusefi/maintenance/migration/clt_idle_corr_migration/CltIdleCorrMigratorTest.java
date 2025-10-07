@@ -21,9 +21,14 @@ public class CltIdleCorrMigratorTest {
         ComposedTuneMigrator.INSTANCE.migrateTune(testContext);
         final Map<String, Constant> migratedConstants = testContext.getMigratedConstants();
 
-        assertEquals(2, migratedConstants.size());
+        assertEquals(3, migratedConstants.size());
 
-        assertFalse(migratedConstants.containsKey(MAN_IDLE_POSITION_FIELD_NAME));
+        // migrated `manIdlePosition` is null to prevent processing of disappeared `ManIdlePosition` ini-field by
+        // `DefaultTuneMigrator`:
+        assertTrue(migratedConstants.containsKey(MAN_IDLE_POSITION_FIELD_NAME));
+        assertNull(migratedConstants.get(MAN_IDLE_POSITION_FIELD_NAME));
+        assertFalse(testContext.getTestCallbacks().getContent().contains(MAN_IDLE_POSITION_FIELD_NAME));
+
         {
             final Constant migratedCltIdleCorrBinsValue = migratedConstants.get(CLT_IDLE_CORR_BINS_FIELD_NAME);
             assertNotNull(migratedCltIdleCorrBinsValue);
@@ -38,7 +43,7 @@ public class CltIdleCorrMigratorTest {
             final Constant migratedCltIdleCorrValue = migratedConstants.get(CLT_IDLE_CORR_FIELD_NAME);
             assertNotNull(migratedCltIdleCorrValue);
             assertEquals(CLT_IDLE_CORR_FIELD_NAME, migratedCltIdleCorrValue.getName());
-            assertNull(migratedCltIdleCorrValue.getUnits());
+            assertEquals("%", migratedCltIdleCorrValue.getUnits());
             assertEquals(
                 "\n" +
                     "         75.0\n" +

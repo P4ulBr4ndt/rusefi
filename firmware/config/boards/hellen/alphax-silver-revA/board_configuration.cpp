@@ -5,6 +5,7 @@
 #include "smart_gpio.h"
 #include "drivers/gpio/tle9104.h"
 #include "pca_board_id.h" // bb i2c board id, works via __weak__ magic
+#include "board_overrides.h"
 
 static OutputPin alphaTempPullUp;
 static OutputPin alphaTachSelPullUp;
@@ -40,7 +41,7 @@ static void setupDefaultSensorInputs() {
 	engineConfiguration->iat.adcChannel = MM100_IN_IAT_ANALOG;
 }
 
-void setBoardConfigOverrides() {
+static void alphax_silver_revA_boardConfigOverrides() {
 	/* Force PWR_EN as TLE9104s are powered from +5VA */
 	setHellenMegaEnPin();
 
@@ -52,7 +53,7 @@ void setBoardConfigOverrides() {
 	engineConfiguration->vrThreshold[0].pin = Gpio::MM100_OUT_PWM2;
 }
 
-void setBoardDefaultConfiguration() {
+static void alphax_silver_revA_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 	setHellenMMbaro();
@@ -72,7 +73,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID3,
 		.spi_config = {
 			.circular = false,
-			.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOA,
 			.sspad = 15,
 			.cr1 =
@@ -98,7 +105,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID3,
 		.spi_config = {
 			.circular = false,
-			.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOB,
 			.sspad = 12,
 			.cr1 =
@@ -151,7 +164,7 @@ static void board_init_ext_gpios() {
 /**
  * @brief Board-specific initialization code.
  */
-void boardInitHardware() {
+static void alphax_silver_revA_boardInitHardware() {
 	alphaTempPullUp.initPin("a-temp", Gpio::MM100_IGN8); //  E6
 	alphaTachSelPullUp.initPin("Tach PullUp", Gpio::MM100_OUT_PWM1);
 	alphaHall1PullUp.initPin("hall1 PullUp", Gpio::MM100_OUT_PWM3);
@@ -196,3 +209,10 @@ int getBoardMetaLowSideOutputsCount() {
 Gpio* getBoardMetaOutputs() {
     return OUTPUTS;
 }
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = alphax_silver_revA_boardInitHardware;
+	custom_board_DefaultConfiguration = alphax_silver_revA_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  alphax_silver_revA_boardConfigOverrides;
+}
+

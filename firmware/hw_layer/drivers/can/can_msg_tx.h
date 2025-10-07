@@ -58,12 +58,12 @@ public:
 	uint8_t& operator[](size_t);
 
 	/**
-	 * @brief Write a 16-bit short value to the buffer. Note: this writes in little endian byte order.
+	 * @brief Write a 16-bit short value to the buffer. Note: this writes in Intel little endian byte order.
 	 */
 	void setShortValue(uint16_t value, size_t offset);
 
 	/**
-	 Same as above but big endian
+	 Same as above but big endian Motorola
 	 * for instance DBC 8|16@0
 	 */
 	void setShortValueMsb(uint16_t value, size_t offset);
@@ -82,11 +82,16 @@ public:
 		return &m_frame;
 	}
 
-void setArray(uint8_t *data, size_t len) {
-    for (size_t i = 0; i < len; i++) {
-        m_frame.data8[i] = data[i];
+    void setArray(const uint8_t *data, size_t len) {
+        for (size_t i = 0; i < std::min(len, size_t(8)); i++) {
+            m_frame.data8[i] = data[i];
+        }
     }
-}
+
+    template<size_t N>
+    void setArray(const uint8_t (&data)[N]) {
+        setArray(data, N);
+    }
 
 #endif // HAL_USE_CAN || EFI_UNIT_TEST
 

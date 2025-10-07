@@ -5,22 +5,21 @@
 #include "wideband_state_generated.h"
 
 // Following codes "extend" wbo::Fault codes
-// "silent" of wboFaultCodeList
-#define HACK_SILENT_VALUE 1
-// todo: suggest values 1 and 2 into the official WB source fault enum?
-#define HACK_CRANKING_VALUE 2
+#define HACK_INVALID_AEM 7
+
 // todo: static_cast<uint8_t>(Fault::LegacyProtocol);
-#define HACK_VALID_AEM 7
-#define HACK_INVALID_AEM 8
-#define HACK_INVALID_RE	9
+
+#define RUSEFI_WIDEBAND_VERSION_MIN	0xA0
 
 class AemXSeriesWideband : public CanSensorBase, public wideband_state_s {
 public:
 	AemXSeriesWideband(uint8_t sensorIndex, SensorType type);
 
-	bool acceptFrame(const CANRxFrame& frame) const override final;
+	bool acceptFrame(const size_t busIndex, const CANRxFrame& frame) const override final;
 
 	void refreshState(void);
+
+	void refreshSmoothedLambda(float lambda);
 
 protected:
 	// Dispatches to one of the three decoders below
@@ -30,17 +29,22 @@ protected:
 	bool decodeAemXSeries(const CANRxFrame& frame, efitick_t nowNt);
 
 	// Decode rusEFI custom format
-	void decodeRusefiStandard(const CANRxFrame& frame, efitick_t nowNt);
+	bool decodeRusefiStandard(const CANRxFrame& frame, efitick_t nowNt);
 	void decodeRusefiDiag(const CANRxFrame& frame);
 
 private:
 	can_wbo_type_e sensorType() const;
+	uint32_t getReCanId() const;
+	uint32_t getAemCanId() const;
 	bool isHeaterAllowed();
 
 	const uint8_t m_sensorIndex;
 	// raw fault code from sensor
 	uint8_t m_faultCode;
-	bool m_isValid;
+	// Used by both AEM and rusEFI WBO
+	bool m_afrIsValid;
 	// Used for AEM sensor only
 	bool m_isFault;
+	// Last valid packed received, for wbo::Fault::CanSilent state
+	efitick_t m_lastUpdate = 0;
 };

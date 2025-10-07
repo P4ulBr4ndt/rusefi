@@ -9,6 +9,7 @@
 #include "pch.h"
 #include "defaults.h"
 #include "hellen_meta.h"
+#include "board_overrides.h"
 
 static void setInjectorPins() {
 	engineConfiguration->injectionPins[0] = Gpio::MM100_INJ1;
@@ -42,7 +43,7 @@ static void setupDefaultSensorInputs() {
 
 #include "hellen_leds_100.cpp"
 
-void setBoardConfigOverrides() {
+static void hellen112_17_boardConfigOverrides() {
 	// rev A needs EN pin but newer revisions would potentially not use it
 	setHellenMegaEnPin();
 	setHellenVbatt();
@@ -72,7 +73,7 @@ void setBoardConfigOverrides() {
  *
 
  */
-void setBoardDefaultConfiguration() {
+static void hellen112_17_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -80,8 +81,6 @@ void setBoardDefaultConfiguration() {
 //	setHellenMMbaro();
 
 	engineConfiguration->displayLogicLevelsInEngineSniffer = true;
-
-	engineConfiguration->globalTriggerAngleOffset = 0;
 
 	engineConfiguration->enableSoftwareKnock = true;
 
@@ -110,12 +109,12 @@ void setBoardDefaultConfiguration() {
 	// Some sensible defaults for other options
 	setCrankOperationMode();
 
-	setAlgorithm(LM_SPEED_DENSITY);
+	setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
 
 	engineConfiguration->injectorCompensationMode = ICM_FixedRailPressure;
 
-	setCommonNTCSensor(&engineConfiguration->clt, HELLEN_DEFAULT_AT_PULLUP);
-	setCommonNTCSensor(&engineConfiguration->iat, HELLEN_DEFAULT_AT_PULLUP);
+	setCommonNTCSensorParameters(&engineConfiguration->clt);
+	setCommonNTCSensorParameters(&engineConfiguration->iat);
 
     setTPS1Calibration(100, 650);
 	//hellenWbo();
@@ -153,4 +152,9 @@ Gpio* getBoardMetaOutputs() {
 
 int getBoardMetaDcOutputsCount() {
     return 1;
+}
+
+void setup_custom_board_overrides() {
+	custom_board_DefaultConfiguration = hellen112_17_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  hellen112_17_boardConfigOverrides;
 }

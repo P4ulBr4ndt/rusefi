@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -17,7 +18,7 @@ import static com.devexperts.logging.Logging.getLogging;
  */
 public class FileUtil {
     private static final Logging log = getLogging(FileUtil.class);
-    public static final String RUSEFI_SETTINGS_FOLDER = System.getProperty("user.home") + File.separator + ".rusEFI";
+    public static final String RUSEFI_SETTINGS_FOLDER = System.getProperty("user.home") + File.separator + ".rusEFI" + File.separator;
 
     public static void unzip(
         final String zipFileName,
@@ -91,5 +92,11 @@ public class FileUtil {
         ByteBuffer wrapped = ByteBuffer.wrap(array, offset, length);
         wrapped.order(ByteOrder.LITTLE_ENDIAN);
         return wrapped;
+    }
+
+    public static void copyFile(String sourceFile, String destinationFile) throws IOException {
+        FileChannel sourceFileChannel = new FileInputStream(sourceFile).getChannel();
+        FileChannel dest = new FileOutputStream(destinationFile).getChannel();
+        dest.transferFrom(sourceFileChannel, 0, sourceFileChannel.size());
     }
 }

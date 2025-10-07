@@ -30,8 +30,8 @@
 // todo: reset this between cranking attempts?! #2735
 float minCrankingRpm = 0;
 
-static Map3D<TRACTION_CONTROL_ETB_DROP_SIZE, TRACTION_CONTROL_ETB_DROP_SIZE, int8_t, uint16_t, uint8_t> tcTimingDropTable{"tct"};
-static Map3D<TRACTION_CONTROL_ETB_DROP_SIZE, TRACTION_CONTROL_ETB_DROP_SIZE, int8_t, uint16_t, uint8_t> tcSparkSkipTable{"tcs"};
+static Map3D<TRACTION_CONTROL_ETB_DROP_SLIP_SIZE, TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, int8_t, uint16_t, uint8_t> tcTimingDropTable{"tct"};
+static Map3D<TRACTION_CONTROL_ETB_DROP_SLIP_SIZE, TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, int8_t, uint16_t, uint8_t> tcSparkSkipTable{"tcs"};
 
 #if EFI_ENGINE_CONTROL && EFI_SHAFT_POSITION_INPUT
 
@@ -76,6 +76,7 @@ angle_t getRunningAdvance(float rpm, float engineLoad) {
 		engine->outputChannels.ignBlendParameter[i] = result.BlendParameter;
 		engine->outputChannels.ignBlendBias[i] = result.Bias;
 		engine->outputChannels.ignBlendOutput[i] = result.Value;
+		engine->outputChannels.ignBlendYAxis[i] = result.TableYAxis;
 
 		advanceAngle += result.Value;
 	}
@@ -83,7 +84,7 @@ angle_t getRunningAdvance(float rpm, float engineLoad) {
 	// get advance from the separate table for Idle
 #if EFI_IDLE_CONTROL
 	if (engineConfiguration->useSeparateAdvanceForIdle &&
-		engine->module<IdleController>()->isIdlingOrTaper()) {
+		(engine->module<IdleController>()->isIdlingOrTaper() || engine->module<IdleController>()->isCoastingAdvance())) {
 		float idleAdvance = interpolate2d(rpm, config->idleAdvanceBins, config->idleAdvance);
 
 		auto tps = Sensor::get(SensorType::DriverThrottleIntent);
@@ -95,6 +96,19 @@ angle_t getRunningAdvance(float rpm, float engineLoad) {
 			float idleThreshold = engineConfiguration->idlePidDeactivationTpsThreshold;
 			advanceAngle = interpolateClamped(idleThreshold / 2, idleAdvance, idleThreshold, advanceAngle, tps.Value);
 		}
+	}
+#endif
+
+#if EFI_IDLE_CONTROL
+	// reset ignition table dot, see #8198
+	if(engineConfiguration->useSeparateAdvanceForIdle && engine->module<IdleController>()->isIdlingOrTaper()){
+		engine->ignitionState.rpmForIgnitionIdleTableDot = rpm;
+		engine->ignitionState.rpmForIgnitionTableDot = -1;
+		engine->ignitionState.loadForIgnitionTableDot = -1;
+	} else {
+		engine->ignitionState.rpmForIgnitionIdleTableDot = -1;
+		engine->ignitionState.rpmForIgnitionTableDot = rpm;
+		engine->ignitionState.loadForIgnitionTableDot = engineLoad;
 	}
 #endif
 
@@ -126,6 +140,10 @@ angle_t getRunningAdvance(float rpm, float engineLoad) {
         advanceAngle -= engineConfiguration->nitrousIgnitionRetard;
     }
 #endif /* EFI_LAUNCH_CONTROL */
+
+#ifdef MODULE_VVL_CONTROLLER
+	advanceAngle += engine->module<VvlController>().unmock().getTimingModifier();
+#endif /* MODULE_VVL_CONTROLLER */
 
 	return advanceAngle;
 }

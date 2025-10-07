@@ -47,6 +47,11 @@
 #define EFI_LTFT_CONTROL TRUE
 #endif
 
+#ifndef EFI_STORAGE_SD
+// Lets try saving LTFT trims on SD card by default
+#define EFI_STORAGE_SD TRUE
+#endif
+
 #ifndef EFI_ANTILAG_SYSTEM
 #define EFI_ANTILAG_SYSTEM TRUE
 #endif
@@ -162,7 +167,7 @@
  */
 #define EFI_TUNER_STUDIO_VERBOSE TRUE
 
-#define EFI_DEFAILED_LOGGING FALSE
+#define EFI_DETAILED_LOGGING FALSE
 
 /**
  * Dev console support.
@@ -192,17 +197,40 @@
 
 #define TRIGGER_EXTREME_LOGGING FALSE
 
+/**
+ * Store configuration as raw binary to internal flash (two copies if there is enough flash)
+ * No wear leveling, one copy occupie whole sector erased on each update
+ * Legacy, should be replaced with EFI_STORAGE_MFS
+ */
 #ifndef EFI_STORAGE_INT_FLASH
 // historically we've started with low-level flash access with our own redundancy logic
 // todo: migrate to EFI_STORAGE_MFS which provides same functionality and more!
 #define EFI_STORAGE_INT_FLASH   TRUE
 #endif
 
+/**
+ * ChibiOS Managed Flash Storage
+ * Can store finite number of records, can update/add while there is free space in bank.
+ * Recover from power loss
+ */
 #ifndef EFI_STORAGE_MFS
 // todo: this higher level API should replace EFI_STORAGE_INT_FLASH legacy implementation
 #define EFI_STORAGE_MFS         FALSE
 #endif
 
+/**
+ * Store settings/calibrations/learning to SD card as a files
+ */
+#ifndef EFI_STORAGE_SD
+#define EFI_STORAGE_SD	        FALSE
+#endif
+
+/**
+ * Controlled defined to TRUE by USE_FATFS=yes in board mk file
+ */
+#ifndef EFI_SUPPORT_FATFS
+#define EFI_SUPPORT_FATFS		FALSE
+#endif
 
 /**
  * Usually you need shaft position input, but maybe you do not need it?
@@ -347,7 +375,7 @@
 	#ifndef ENABLE_PERF_TRACE
 	  #define ENABLE_PERF_TRACE TRUE
 	#endif // ENABLE_PERF_TRACE
-	#define LUA_USER_HEAP (1 * 1024 * 1024)
+	#define LUA_EXTRA_HEAP (1 * 1024 * 1024)
 #elif defined(EFI_IS_F42x)
 	// F42x has more memory, so we can:
 	//  - use compressed USB MSD image (requires 32k of memory)
@@ -359,19 +387,11 @@
 		#endif
 	#endif
 	#define ENABLE_PERF_TRACE TRUE
-
-	#ifndef LUA_USER_HEAP
-	  #define LUA_USER_HEAP 25000
-	#endif
 #else
 	#ifndef ENABLE_PERF_TRACE
 	  // small memory F40x can't fit perf trace
 	  #define ENABLE_PERF_TRACE FALSE
 	#endif // ENABLE_PERF_TRACE
-
-	#ifndef LUA_USER_HEAP
-	  #define LUA_USER_HEAP 18000
-	#endif
 #endif
 
 #ifndef EFI_USE_COMPRESSED_INI_MSD
@@ -529,8 +549,4 @@
 
 #ifndef EFI_SENT_SUPPORT
 #define EFI_SENT_SUPPORT        FALSE
-#endif
-
-#ifndef EFI_FLASH_WRITE_THREAD
-#define EFI_FLASH_WRITE_THREAD FALSE
 #endif

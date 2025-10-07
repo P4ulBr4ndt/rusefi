@@ -11,7 +11,7 @@
 #include "pch.h"
 #include "hellen_meta.h"
 #include "defaults.h"
-
+#include "board_overrides.h"
 
 static OutputPin alphaTachPullUp;
 static OutputPin alphaTempPullUp;
@@ -69,7 +69,7 @@ static void setupDefaultSensorInputs() {
 	engineConfiguration->iat.adcChannel = H144_IN_IAT;
 }
 
-void boardInitHardware() {
+static void alphax_8chan_reva_boardInitHardware() {
 	setHellenEnPin(Gpio::H144_OUT_IO3);
 
 	alphaTempPullUp.initPin("a-temp", Gpio::H144_OUT_IO4);
@@ -96,7 +96,7 @@ void boardOnConfigurationChange(engine_configuration_s * /*previousConfiguration
 	alphaD4PullDown.setValue(config->boardUseD4PullDown);
 }
 
-void setBoardConfigOverrides() {
+static void alphax_8chan_reva_boardConfigOverrides() {
 	setHellenVbatt();
 
 	setHellenSdCardSpi2();
@@ -104,8 +104,7 @@ void setBoardConfigOverrides() {
     setDefaultHellenAtPullUps();
 
 	setHellenCan();
-	engineConfiguration->can2RxPin = Gpio::B12;
-	engineConfiguration->can2TxPin = Gpio::B13;
+	setHellenCan2();
 }
 
 /**
@@ -115,7 +114,7 @@ void setBoardConfigOverrides() {
  *
 
  */
-void setBoardDefaultConfiguration() {
+static void alphax_8chan_reva_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -167,4 +166,10 @@ int getBoardMetaOutputsCount() {
 
 Gpio* getBoardMetaOutputs() {
     return OUTPUTS;
+}
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = alphax_8chan_reva_boardInitHardware;
+	custom_board_DefaultConfiguration = alphax_8chan_reva_boardDefaultConfiguration;
+	custom_board_ConfigOverrides = alphax_8chan_reva_boardConfigOverrides;
 }

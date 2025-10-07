@@ -13,6 +13,7 @@ import com.rusefi.tune.xml.Msq;
 
 import javax.xml.bind.JAXBException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Objects;
@@ -28,7 +29,7 @@ public class WriteSimulatorConfiguration {
 
     private static final String ROOT_FOLDER = System.getProperty("ROOT_FOLDER", "../simulator/");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         if (args.length != 1)
             throw new IllegalArgumentException("One argument expected: .ini file name");
         String iniFileName = args[0];
@@ -61,7 +62,7 @@ public class WriteSimulatorConfiguration {
             readBinaryWriteXmlTune(iniFileName, in,
                 TuneCanTool.getDefaultTuneOutputFileName(engineType), ini);
         } catch (Throwable e) {
-            throw new IllegalStateException("With " + engineType, e);
+            throw new IllegalStateException("writeSpecificEngineType: With " + engineType, e);
         }
     }
 
@@ -71,7 +72,7 @@ public class WriteSimulatorConfiguration {
         if (ini == null)
             throw new IllegalStateException("Not found " + iniFileName);
         byte[] fileContent = Files.readAllBytes(new File(ROOT_FOLDER + inputBinaryTuneFileName).toPath());
-        int pageSize = ini.getMetaInfo().getTotalSize();
+        int pageSize = ini.getMetaInfo().getPageSize(0);
         log.info("Got " + fileContent.length + " from " + inputBinaryTuneFileName + " while expecting " + pageSize);
         if (fileContent.length != pageSize)
             throw new IllegalStateException("Unexpected image size " + fileContent.length + " while expecting " + pageSize);

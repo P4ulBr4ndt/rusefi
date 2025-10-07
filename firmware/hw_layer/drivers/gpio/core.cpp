@@ -60,6 +60,7 @@ public:
 		} else {
 			/* This is not an error, will fallback to SW PWM */
 			//firmwareError(ObdCode::CUSTOM_GPIO_CHIP_FAILED_PWM, "Faield to enable PWM mode for chip %s on pin \"%s\"", msg, chip->name, pin);
+			efiPrintf("Faield to enable PWM mode for chip %s on pin %d \"%s\"", chip->name, pin, msg);
 			return -1;
 		}
 		return 0;
@@ -344,7 +345,7 @@ extern bool isInHardFaultHandler;
 
 	if (!chip) {
 		// todo: make readPad fail in a similar way?
-		criticalError("gpiochip not found for pin %d", pin);
+		criticalError("Failed migration? Time to reset settings? gpiochip not found for pin %d", pin);
 		return -108;
 	}
 

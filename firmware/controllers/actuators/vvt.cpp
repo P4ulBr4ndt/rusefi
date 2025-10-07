@@ -11,9 +11,7 @@
 #include "vvt.h"
 #include "bench_test.h"
 
-#define NO_PIN_PERIOD 500
-
-using vvt_map_t = Map3D<VVT_TABLE_SIZE, VVT_TABLE_SIZE, int8_t, uint16_t, uint16_t>;
+using vvt_map_t = Map3D<VVT_TABLE_RPM_SIZE, VVT_TABLE_SIZE, int8_t, uint16_t, uint16_t>;
 
 // todo: rename to intakeVvtTable?
 static vvt_map_t vvtTable1{"vvt1"};
@@ -41,6 +39,7 @@ void VvtController::onFastCallback() {
 	}
 
 	m_isRpmHighEnough = Sensor::getOrZero(SensorType::Rpm) > engineConfiguration->vvtControlMinRpm;
+	m_isCltWarmEnough = Sensor::getOrZero(SensorType::Clt) > engineConfiguration->vvtControlMinClt;
 
 	auto nowNt = getTimeNowNt();
 	m_engineRunningLongEnough = engine->rpmCalculator.getSecondsSinceEngineStart(nowNt) > engineConfiguration->vvtActivationDelayMs / MS_PER_SECOND;
@@ -65,6 +64,10 @@ expected<angle_t> VvtController::observePlant() {
 expected<angle_t> VvtController::getSetpoint() {
 	float rpm = Sensor::getOrZero(SensorType::Rpm);
 	bool enabled = m_engineRunningLongEnough &&
+#if EFI_PROD_CODE || EFI_UNIT_TEST
+// simulator functional test does not have CLT or flag?
+                 		m_isCltWarmEnough &&
+#endif
                  		m_isRpmHighEnough;
 	if (!enabled) {
 		return unexpected;

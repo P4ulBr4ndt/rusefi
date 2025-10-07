@@ -13,6 +13,7 @@
 #include "pch.h"
 #include "defaults.h"
 #include "hellen_meta.h"
+#include "board_overrides.h"
 
 static void setInjectorPins() {
 	engineConfiguration->injectionPins[0] = Gpio::MC33810_0_OUT_0;
@@ -50,7 +51,13 @@ static struct tle9201_config tle9201 = {
 	.spi_bus = &SPID3,
 	.spi_config = {
 		.circular = false,
-		.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+		.end_cb = nullptr,
+#else
+		.slave = false,
+		.data_cb = nullptr,
+		.error_cb = nullptr,
+#endif
 		// H_SPI3_CS
 		.ssport = GPIOA,
 		.sspad = 15,
@@ -59,7 +66,7 @@ static struct tle9201_config tle9201 = {
 	}
 };
 
-void setBoardConfigOverrides() {
+static void hellen154hyundai_f7_boardConfigOverrides() {
 	/* Force 3.3V PWR_EN as MC33810 is powered from this power line */
 	setHellenMegaEnPin();
 
@@ -90,7 +97,7 @@ void setBoardConfigOverrides() {
  *
 
  */
-void setBoardDefaultConfiguration() {
+static void hellen154hyundai_f7_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -144,11 +151,11 @@ static const struct mc33810_config mc33810 = {
 	.spi_config = {
 		.circular = false,
 #ifdef _CHIBIOS_RT_CONF_VER_6_1_
-		.end_cb = NULL,
+		.end_cb = nullptr,
 #else
-        .slave = false,
-        .data_cb = NULL,
-        .error_cb = NULL,
+		.slave = false,
+		.data_cb = nullptr,
+		.error_cb = nullptr,
 #endif
 		// SPI3_CS_33810 OUT_PWM1 H144_OUT_PWM1
 		.ssport = GPIOD,
@@ -183,7 +190,7 @@ static const struct mc33810_config mc33810 = {
 	.maxi = Gpio::Unassigned
 };
 
-/*PUBLIC_API_WEAK*/ void boardInitHardware() {
+static void hellen154hyundai_f7_boardInitHardware() {
 	static OutputPin spi3CsWastegate;
 
 	spi3CsWastegate.initPin("spi3-cs-wg", Gpio::H144_GP_IO6);
@@ -224,3 +231,10 @@ int getBoardMetaDcOutputsCount() {
 Gpio* getBoardMetaOutputs() {
     return OUTPUTS;
 }
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = hellen154hyundai_f7_boardInitHardware;
+	custom_board_DefaultConfiguration = hellen154hyundai_f7_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  hellen154hyundai_f7_boardConfigOverrides;
+}
+

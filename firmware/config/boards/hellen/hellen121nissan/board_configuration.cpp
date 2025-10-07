@@ -14,6 +14,7 @@
 #include "pch.h"
 #include "defaults.h"
 #include "hellen_meta.h"
+#include "board_overrides.h"
 
 static void setInjectorPins() {
 	engineConfiguration->injectionPins[0] = Gpio::H144_LS_1;
@@ -54,7 +55,7 @@ static void setupDefaultSensorInputs() {
 	engineConfiguration->iat.adcChannel = H144_IN_IAT;
 }
 
-void setBoardConfigOverrides() {
+static void hellen121_nissan_boardConfigOverrides() {
 	setHellenVbatt();
 	setHellenSdCardSpi3();
 
@@ -73,7 +74,7 @@ void setBoardConfigOverrides() {
  *
 
  */
-void setBoardDefaultConfiguration() {
+static void hellen121_nissan_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -96,9 +97,9 @@ void setBoardDefaultConfiguration() {
 	// Some sensible defaults for other options
 	setCrankOperationMode();
 
-//	setAlgorithm(LM_SPEED_DENSITY);
+//	setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
     // at least this starts
-	engineConfiguration->fuelAlgorithm = LM_ALPHA_N;
+	engineConfiguration->fuelAlgorithm = engine_load_mode_e::LM_ALPHA_N;
 
 	engineConfiguration->cranking.rpm = 400;
 	engineConfiguration->fanOnTemperature = 85;
@@ -158,4 +159,9 @@ Gpio* getBoardMetaOutputs() {
 
 int getBoardMetaDcOutputsCount() {
     return 1;
+}
+
+void setup_custom_board_overrides() {
+	custom_board_DefaultConfiguration = hellen121_nissan_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  hellen121_nissan_boardConfigOverrides;
 }

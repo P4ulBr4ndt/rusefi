@@ -1,9 +1,9 @@
 package com.rusefi.maintenance;
 
-import com.devexperts.logging.Logging;
 import com.opensr5.ini.IniMemberNotFound;
 import com.opensr5.ini.field.IniField;
-import com.rusefi.SerialPortScanner;
+import com.rusefi.ConnectivityContext;
+import com.rusefi.PortResult;
 import com.rusefi.binaryprotocol.BinaryProtocol;
 import com.rusefi.core.SensorCentral;
 import com.rusefi.io.UpdateOperationCallbacks;
@@ -12,23 +12,19 @@ import com.rusefi.panama.PanamaHelper;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.devexperts.logging.Logging.getLogging;
-
 public class OutputChannelsHelper {
-    private static final Logging log = getLogging(OutputChannelsHelper.class);
     private static final String MCUSERIAL = PanamaHelper.MCUSERIAL;
 
     public static Optional<Integer> readMcuSerial(
-        final SerialPortScanner.PortResult ecuPort,
-        final UpdateOperationCallbacks callbacks
-    ) {
+        final PortResult ecuPort,
+        final UpdateOperationCallbacks callbacks,
+        ConnectivityContext connectivityContext) {
         return BinaryProtocolExecutor.executeWithSuspendedPortScanner(
             ecuPort.port,
             callbacks,
             (binaryProtocol) -> readMcuSerial(binaryProtocol, callbacks),
-            Optional.empty(),
-            false
-        );
+            Optional.empty(), connectivityContext,
+            "readMcuSerial");
     }
 
     private static Optional<Integer> readMcuSerial(

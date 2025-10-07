@@ -48,7 +48,11 @@ static void reset_and_jump(void) {
 		// H7 needs a forcible reset of the USB peripheral(s) in order for the bootloader to work properly.
 		// If you don't do this, the bootloader will execute, but USB doesn't work (nobody knows why)
 		// See https://community.st.com/s/question/0D53W00000vQEWsSAO/stm32h743-dfu-entry-doesnt-work-unless-boot0-held-high-at-poweron
+	#ifdef STM32H723xx
+		RCC->AHB1ENR &= ~(RCC_AHB1ENR_USB1OTGHSEN);
+	#else
 		RCC->AHB1ENR &= ~(RCC_AHB1ENR_USB1OTGHSEN | RCC_AHB1ENR_USB2OTGFSEN);
+	#endif
 	#endif
 
 	// and now reboot
@@ -150,6 +154,8 @@ void startWatchdog(int timeoutMs) {
 }
 
 static efitimems_t watchdogResetPeriodMs = 0;
+// Reset watchod reset counted in SharedParams after this delay
+static const efitimems_t watchdogCounterResetDelay = 3000;
 
 void setWatchdogResetPeriod(int resetMs) {
 #if 0
@@ -161,11 +167,22 @@ void setWatchdogResetPeriod(int resetMs) {
 void tryResetWatchdog() {
 #if HAL_USE_WDG
 	static Timer lastTimeWasReset;
+	static efitimems_t wdUptime = 0;
 	// check if it's time to reset the watchdog
 	if (lastTimeWasReset.hasElapsedMs(watchdogResetPeriodMs)) {
 		// we assume tryResetWatchdog() is called from a timer callback
 		wdgResetI(&WDGD1);
 		lastTimeWasReset.reset();
+		// with 100 ms WD
+		if (wdUptime < watchdogCounterResetDelay) {
+			wdUptime += watchdogResetPeriodMs;
+			// we just crossed the treshold
+			if (wdUptime >= watchdogCounterResetDelay) {
+#if EFI_USE_OPENBLT
+				SharedParamsWriteByIndex(1, 0);
+#endif
+			}
+		}
 	}
 #endif // HAL_USE_WDG
 }
@@ -211,59 +228,14 @@ int getRemainingStack(thread_t *otp) {
 #endif /* CH_DBG_ENABLE_STACK_CHECK */
 }
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-
-#define HWREG(x)                                                              \
-        (*((volatile unsigned long *)(x)))
-
-#define NVIC_FAULT_STAT         0xE000ED28  // Configurable Fault Status
-#define NVIC_FAULT_STAT_BFARV   0x00008000  // Bus Fault Address Register Valid
-#define NVIC_CFG_CTRL_BFHFNMIGN 0x00000100  // Ignore Bus Fault in NMI and
-                                            // Fault
-#define NVIC_CFG_CTRL           0xE000ED14  // Configuration and Control
-
-
-/**
- * @brief Probe an address to see if can be read without generating a bus fault
- * @details This function must be called with the processor in privileged mode.
- *          It:
- *          - Clear any previous indication of a bus fault in the BFARV bit
- *          - Temporarily sets the processor to Ignore Bus Faults with all interrupts and fault handlers disabled
- *          - Attempt to read from read_address, ignoring the result
- *          - Checks to see if the read caused a bus fault, by checking the BFARV bit is set
- *          - Re-enables Bus Faults and all interrupts and fault handlers
- * @param[in] read_address The address to try reading a byte from
- * @return Returns true if no bus fault occurred reading from read_address, or false if a bus fault occurred.
- */
-bool ramReadProbe(volatile const char *read_address) {
-    bool address_readable = true;
-
-    /* Clear any existing indication of a bus fault - BFARV is write one to clear */
-    HWREG (NVIC_FAULT_STAT) |= NVIC_FAULT_STAT_BFARV;
-
-    HWREG (NVIC_CFG_CTRL) |= NVIC_CFG_CTRL_BFHFNMIGN;
-    asm volatile ("  CPSID f;");
-    *read_address;
-    if ((HWREG (NVIC_FAULT_STAT) & NVIC_FAULT_STAT_BFARV) != 0)
-    {
-        address_readable = false;
-    }
-    asm volatile ("  CPSIE f;");
-    HWREG (NVIC_CFG_CTRL) &= ~NVIC_CFG_CTRL_BFHFNMIGN;
-
-    return address_readable;
-}
-
-#endif
-
 #if defined(STM32F4)
 bool isStm32F42x() {
-	// really it's enough to just check 0x20020010
-	return ramReadProbe((const char *)0x20000010) && ramReadProbe((const char *)0x20020010) && !ramReadProbe((const char *)0x20070010);
+	// Device identifier
+	// 0x419 for STM32F42xxx and STM32F43xxx
+	// 0x413 for STM32F405xx/07xx and STM32F415xx/17xx
+	return ((DBGMCU->IDCODE & DBGMCU_IDCODE_DEV_ID_Msk) == 0x419);
 }
-
 #endif
-
 
 // Stubs for per-board low power helpers
 PUBLIC_API_WEAK void boardPrepareForStop() {

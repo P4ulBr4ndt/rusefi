@@ -20,7 +20,8 @@ void setAtSensor(ThermistorConf *thermistorConf,
     float tempMid, float rMid,
     float tempHigh, float rHigh);
 
+void setCommonNTCSensorParameters(ThermistorConf *thermistorConf);
 void setCommonNTCSensor(ThermistorConf *thermistorConf, float pullup);
-void setGmCltSensor(ThermistorConf *thermistorConf, float pullup);
+void setGmCltSensor(ThermistorConf *thermistorConf);
 void setDodgeSensor(ThermistorConf *thermistorConf, float pullup);
 

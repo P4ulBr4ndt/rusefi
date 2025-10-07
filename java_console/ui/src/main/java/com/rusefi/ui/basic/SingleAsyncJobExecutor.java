@@ -6,24 +6,27 @@ import com.rusefi.maintenance.jobs.AsyncJobExecutor;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class SingleAsyncJobExecutor {
     private final UpdateOperationCallbacks updateOperationCallbacks;
 
-    private final Runnable onJobInProgressFinished;
+    private final java.util.List<Runnable> onJobInProgressFinished = new ArrayList<>();
 
     private volatile Optional<AsyncJob> jobInProgress = Optional.empty();
 
     SingleAsyncJobExecutor(
-        final UpdateOperationCallbacks updateOperationCallbacks,
-        final Runnable onJobInProgressFinished
+        final UpdateOperationCallbacks updateOperationCallbacks
     ) {
         this.updateOperationCallbacks = updateOperationCallbacks;
-        this.onJobInProgressFinished = onJobInProgressFinished;
     }
 
-    void startJob(final AsyncJob job, final Component parent) {
+    public void addOnJobInProgressFinishedListener(Runnable listener) {
+        onJobInProgressFinished.add(listener);
+    }
+
+    public void startJob(final AsyncJob job, final Component parent) {
         final Optional<AsyncJob> prevJobInProgress = setJobInProgressIfEmpty(job);
         if (!prevJobInProgress.isPresent()) {
             updateOperationCallbacks.clear();
@@ -56,6 +59,7 @@ public class SingleAsyncJobExecutor {
 
     private void handleJobInProgressFinished() {
         resetJobInProgress();
-        onJobInProgressFinished.run();
+        for (Runnable listener : onJobInProgressFinished)
+            listener.run();
     }
 }

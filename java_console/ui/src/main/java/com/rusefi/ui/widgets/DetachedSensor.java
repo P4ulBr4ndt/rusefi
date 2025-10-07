@@ -35,12 +35,12 @@ public class DetachedSensor {
     private static final String WIDTH = "width";
 
     private static final Collection<Sensor> MOCKABLE = Arrays.asList(
-            Sensor.CLT,
-            Sensor.Lambda1,
-            Sensor.IAT,
-            Sensor.MAF,
-            Sensor.MAP,
-            Sensor.TPS);
+            Sensor.COOLANT,
+            Sensor.LAMBDAVALUE,
+            Sensor.INTAKE,
+            Sensor.MAFMEASURED,
+            Sensor.MAPVALUE,
+            Sensor.TPSVALUE);
 
     private final static Hashtable<Integer, JComponent> SLIDER_LABELS = new Hashtable<>();
     public static final String XPOS = "xpos";
@@ -113,7 +113,7 @@ public class DetachedSensor {
             Component mockComponent = createMockValueSlider(uiContext.getCommandQueue(), sensor);
             mockControlPanel.add(mockComponent);
         }
-        AutoupdateUtil.trueLayout(content);
+        AutoupdateUtil.trueLayoutAndRepaint(content);
         int size = width;
         int h = isMockable ? (int) (size * 1.5) : size;
         frame.setSize(size, h);

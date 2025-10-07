@@ -24,7 +24,11 @@
 ! technically that's PWM_PHASE_MAX_WAVE_PER_PWM * 2
 #define HW_EVENT_TYPES 4
 
-#define STFT_BANK_COUNT 2
+! Short and Long term fuel corrections
+#define FT_BANK_COUNT 2
+
+#define VE_RPM_COUNT 16
+#define VE_LOAD_COUNT 16
 
 #define TCU_GEAR_COUNT 10
 #define EGT_CHANNEL_COUNT 8
@@ -55,6 +59,7 @@
 #define GAUGE_NAME_CAN_WRITE_OK "CAN: Tx OK"
 #define GAUGE_NAME_CAN_WRITE_ERR "CAN: Tx err"
 
+! todo: technical debt: which file is correct for gauge CATEGORY names?
 #define GAUGE_CATEGORY_TIMING "Timing"
 #define GAUGE_CATEGORY_SYNC "Sync"
 #define GAUGE_CATEGORY_FUEL_MATH "Fuel: math"
@@ -122,6 +127,7 @@
 
 #define GAUGE_NAME_OIL_PRESSURE "Oil Pressure"
 #define GAUGE_NAME_OIL_PRESSURE_UNITS "kPa"
+#define GAUGE_NAME_OIL_TEMPERATURE "Oil Temperature"
 
 #define GAUGE_NAME_ECU_TEMPERATURE "ECU temperature"
 
@@ -161,7 +167,7 @@
 #define GAUGE_NAME_THROTTLE_PEDAL "Throttle pedal position"
 #define GAUGE_NAME_INJECTOR_LAG "Fuel: injector lag"
 #define GAUGE_NAME_FUEL_CHARGE_TEMP "Fuel: Estimated charge temperature"
-#define GAUGE_NAME_FUEL_TPS_EXTRA "Fuel: TPS AE add fuel ms"
+#define GAUGE_NAME_FUEL_TPS_EXTRA "Fuel: TPS acceleration add fuel ms"
 #define GAUGE_NAME_FUEL_CLT_CORR "Fuel: CLT correction"
 #define GAUGE_NAME_FUEL_IAT_CORR "Fuel: IAT correction"
 #define GAUGE_NAME_FUEL_VE "Fuel: VE"
@@ -169,9 +175,17 @@
 #define GAUGE_NAME_FUEL_RUNNING "Fuel: running"
 #define GAUGE_NAME_FUEL_LAST_INJECTION "Fuel: Last inj pulse width"
 #define GAUGE_NAME_FUEL_LAST_INJECTION_STAGE_2 "Fuel: Last inj pulse width stg 2"
+#define GAUGE_NAME_FUEL_LAST_INJECTION_RATIO "Fuel: Last inj pulse growth"
+#define GAUGE_NAME_FUEL_LAST_INJECTION_RATIO_STAGE_2 "Fuel: Last inj pulse growth stg 2"
 #define GAUGE_NAME_FUEL_BASE "Fuel: base cycle mass"
-#define GAUGE_NAME_FUEL_TRIM "Fuel: fuel trim"
-#define GAUGE_NAME_FUEL_TRIM_2 "Fuel: fuel trim 2"
+#define GAUGE_NAME_FUEL_STFT_1 "Short Term Fuel Trim: Bank 1"
+#define GAUGE_NAME_FUEL_STFT_2 "Short Term Fuel Trim: Bank 2"
+#define GAUGE_NAME_FUEL_STFT_INPUT_1 "STFT input lambda error: Bank 1"
+#define GAUGE_NAME_FUEL_STFT_INPUT_2 "STFT input lambda error: Bank 2"
+#define GAUGE_NAME_FUEL_LTFT_1 "Long Term Fuel Trim: Bank 1"
+#define GAUGE_NAME_FUEL_LTFT_2 "Long Term Fuel Trim: Bank 2"
+#define GAUGE_NAME_FUEL_LTFT_ACC_1 "LTFT learned accumulator: Bank 1"
+#define GAUGE_NAME_FUEL_LTFT_ACC_2 "LTFT learned accumulator: Bank 2"
 #define GAUGE_NAME_FUEL_WALL_AMOUNT "Fuel: wall amount"
 #define GAUGE_NAME_FUEL_WALL_CORRECTION "Fuel: wall correction"
 #define GAUGE_NAME_FUEL_LOAD "Fuel: Load"
@@ -194,6 +208,18 @@
 #define GAUGE_NAME_LAMBDA "Lambda"
 #define GAUGE_NAME_LAMBDA2 "Lambda 2"
 #define GAUGE_NAME_IAC "Idle: Position"
+#define GAUGE_LONG_NAME_AAT "Ambient Temperature"
+#define GAUGE_LONG_NAME_CLT "Coolant temp"
+#define GAUGE_LONG_NAME_IAT "Intake air temp"
+#define UNITS_CELSIUS "C"
+#define UNITS_FAHRENHEIT "F"
+#define UNITS_KPA "kPa"
+#define UNITS_PSI "psi"
+#define UNITS_KMH "kmh"
+#define UNITS_MPH "mph"
+
+#define GAUGE_PRECISION_TEMPERATURE_C 1,1
+#define GAUGE_PRECISION_TEMPERATURE_F 1,2
 
 #define GAUGE_NAME_ADJUSTED_TIMING "Timing: ignition"
 #define GAUGE_NAME_TIMING_ADVANCE "Timing: base ignition"

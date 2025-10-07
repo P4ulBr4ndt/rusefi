@@ -95,7 +95,6 @@ RegisteredOutputPin::RegisteredOutputPin(const char *p_registrationName, size_t 
 }
 
 bool RegisteredOutputPin::isPinConfigurationChanged() {
-#if EFI_PROD_CODE
 	brain_pin_e        curPin = *(brain_pin_e       *) ((void *) (&((char*)&activeConfiguration)[m_pinOffset]));
 	brain_pin_e        newPin = *(brain_pin_e       *) ((void *) (&((char*) engineConfiguration)[m_pinOffset]));
 	bool pinChanged = curPin != newPin;
@@ -107,9 +106,6 @@ bool RegisteredOutputPin::isPinConfigurationChanged() {
 	pin_output_mode_e curMode = *(pin_output_mode_e *) ((void *) (&((char*)&activeConfiguration)[m_pinModeOffset]));
 	pin_output_mode_e newMode = *(pin_output_mode_e *) ((void *) (&((char*) engineConfiguration)[m_pinModeOffset]));
 	return pinChanged || curMode != newMode;
-#else
-    return true;
-#endif // EFI_PROD_CODE
 }
 
 void RegisteredOutputPin::init() {
@@ -154,6 +150,7 @@ EnginePins::EnginePins() :
 		acRelay("A/C Relay", CONFIG_PIN_OFFSETS(acRelay)),
 		fuelPumpRelay("Fuel pump Relay", CONFIG_PIN_OFFSETS(fuelPump)),
 		nitrousRelay("Nitrous Relay", CONFIG_PIN_OFFSETS(nitrousRelay)),
+		vvlRelay("VVL Relay", CONFIG_PIN_OFFSETS(vvlRelay)),
 #if EFI_HD_ACR
 		harleyAcr("Harley ACR", CONFIG_OFFSET(acrPin)),
 		harleyAcr2("Harley ACR 2", CONFIG_OFFSET(acrPin2)),
@@ -398,6 +395,23 @@ OutputPin *EnginePins::getOutputPinForBenchMode(bench_mode_e index) {
 	return nullptr;
 }
 
+#if EFI_UNIT_TEST
+/*
+* this function goes through the whole pin repository and sets them all to "GPIO::Unassigned",
+* this is done as a clean-up for testing, since several motor configurations can have conflicting pins
+* at the same time the productive de-init uses "isPinConfigurationChanged" to reset only the pins that have been changed,
+* so in order for it to be properly de-initialized as it is done in prod, all pins are re-configured as unassigned,
+* previously unused pins by tests will not be de-initialized since the configuration on them will be the same (Unassigned => Unassigned)
+*/
+void EnginePins::resetForUnitTest() {
+	RegisteredOutputPin * pin = registeredOutputHead;
+	while (pin != nullptr) {
+		pin->brainPin = Gpio::Unassigned;
+		pin = pin->next;
+	}
+}
+#endif
+
 NamedOutputPin::NamedOutputPin() : OutputPin() {
 }
 
@@ -431,9 +445,9 @@ void NamedOutputPin::setHigh(const char *msg) {
 		efiPrintf("pin %s goes high", name);
 	}
 #endif // EFI_UNIT_TEST
-#if EFI_DEFAILED_LOGGING
+#if EFI_DETAILED_LOGGING
 //	signal->hi_time = hTimeNow();
-#endif /* EFI_DEFAILED_LOGGING */
+#endif /* EFI_DETAILED_LOGGING */
 
 	// turn the output level ACTIVE
 	setValue(msg, true);
@@ -786,6 +800,8 @@ void OutputPin::initPin(const char *msg, brain_pin_e p_brainPin, pin_output_mode
 }
 
 void OutputPin::deInit() {
+	efiPrintf("unregistering %s", hwPortname(brainPin));
+
 	// Unregister under lock - we don't want other threads mucking with the pin while we're trying to turn it off
 	chibios_rt::CriticalSectionLocker csl;
 
@@ -797,8 +813,6 @@ void OutputPin::deInit() {
 #if (BOARD_EXT_GPIOCHIPS > 0)
 	ext = false;
 #endif // (BOARD_EXT_GPIOCHIPS > 0)
-
-	efiPrintf("unregistering %s", hwPortname(brainPin));
 
 #if EFI_GPIO_HARDWARE && EFI_PROD_CODE
 	efiSetPadUnused(brainPin);

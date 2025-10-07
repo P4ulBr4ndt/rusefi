@@ -11,6 +11,7 @@
 #include "pch.h"
 #include "hellen_meta.h"
 #include "defaults.h"
+#include "board_overrides.h"
 
 static void setInjectorPins() {
 	engineConfiguration->injectionPins[0] = Gpio::H144_LS_1;
@@ -51,7 +52,7 @@ static void setupDefaultSensorInputs() {
 
 
 
-void setBoardConfigOverrides() {
+static void hellen88_boardConfigOverrides() {
 	setHellenVbatt();
 
     // hellen88bmw uses L6205PD
@@ -73,7 +74,7 @@ void setBoardConfigOverrides() {
  *
 
  */
-void setBoardDefaultConfiguration() {
+static void hellen88_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -96,7 +97,7 @@ void setBoardDefaultConfiguration() {
 	// Some sensible defaults for other options
 	setCrankOperationMode();
 
-	setAlgorithm(LM_SPEED_DENSITY);
+	setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
 
 	// Bosch VQ40 VR56 VK56 0280158007
 	engineConfiguration->injector.flow = 296.2;
@@ -117,3 +118,9 @@ void setBoardDefaultConfiguration() {
 	engineConfiguration->tps1SecondaryMax = 102;
 	hellenWbo();
 }
+
+void setup_custom_board_overrides() {
+	custom_board_DefaultConfiguration = hellen88_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  hellen88_boardConfigOverrides;
+}
+

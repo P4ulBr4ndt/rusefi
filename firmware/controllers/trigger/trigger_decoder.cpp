@@ -26,6 +26,7 @@
 
 #include "global_shared.h"
 #include "engine_configuration.h"
+#include "transition_events.h"
 
 /**
  * decoder uses TriggerStimulatorHelper in findTriggerZeroEventIndex
@@ -88,10 +89,11 @@ void TriggerDecoderBase::resetState() {
 void TriggerDecoderBase::setTriggerErrorState(int errorIncrement) {
 	m_timeSinceDecodeError.reset();
 	totalTriggerErrorCounter += errorIncrement;
+	onTransitionEvent(TransitionEvent::TriggerError);
 }
 
 void TriggerDecoderBase::resetCurrentCycleState() {
-	memset(currentCycle.eventCount, 0, sizeof(currentCycle.eventCount));
+	setArrayValues(currentCycle.eventCount, 0);
 	currentCycle.current_index = 0;
 }
 
@@ -230,6 +232,7 @@ angle_t PrimaryTriggerDecoder::syncEnginePhase(int divider, int remainder, angle
 
 	if (totalShift > 0) {
 		camResyncCounter++;
+		onTransitionEvent(TransitionEvent::EngineResync);
 	}
 
 	return totalShift;
@@ -315,7 +318,7 @@ int TriggerDecoderBase::getEventCountersError(const TriggerWaveform& triggerShap
 	  }
 	}
 
-#if EFI_DEFAILED_LOGGING
+#if EFI_DETAILED_LOGGING
 	printf("getEventCountersError: isDecodingError=%d\n", (countersError != 0));
 	if (countersError != 0) {
 		for (int i = 0;i < PWM_PHASE_MAX_WAVE_PER_PWM;i++) {
@@ -369,6 +372,40 @@ static bool shouldConsiderEdge(const TriggerWaveform& triggerShape, TriggerWheel
 	// assert(false)?
 
 	return false;
+}
+
+void TriggerDecoderBase::printGaps(const char * prefix,
+  const TriggerConfiguration& triggerConfiguration,
+  const TriggerWaveform& triggerShape) {
+				for (int i = 0;i<triggerShape.gapTrackingLength;i++) {
+					float ratioFrom = triggerShape.synchronizationRatioFrom[i];
+					if (std::isnan(ratioFrom)) {
+						// we do not track gap at this depth
+						continue;
+					}
+
+					float gap = 1.0 * toothDurations[i] / toothDurations[i + 1];
+					if (std::isnan(gap)) {
+						efiPrintf("%s index=%d NaN gap, you have noise issues?", prefix, i);
+					} else {
+						float ratioTo = triggerShape.synchronizationRatioTo[i];
+
+						bool gapOk = isInRange(ratioFrom, gap, ratioTo);
+
+						efiPrintf("%s %srpm=%d time=%d eventIndex=%lu gapIndex=%d: %s gap=%.3f expected from %.3f to %.3f error=%s",
+								prefix,
+								triggerConfiguration.PrintPrefix,
+								(int)Sensor::getOrZero(SensorType::Rpm),
+							/* cast is needed to make sure we do not put 64 bit value to stack*/ (int)getTimeNowS(),
+							currentCycle.current_index,
+							i,
+							gapOk ? "Y" : "n",
+							gap,
+							ratioFrom,
+							ratioTo,
+							boolToString(someSortOfTriggerError()));
+					}
+				}
 }
 
 /**
@@ -485,36 +522,7 @@ expected<TriggerDecodeResult> TriggerDecoderBase::decodeTriggerEvent(
 
 			if (verbose || (someSortOfTriggerError() && !silentTriggerError)) {
 			    const char * prefix = verbose ? "[vrb]" : "[err]";
-
-				for (int i = 0;i<triggerShape.gapTrackingLength;i++) {
-					float ratioFrom = triggerShape.synchronizationRatioFrom[i];
-					if (std::isnan(ratioFrom)) {
-						// we do not track gap at this depth
-						continue;
-					}
-
-					float gap = 1.0 * toothDurations[i] / toothDurations[i + 1];
-					if (std::isnan(gap)) {
-						efiPrintf("%s index=%d NaN gap, you have noise issues?", prefix, i);
-					} else {
-						float ratioTo = triggerShape.synchronizationRatioTo[i];
-
-						bool gapOk = isInRange(ratioFrom, gap, ratioTo);
-
-						efiPrintf("%s %srpm=%d time=%d eventIndex=%lu gapIndex=%d: %s gap=%.3f expected from %.3f to %.3f error=%s",
-								prefix,
-								triggerConfiguration.PrintPrefix,
-								(int)Sensor::getOrZero(SensorType::Rpm),
-							/* cast is needed to make sure we do not put 64 bit value to stack*/ (int)getTimeNowS(),
-							currentCycle.current_index,
-							i,
-							gapOk ? "Y" : "n",
-							gap,
-							ratioFrom,
-							ratioTo,
-							boolToString(someSortOfTriggerError()));
-					}
-				}
+			    printGaps(prefix, triggerConfiguration, triggerShape);
 			}
 #else
 			if (printTriggerTrace) {
@@ -584,6 +592,7 @@ expected<TriggerDecodeResult> TriggerDecoderBase::decodeTriggerEvent(
 
 				// This is a decoding error
 				onTriggerError();
+				printGaps("newerr", triggerConfiguration, triggerShape);
 			} else {
 				// If this was the first sync point OR no decode error, we're synchronized!
 				setShaftSynchronized(true);
@@ -628,12 +637,14 @@ expected<TriggerDecodeResult> TriggerDecoderBase::decodeTriggerEvent(
 		return unexpected;
 	}
 
-	// Needed for early instant-RPM detection
-	if (triggerStateListener) {
-		triggerStateListener->OnTriggerStateProperState(nowNt);
-	}
-
 	triggerStateIndex = currentCycle.current_index;
+
+	// Needed for early instant-RPM detection
+	TriggerStateListener * l = triggerStateListener;
+	while (l) {
+		l->OnTriggerStateProperState(nowNt, triggerStateIndex);
+		l = l->nextListener();
+	}
 
 	if (getShaftSynchronized()) {
 		return TriggerDecodeResult{ currentCycle.current_index };
@@ -726,7 +737,7 @@ uint32_t TriggerDecoderBase::findTriggerZeroEventIndex(
 
 #if EFI_UNIT_TEST
 	if (printTriggerDebug) {
-		printf("findTriggerZeroEventIndex: syncIndex located %d!\r\n", syncIndex);
+		printf("findTriggerZeroEventIndex: syncIndex located %lu!\r\n", syncIndex.Value);
 	}
 #endif /* EFI_UNIT_TEST */
 

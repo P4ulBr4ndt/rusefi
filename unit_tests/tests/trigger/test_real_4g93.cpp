@@ -49,10 +49,10 @@ TEST(real4g93, cranking) {
 
 		float vvtSyncGapRatio = vvtDecoder.triggerSyncGapRatio;
 		float gapRatio = gapRatios[idx < 12 ? 0 : 1][gapRatioIndices[idx % 12]];
-		if (isnan(gapRatio)) {
-			EXPECT_TRUE(isnan(vvtSyncGapRatio));
-		} else if (isinf(gapRatio)) {
-			EXPECT_TRUE(isinf(vvtSyncGapRatio));
+		if (std::isnan(gapRatio)) {
+			EXPECT_TRUE(std::isnan(vvtSyncGapRatio));
+		} else if (std::isinf(gapRatio)) {
+			EXPECT_TRUE(std::isinf(vvtSyncGapRatio));
 		}else {
 			EXPECT_NEAR(vvtSyncGapRatio, gapRatio, 0.1);
 		}
@@ -61,7 +61,7 @@ TEST(real4g93, cranking) {
 	ASSERT_TRUE(reader.gotRpm);
 	ASSERT_TRUE(reader.gotSync);
 
-	ASSERT_EQ(0, eth.recentWarnings()->getCount());
+	ASSERT_EQ(0u, eth.recentWarnings()->getCount());
 }
 
 TEST(real4g93, crankingOn11) {
@@ -114,5 +114,5 @@ TEST(real4g93, crankingCamOnly) {
 	ASSERT_TRUE(reader.gotRpm);
 	ASSERT_TRUE(reader.gotSync);
 
-	ASSERT_EQ(1, eth.recentWarnings()->getCount());
+	ASSERT_EQ(1u, eth.recentWarnings()->getCount());
 }

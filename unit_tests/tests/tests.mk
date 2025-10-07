@@ -1,12 +1,13 @@
 TESTS_SRC_CPP = \
+	tests/ltft_sandbox.cpp \
 	tests/trigger/test_all_triggers.cpp \
+	tests/trigger/test_trigger_sequence_finder.cpp \
 	tests/trigger/test_2_stroke.cpp \
 	tests/trigger/test_symmetrical_crank.cpp \
 	tests/trigger/test_trigger_decoder.cpp \
 	tests/trigger/test_trigger_decoder_2.cpp \
 	tests/trigger/test_coil.cpp \
 	tests/trigger/test_trigger_noiseless.cpp \
-	tests/trigger/test_trigger_multi_sync.cpp \
 	tests/trigger/test_trigger_input_adc.cpp \
 	tests/trigger/test_miata_na_tdc.cpp \
 	tests/trigger/test_cam_vvt_input.cpp \
@@ -29,6 +30,8 @@ TESTS_SRC_CPP = \
 	tests/trigger/test_real_nissan_hr_vvt.cpp \
 	tests/trigger/test_real_k24a2.cpp \
 	tests/trigger/test_real_k20.cpp \
+	tests/trigger/test_real_jeep_evd.cpp \
+	tests/trigger/test_real_subaru_ej20g.cpp \
 	tests/trigger/test_toyota_3_tooth_cam.cpp \
 	tests/trigger/test_real_noisy_trigger.cpp \
 	tests/trigger/test_map_cam.cpp \
@@ -108,9 +111,11 @@ TESTS_SRC_CPP = \
 	tests/lua/test_lua_Leiderman_Khlystov.cpp \
 	tests/lua/test_can_filter.cpp \
 	tests/lua/test_lua_vin.cpp \
+	tests/lua/test_lua_debounce.cpp \
 	tests/test_change_engine_type.cpp \
 	tests/test_big_buffer.cpp \
 	tests/system/test_periodic_thread_controller.cpp \
+	tests/system/test_scheduler.cpp \
 	tests/test_util.cpp \
 	tests/test_start_stop.cpp \
 	tests/test_hardware_reinit.cpp \
@@ -138,6 +143,7 @@ TESTS_SRC_CPP = \
 	tests/test_sticky_pps.cpp \
 	tests/test_knock.cpp \
 	tests/test_lambda_monitor.cpp \
+	tests/test_flex_sensor.cpp \
 	tests/sensor/basic_sensor.cpp \
 	tests/sensor/func_sensor.cpp \
 	tests/sensor/function_pointer_sensor.cpp \
@@ -186,8 +192,18 @@ TESTS_SRC_CPP = \
 	tests/controllers/can/test_can_serial.cpp \
 	tests/controllers/can/test_can_wideband.cpp \
 	tests/controllers/can/test_obd2.cpp \
+	tests/controllers/test_long_term_fuel_trim.cpp \
 	tests/ignition_injection/test_ignition_state.cpp \
 	tests/core/test_main_loop.cpp \
 	tests/test_trip_odometer.cpp \
 	tests/controllers/modules/map_averaging/test_map_averaging.cpp \
 	tests/util/test_utils.cpp \
+	tests/controllers/algo/test_engine_cylinder.cpp \
+	tests/controllers/algo/test_closed_loop_idle.cpp \
+	tests/controllers/modules/test_example_module.cpp \
+	tests/controllers/test_flash.cpp \
+	tests/controllers/modules/vvl_controller/vvl_controller_rpm_condition.cpp \
+	tests/controllers/modules/vvl_controller/vvl_controller_clt_condition.cpp \
+	tests/controllers/modules/vvl_controller/vvl_controller_tps_condition.cpp \
+	tests/controllers/modules/vvl_controller/vvl_controller_map_condition.cpp \
+	tests/controllers/modules/vvl_controller/vvl_controller_afr_condition.cpp

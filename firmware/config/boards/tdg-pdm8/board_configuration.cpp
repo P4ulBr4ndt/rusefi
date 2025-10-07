@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "protected_gpio.h"
+#include "board_overrides.h"
 
 Gpio getCommsLedPin() {
 	// this board has no comms led
@@ -17,7 +18,7 @@ Gpio getRunningLedPin() {
 	return Gpio::Unassigned;
 }
 
-void setBoardConfigOverrides() {
+static void tdg_pdm8_boardConfigOverrides() {
 	// No divider, just direct connected analog inputs (they're all internal, so why divide?)
 	engineConfiguration->analogInputDividerCoefficient = 1;
 
@@ -47,6 +48,12 @@ static const ProtectedGpioConfig cfgs[] = {
 	{ Gpio::A10, EFI_ADC_9,  AmpsPerVolt, MaxCurrent },
 };
 
-void boardInitHardware() {
+static void tdg_pdm8_boardInitHardware() {
 	protectedGpio_add(Gpio::PROTECTED_PIN_0, cfgs);
 }
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = tdg_pdm8_boardInitHardware;
+	custom_board_ConfigOverrides =  tdg_pdm8_boardConfigOverrides;
+}
+

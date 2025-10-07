@@ -122,11 +122,18 @@ public class LuaScriptPanel {
         JPanel scriptPanel = new JPanel(new BorderLayout());
 
         scriptText = new LuaTextEditor(context);
-        scriptPanel.add(scriptText.getControl(), BorderLayout.CENTER);
+        JComponent editorComponent = scriptText.getControl();
+        // enforce monospaced font for editor
+        editorComponent.setFont(new Font(Font.MONOSPACED, Font.PLAIN, editorComponent.getFont().getSize()));
+        scriptPanel.add(editorComponent, BorderLayout.CENTER);
 
         //centerPanel.add(, BorderLayout.WEST);
         JPanel messagesPanel = new JPanel(new BorderLayout());
         messagesPanel.add(BorderLayout.NORTH, mp.getButtonPanel());
+        // enforce monospaced font for log view
+        Font current = mp.getFont();
+        Font mono = new Font(Font.MONOSPACED, Font.PLAIN, current.getSize());
+        mp.setFont(mono, config);
         messagesPanel.add(BorderLayout.CENTER, mp.getMessagesScroll());
 
         ConnectionStatusLogic.INSTANCE.addListener(isConnected -> {
@@ -143,12 +150,13 @@ public class LuaScriptPanel {
         });
 
         JSplitPane centerPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scriptPanel, messagesPanel);
+        centerPanel.setResizeWeight(0.5);
+        centerPanel.setDividerLocation(0.5);
 
         mainPanel.add(upperPanel, BorderLayout.NORTH);
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
-        AutoupdateUtil.trueLayout(mainPanel);
-        SwingUtilities.invokeLater(() -> centerPanel.setDividerLocation(centerPanel.getSize().width / 2));
+        AutoupdateUtil.trueLayoutAndRepaint(mainPanel);
     }
 
     private String getScriptFullFileName() {
@@ -294,22 +302,8 @@ public class LuaScriptPanel {
 
             byte[] paddedScript = getScriptBytes(field, script);
 
-            int idx = 0;
-            int remaining;
-
-            int blockingFactor = bp.getIniFile().getBlockingFactor();
-
             log.info("Sending " + field);
-            do {
-                remaining = paddedScript.length - idx;
-                int thisWrite = Math.min(remaining, blockingFactor);
-
-                bp.writeData(paddedScript, idx, field.getOffset() + idx, thisWrite);
-
-                idx += thisWrite;
-
-                remaining -= thisWrite;
-            } while (remaining > 0);
+            bp.writeInBlocks(paddedScript, 0, field.getOffset(), paddedScript.length);
 
 // need a way to modify script on the fly with shorter execution gaps to keep E65 CAN network happy
 // todo: auto-burn on console close check box in case of Lua changes?

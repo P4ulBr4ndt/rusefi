@@ -4,17 +4,19 @@ name: Update wideband Reference
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '45 0 * * *'
 
 jobs:
   update-git:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Git Checkout Submodules
         run: |
-          git submodule update --init --depth=1 firmware/controllers/can/wideband_firmware
+          git submodule update --init firmware/controllers/can/wideband_firmware
 
       - name: Dump GitHub context
         env:

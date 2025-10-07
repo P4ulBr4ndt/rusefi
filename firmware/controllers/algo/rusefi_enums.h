@@ -130,31 +130,13 @@ typedef enum  __attribute__ ((__packed__)) {
   VVT_CUSTOM_26 = 26,
 
   VVT_TOYOTA_3TOOTH_UZ = 27,
+
+  VVT_SUBARU_7TOOTH = 28,
+
+  VVT_CUSTOM_1 = 29,
+
+  VVT_CUSTOM_2 = 30,
 } vvt_mode_e;
-
-/**
- * This enum is used to select your desired Engine Load calculation algorithm
- */
-typedef enum __attribute__ ((__packed__)) {
-	/**
-	 * Speed Density algorithm - Engine Load is a function of MAP, VE and target AFR
-	 * http://articles.sae.org/8539/
-	 */
-	LM_SPEED_DENSITY = 0,
-
-	/**
-	 * MAF with a known kg/hour function
-	 */
-	LM_REAL_MAF = 1,
-
-	LM_ALPHA_N = 2,
-
-	LM_LUA = 3,
-
-	// This mode is for unit testing only, so that tests don't have to rely on a particular real airmass mode
-	LM_MOCK = 100,
-
-} engine_load_mode_e;
 
 typedef enum __attribute__ ((__packed__)) {
 	DM_NONE = 0,
@@ -182,7 +164,7 @@ typedef enum __attribute__ ((__packed__)) {
 
 } mc33810maxDwellTimer_e;
 
-typedef enum __attribute__ ((__packed__)) {
+enum class idle_mode_e : uint8_t {
 	/**
 	 * In auto mode we currently have some pid-like-but-not really PID logic which is trying
 	 * to get idle RPM to desired value by dynamically adjusting idle valve position.
@@ -195,7 +177,7 @@ typedef enum __attribute__ ((__packed__)) {
 	 */
 	IM_MANUAL = 1,
 
-} idle_mode_e;
+};
 
 enum class SentEtbType : uint8_t {
 	NONE = 0,
@@ -521,14 +503,6 @@ typedef enum {
 } gear_e;
 
 typedef enum __attribute__ ((__packed__)) {
-	CUSTOM = 0,
-	Bosch0280218037 = 1,
-	Bosch0280218004 = 2,
-	DensoTODO = 3,
-
-} maf_sensor_type_e;
-
-typedef enum __attribute__ ((__packed__)) {
 	/**
 	 * This is the default mode in which ECU controls timing dynamically
 	 */
@@ -540,6 +514,13 @@ typedef enum __attribute__ ((__packed__)) {
 	TM_FIXED = 1,
 
 } timing_mode_e;
+
+	/* I am confused: wingdi.h has CCNONE meaning TODO migrate to proper enum! */
+typedef enum __attribute__ ((__packed__)) {
+	CCNONE = 0,
+	CC_BRAKE = 1,
+	CC_CLUTCH = 2,
+} cranking_condition_e;
 
 /**
  * Net Body Computer types
@@ -591,6 +572,7 @@ typedef enum __attribute__ ((__packed__)) {
 	CLUTCH_INPUT_LAUNCH = 1,
 	ALWAYS_ACTIVE_LAUNCH = 2,
 	STOP_INPUT_LAUNCH = 3,
+	LUA_LAUNCH = 4,
 } launchActivationMode_e;
 
 typedef enum __attribute__ ((__packed__)) {
@@ -621,9 +603,11 @@ typedef enum __attribute__ ((__packed__)) {
 	LUA_GAUGE_UPPER_BOUND = 1,
 } lua_gauge_meaning_e;
 
+// this one is "Rotational Idle", it's a naming mess https://github.com/rusefi/rusefi/issues/8435
 typedef enum __attribute__ ((__packed__)) {
 	SWITCH_INPUT_ANTILAG = 0,
 	ALWAYS_ON_ANTILAG = 1,
+	LUA_ANTILAG = 2,
 } antiLagActivationMode_e;
 
 typedef enum __attribute__ ((__packed__)) {
@@ -668,13 +652,14 @@ typedef enum __attribute__ ((__packed__)) {
 } gppwm_channel_e;
 
 typedef enum __attribute__ ((__packed__)) {
-	B50KBPS = 0, // 50kbps
-	B83KBPS = 1, // 83.33kbps
-	B100KBPS = 2, // 100kbps
-	B125KBPS = 3, // 125kbps
-	B250KBPS = 4, // 250kbps
-	B500KBPS = 5, // 500kbps
-	B1MBPS = 6, // 1Mbps
+	B33KBPS = 0, // 33.33kbps
+	B50KBPS = 1, // 50kbps
+	B83KBPS = 2, // 83.33kbps
+	B100KBPS = 3, // 100kbps
+	B125KBPS = 4, // 125kbps
+	B250KBPS = 5, // 250kbps
+	B500KBPS = 6, // 500kbps
+	B1MBPS = 7, // 1Mbps
 } can_baudrate_e;
 
 typedef enum __attribute__ ((__packed__)) {
@@ -682,6 +667,63 @@ typedef enum __attribute__ ((__packed__)) {
 	AEM = 1,
 	DISABLED = 2
 } can_wbo_type_e;
+
+typedef enum __attribute__ ((__packed__)) {
+	WBO_RE_IDLE	= 0,
+	WBO_RE_DONE = 1,
+	WBO_RE_BUSY = 2,
+	WBO_RE_FAILED = 3
+} can_wbo_re_status_e;
+
+typedef enum __attribute__((__packed__)) {
+	WBO_RE_ID1  =  0,
+	WBO_RE_ID2  =  1,
+	WBO_RE_ID3  =  2,
+	WBO_RE_ID4  =  3,
+	WBO_RE_ID5  =  4,
+	WBO_RE_ID6  =  5,
+	WBO_RE_ID7  =  6,
+	WBO_RE_ID8  =  7,
+	WBO_RE_ID9  =  8,
+	WBO_RE_ID10 =  9,
+	WBO_RE_ID11 = 10,
+	WBO_RE_ID12 = 11,
+	WBO_RE_ID13 = 12,
+	WBO_RE_ID14 = 13,
+	WBO_RE_ID15 = 14,
+	WBO_RE_ID16 = 15
+} can_wbo_re_id_e;
+
+// Hardware index, usually strapped by cfg pins and pull-up/pull-down resistors
+typedef enum  __attribute__((__packed__)) {
+	WBO_RE_HWIDX0 = 0,
+	WBO_RE_HWIDX1 = 1,
+	WBO_RE_HWIDX2 = 2,
+	WBO_RE_HWIDX3 = 3,
+	WBO_RE_HWIDX4 = 4,
+	WBO_RE_HWIDX5 = 5,
+	WBO_RE_HWIDX6 = 6,
+	WBO_RE_HWIDX7 = 7,
+} can_wbo_re_hwidx_e;
+
+typedef enum __attribute__((__packed__)) {
+	WBO_AEM_ID1  =  0,
+	WBO_AEM_ID2  =  1,
+	WBO_AEM_ID3  =  2,
+	WBO_AEM_ID4  =  3,
+	WBO_AEM_ID5  =  4,
+	WBO_AEM_ID6  =  5,
+	WBO_AEM_ID7  =  6,
+	WBO_AEM_ID8  =  7,
+	WBO_AEM_ID9  =  8,
+	WBO_AEM_ID10 =  9,
+	WBO_AEM_ID11 = 10,
+	WBO_AEM_ID12 = 11,
+	WBO_AEM_ID13 = 12,
+	WBO_AEM_ID14 = 13,
+	WBO_AEM_ID15 = 14,
+	WBO_AEM_ID16 = 15
+} can_wbo_aem_id_e;
 
 typedef enum __attribute__ ((__packed__)) {
 	GPPWM_GreaterThan = 0,
@@ -751,6 +793,13 @@ typedef enum __attribute__ ((__packed__)) {
     HPFP_CAM_EX2 = 4,
 } hpfp_cam_e;
 
+// IMPORTANT: This enum must be kept in sync with the definition in rusefi_config.txt
+typedef enum __attribute__ ((__packed__)) {
+	AE_MODE_MS_ADDER = 0,
+	AE_MODE_PERCENT_ADDER = 1,
+	AE_MODE_PREDICTIVE_MAP = 2,
+} accel_enrichment_mode_e;
+
 #if __cplusplus
 #include <cstdint>
 
@@ -810,4 +859,22 @@ enum class SelectedGear : uint8_t {
 
 #define SC_Exhaust_First 1
 
+typedef enum __attribute__ ((__packed__)) {
+	stftEnabled = 0,
+	stftDisabledSettings = 1,
+	stftDisabledTuning = 2,
+	stftDisabledRPM = 3,
+	stftDisabledCrankingDelay = 4,
+	stftDisabledClt = 5,
+	// below state related to learning only
+	stftDisabledAfrOurOfRange = 6,
+	stftDisabledDFCO = 7,
+	stftDisabledTpsAccel = 8,
+	stftDisabledFuelCut = 9
+} stft_state_e;
+
 #endif // __cplusplus
+
+#include "generated/enums/rusefi_config_generated_enums.h"
+
+using namespace rusefi::generated::enums;

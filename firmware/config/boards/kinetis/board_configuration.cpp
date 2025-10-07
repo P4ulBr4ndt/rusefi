@@ -8,6 +8,7 @@
  */
 
 #include "pch.h"
+#include "board_overrides.h"
 
 #if 0
 char __debugBuffer[80];
@@ -37,10 +38,10 @@ static void setSerialConfigurationOverrides() {
 	engineConfiguration->uartConsoleSerialSpeed = SERIAL_SPEED;
 }
 
-void setBoardOverrides() {
+static void kinetis_boardConfigOverrides() {
 	engineConfiguration->useNoiselessTriggerDecoder = true;
 
-	setAlgorithm(LM_SPEED_DENSITY);
+	setAlgorithm(engine_load_mode_e::LM_SPEED_DENSITY);
 
 	engineConfiguration->cylindersCount = 4;
 	engineConfiguration->firingOrder = FO_1_3_4_2;
@@ -121,4 +122,8 @@ void longjmp(jmp_buf /*env*/, int /*status*/) {
 int setjmp(jmp_buf /*env*/) {
 	// Fake return 0, not implemented
 	return 0;
+}
+
+void setup_custom_board_overrides() {
+	custom_board_ConfigOverrides =  kinetis_boardConfigOverrides;
 }

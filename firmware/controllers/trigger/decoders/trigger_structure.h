@@ -11,8 +11,6 @@
 #pragma once
 
 #include "state_sequence.h"
-#include "generated_lookup_engine_configuration.h"
-#include "engine_state.h"
 
 #define FOUR_STROKE_ENGINE_CYCLE 720
 
@@ -28,23 +26,7 @@
 
 // Shifts angle into the [0..720) range for four stroke and [0..360) for two stroke
 // See also wrapVvt
-inline void wrapAngle(angle_t& angle, const char* msg, ObdCode code) {
-	if (std::isnan(angle)) {
-		firmwareError(ObdCode::CUSTOM_ERR_ANGLE, "a NaN %s", msg);
-		angle = 0;
-	}
-
-	assertAngleRange(angle, msg, code);
-	float engineCycle = getEngineState()->engineCycle;
-
-	while (angle < 0) {
-		angle += engineCycle;
-	}
-
-	while (angle >= engineCycle) {
-		angle -= engineCycle;
-	}
-}
+void wrapAngle(angle_t& angle, const char* msg, ObdCode code);
 
 // proper method avoids un-wrapped state of variables
 inline angle_t wrapAngleMethod(angle_t param, const char *msg = "", ObdCode code = ObdCode::OBD_PCM_Processor_Fault) {
@@ -103,7 +85,7 @@ public:
 	int version = 0;
 
 	/**
-	 * Depending on trigger shape, we use betweeb one and three previous gap ranges to detect synchronizaiton.
+	 * Depending on trigger shape, we use between one and three previous gap ranges to detect synchronization.
 	 *
 	 * Usually second or third gap is not needed, but some crazy triggers like 36-2-2-2 require two consecutive
 	 * gaps ratios to sync
@@ -255,11 +237,11 @@ public:
 
 	uint16_t findAngleIndex(TriggerFormDetails *details, angle_t angle) const;
 
-private:
 	/**
 	 * These angles are in trigger DESCRIPTION coordinates - i.e. the way you add events while declaring trigger shape
 	 */
 	angle_t getSwitchAngle(int index) const;
+private:
 
 	/**
 	 * This variable is used to confirm that events are added in the right order.

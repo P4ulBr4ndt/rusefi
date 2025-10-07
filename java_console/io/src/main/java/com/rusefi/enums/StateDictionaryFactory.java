@@ -1,5 +1,5 @@
 package com.rusefi.enums;
-//was generated automatically by rusEFI tool config_definition_base-all.jar based on StateDictionaryGenerator integration/LiveData.yaml on Fri May 16 12:31:52 UTC 2025n
+//was generated automatically by rusEFI tool config_definition_base-all.jar based on StateDictionaryGenerator integration/LiveData.yaml on Wed Aug 27 12:32:13 UTC 2025n
 import com.rusefi.config.generated.*;
 import com.rusefi.ldmp.StateDictionary;
 
@@ -34,6 +34,8 @@ public class StateDictionaryFactory {
         stateDictionary.register(live_data_e.LDS_trigger_state4, "trigger_decoder");
         stateDictionary.register(live_data_e.LDS_trigger_state_primary, "trigger_decoder");
         stateDictionary.register(live_data_e.LDS_wall_fuel_state, "wall_fuel");
+        stateDictionary.register(live_data_e.LDS_closed_loop_idle, "closed_loop_idle");
+        stateDictionary.register(live_data_e.LDS_live_data_example, "live_data_example");
         stateDictionary.register(live_data_e.LDS_idle_state, "idle_thread");
         stateDictionary.register(live_data_e.LDS_electronic_throttle0, "electronic_throttle");
         stateDictionary.register(live_data_e.LDS_electronic_throttle1, "electronic_throttle");
@@ -44,5 +46,8 @@ public class StateDictionaryFactory {
         stateDictionary.register(live_data_e.LDS_vvt, "vvt");
         stateDictionary.register(live_data_e.LDS_lambda_monitor, "lambda_monitor");
         stateDictionary.register(live_data_e.LDS_mc33810_state, "mc33810");
+        stateDictionary.register(live_data_e.LDS_long_term_fuel_trim_state, "long_term_fuel_trim");
+        stateDictionary.register(live_data_e.LDS_short_term_fuel_trim_state, "short_term_fuel_trim");
+        stateDictionary.register(live_data_e.LDS_vvl_controller_state, "vvl_controller_state");
     }
 }

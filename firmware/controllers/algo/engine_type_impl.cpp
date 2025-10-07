@@ -8,11 +8,9 @@
 #include "dodge_neon.h"
 #include "dodge_ram.h"
 
-#include "engine_template.h"
-
 #include "ford_aspire.h"
 #include "ford_1995_inline_6.h"
-#include "f136.h"
+#include "ford_ecoboost.h"
 
 #include "honda_k_dbc.h"
 #include "honda_600.h"
@@ -22,12 +20,10 @@
 
 #include "GY6_139QMB.h"
 
-#include "nissan_primera.h"
 #include "nissan_vq.h"
 #include "tc_4l6x.h"
 #include "../board_id/qc_stim_meta.h"
 
-#include "mazda_miata.h"
 #include "mazda_miata_1_6.h"
 #include "mazda_miata_na8.h"
 #include "mazda_miata_vvt.h"
@@ -46,7 +42,6 @@
 #include "toyota_jz.h"
 #include "toyota_1NZ_FE.h"
 #include "mitsubishi_3A92.h"
-#include "mitsubishi_4G93.h"
 #include "ford_festiva.h"
 
 static_assert(libPROTEUS_STIM_QC == (int)engine_type_e::PROTEUS_STIM_QC);
@@ -57,7 +52,7 @@ PUBLIC_API_WEAK_SOMETHING_WEIRD void applyUnknownEngineType(engine_type_e engine
 		firmwareError(ObdCode::CUSTOM_UNEXPECTED_ENGINE_TYPE, "Unexpected engine type: %d", (int)engineType);
 }
 
-PUBLIC_API_WEAK void boardAfterTuneDefaults(engine_type_e engineType) { }
+PUBLIC_API_WEAK void boardAfterTuneDefaults(engine_type_e engineType) { UNUSED(engineType); }
 
 void applyEngineType(engine_type_e engineType) {
 	/**
@@ -67,12 +62,12 @@ void applyEngineType(engine_type_e engineType) {
 	case engine_type_e::FORD_COYOTE:
 	case engine_type_e::MAZDA_MIATA_NC:
 	case engine_type_e::DISCOVERY_PDM:
-	case engine_type_e::UNUSED67:
 	case engine_type_e::UNUSED94:
 	case engine_type_e::UNUSED_97:
 	case engine_type_e::TEST_100:
 	case engine_type_e::TEST_101:
 	case engine_type_e::UNUSED102:
+	case engine_type_e::UNUSED_105:
 	case engine_type_e::HELLEN_4CHAN_STIM_QC:
 	case engine_type_e::HELLEN_2CHAN_STIM_QC:
 	case engine_type_e::HELLEN_154_VAG:
@@ -81,6 +76,8 @@ void applyEngineType(engine_type_e engineType) {
 	case engine_type_e::SIMULATOR_CONFIG:
 	case engine_type_e::HELLEN_121_VAG_4_CYL:
 	case engine_type_e::MINIMAL_PINS:
+	case engine_type_e::UNUSED_5:
+	case engine_type_e::UNUSED_16:
 		// all basic settings are already set in prepareVoidConfiguration(), no need to set anything here
 		// nothing to do - we do it all in setBoardDefaultConfiguration
 		break;
@@ -133,9 +130,7 @@ void applyEngineType(engine_type_e engineType) {
 	case engine_type_e::MRE_SUBARU_EJ18:
 		setSubaruEJ18_MRE();
 		break;
-	case engine_type_e::MRE_BOARD_NEW_TEST:
-		mreBoardNewTest();
-		break;
+	case engine_type_e::UNUSED31:
 	case engine_type_e::BMW_M73_MRE:
 	case engine_type_e::BMW_M73_MRE_SLAVE:
 		setEngineBMW_M73_microRusEfi();
@@ -152,9 +147,12 @@ void applyEngineType(engine_type_e engineType) {
 		break;
 
 #if HW_PROTEUS || HW_HELLEN_4CHAN || HW_HELLEN_8CHAN || HW_HELLEN_4K_GDI
-    case engine_type_e::HYUNDAI_PB:
-        setHyundaiPb();
+	case engine_type_e::FORD_ECOBOOST:
+	  setFordEcoboost();
 		break;
+  case engine_type_e::HYUNDAI_PB:
+    setHyundaiPb();
+	  break;
 #endif
 
 #if HW_PROTEUS || HW_HELLEN_HONDA
@@ -214,6 +212,12 @@ void applyEngineType(engine_type_e engineType) {
 	  setGmSbcGen5();
 		break;
 
+#if defined(HW_HELLEN_8CHAN) || HW_PROTEUS || EFI_SIMULATOR
+	case engine_type_e::GM_SBC_GEN4:
+		setGmLs4();
+		break;
+#endif
+
 #if HW_PROTEUS || EFI_SIMULATOR
     case engine_type_e::WASTEGATE_PROTEUS_TEST:
         proteusDcWastegateTest();
@@ -221,15 +225,10 @@ void applyEngineType(engine_type_e engineType) {
     case engine_type_e::PROTEUS_NISSAN_VQ35:
         setProteusNissanVQ();
 		break;
-	case engine_type_e::PROTEUS_GM_LS_4:
-		setProteusGmLs4();
-		break;
 	case engine_type_e::PROTEUS_VW_B6:
 		setProteusVwPassatB6();
 		break;
-	case engine_type_e::PROTEUS_QC_TEST_BOARD:
-		proteusBoardTest();
-		break;
+	case engine_type_e::UNUSED42:
 	case engine_type_e::PROTEUS_LUA_DEMO:
 		proteusLuaDemo();
 		break;
@@ -287,7 +286,7 @@ void applyEngineType(engine_type_e engineType) {
 		break;
 #endif
 
-#if defined(HW_HELLEN_8CHAN) || defined(HW_HELLEN_UAEFI121)
+#if defined(HW_HELLEN_8CHAN) || defined(HW_HELLEN_UAEFI121) || defined(HW_HELLEN_UAEFI)
 	case engine_type_e::GM_SBC:
 	    setGmSbc();
         break;
@@ -310,10 +309,6 @@ void applyEngineType(engine_type_e engineType) {
 	    setHellen121Vag_8_cyl();
         break;
 #endif
-
-	case engine_type_e::FERRARI_F136:
-	      setF136();
-        break;
 
 #ifdef HW_HELLEN
 	case engine_type_e::TOYOTA_1NZ_FE:
@@ -367,9 +362,6 @@ void applyEngineType(engine_type_e engineType) {
 	case engine_type_e::FORD_ASPIRE_1996:
 		setFordAspireEngineConfiguration();
 		break;
-	case engine_type_e::NISSAN_PRIMERA:
-		setNissanPrimeraEngineConfiguration();
-		break;
 	case engine_type_e::FRANKENSO_MIATA_NA6_MAP:
 		setMiataNA6_MAP_Frankenso();
 		break;
@@ -386,9 +378,6 @@ void applyEngineType(engine_type_e engineType) {
 		break;
 	case engine_type_e::MITSUBISHI_3A92:
 	    setMitsubishi3A92();
-	    break;
-	case engine_type_e::MITSUBISHI_4G93:
-	    setMitsubishi4G93();
 	    break;
 	case engine_type_e::FORD_INLINE_6_1995:
 		setFordInline6();
@@ -436,5 +425,5 @@ void applyEngineType(engine_type_e engineType) {
 }
 
 PUBLIC_API_WEAK_SOMETHING_WEIRD engine_type_e getLastEngineType() {
-  return engine_type_e::FERRARI_F136;
+  return engine_type_e::UNUSED_105;
 }

@@ -24,7 +24,7 @@ static inline void commonPassatB6() {
     engineConfiguration->globalTriggerAngleOffset = 90;
 
 	engineConfiguration->idlePidRpmDeadZone = 500;
-	engineConfiguration->idleMode = IM_AUTO;
+	engineConfiguration->idleMode = idle_mode_e::IM_AUTO;
 
 	setInline4();
 
@@ -35,11 +35,6 @@ static inline void commonPassatB6() {
 		engineConfiguration->injectionPins[i] = Gpio::Unassigned;
 		engineConfiguration->ignitionPins[i] = Gpio::Unassigned;
 	}
-
-//	engineConfiguration->canNbcType = CAN_BUS_NBC_VAG;
-
-//	engineConfiguration->enableAemXSeries = true;
-
 
 	// Injectors flow 1214 cc/min at 100 bar pressure
 	engineConfiguration->injector.flow = 1214;

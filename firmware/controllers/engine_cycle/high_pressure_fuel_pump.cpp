@@ -89,7 +89,7 @@ float HpfpQuantity::calcFuelPercent(float rpm) {
 static float getLoad() {
     switch(engineConfiguration->fuelAlgorithm) {
     // TODO: allow other load axis, like we claim to
-    case LM_ALPHA_N:
+    case engine_load_mode_e::LM_ALPHA_N:
         return Sensor::getOrZero(SensorType::DriverThrottleIntent);
     default:
        return Sensor::getOrZero(SensorType::Map);
@@ -204,7 +204,7 @@ void HpfpController::pinTurnOn(HpfpController *self) {
 	scheduleByAngle(&self->m_event.eventScheduling,
 			self->m_event.eventScheduling.getMomentNt(),
 			self->m_deadangle + engineConfiguration->hpfpActivationAngle,
-			{ pinTurnOff, self });
+			action_s::make<pinTurnOff>( self ));
 }
 
 void HpfpController::pinTurnOff(HpfpController *self) {
@@ -241,7 +241,7 @@ void HpfpController::scheduleNextCycle() {
 		    "hpfp",
 			&m_event,
 			di_nextStart,
-			{ pinTurnOn, this });
+			action_s::make<pinTurnOn>( this ));
 
 		// Off will be scheduled after turning the valve on
 	} else {
@@ -252,7 +252,7 @@ void HpfpController::scheduleNextCycle() {
 		engine->module<TriggerScheduler>()->schedule(
 			HPFP_CONTROLLER,
 			&m_event, lobeAngle,
-			{ pinTurnOff, this });
+			action_s::make<pinTurnOff>( this ));
 	}
 }
 

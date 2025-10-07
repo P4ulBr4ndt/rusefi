@@ -82,34 +82,33 @@ FILE *jsonTrace = nullptr;
 EngineTestHelper::EngineTestHelper(engine_type_e engineType, configuration_callback_t configurationCallback, const std::unordered_map<SensorType, float>& sensorValues) :
 	EngineTestHelperBase(&engine, &persistentConfig.engineConfiguration, &persistentConfig)
 {
-	memset(&persistentConfig, 0, sizeof(persistentConfig));
-	memset(&pinRepository, 0, sizeof(pinRepository));
-
+	persistentConfig = decltype(persistentConfig){};
+	pinRepository = decltype(pinRepository){};
 
 	auto testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
-extern bool hasInitGtest;
+	extern bool hasInitGtest;
 	if (hasInitGtest) {
-	#if IS_WINDOWS_COMPILER
-     mkdir(TEST_RESULTS_DIR);
-  #else
-     mkdir(TEST_RESULTS_DIR, 0777);
-  #endif
-  createUnitTestLog();
+		#if IS_WINDOWS_COMPILER
+		  mkdir(TEST_RESULTS_DIR);
+		#else
+		  mkdir(TEST_RESULTS_DIR, 0777);
+		#endif
+		createUnitTestLog();
 
-    	std::stringstream filePath;
-    	filePath << TEST_RESULTS_DIR << "/unittest_" << testInfo->test_case_name() << "_" << testInfo->name() << "_trace.json";
-    	// fun fact: ASAN says not to extract 'fileName' into a variable, we must be doing something a bit not right?
-    	jsonTrace = fopen(filePath.str().c_str(), "wb");
-    	if (jsonTrace == nullptr) {
-//    		criticalError("Error creating file [%s]", filePath.str().c_str());
-    		// TOOD handle config tests
-    		printf("Error creating file [%s]\n", filePath.str().c_str());
-    	} else {
-    		fprintf(jsonTrace, "{\"traceEvents\": [\n");
-    		fprintf(jsonTrace, "{\"name\":\"process_name\",\"ph\":\"M\",\"pid\":-16,\"tid\":0,\"args\":{\"name\":\"Main\"}}\n");
-    	}
+		std::stringstream filePath;
+		filePath << TEST_RESULTS_DIR << "/unittest_" << testInfo->test_case_name() << "_" << testInfo->name() << "_trace.json";
+		// fun fact: ASAN says not to extract 'fileName' into a variable, we must be doing something a bit not right?
+		jsonTrace = fopen(filePath.str().c_str(), "wb");
+		if (jsonTrace == nullptr) {
+			//    		criticalError("Error creating file [%s]", filePath.str().c_str());
+			// TOOD handle config tests
+			printf("Error creating file [%s]\n", filePath.str().c_str());
+		} else {
+			fprintf(jsonTrace, "{\"traceEvents\": [\n");
+			fprintf(jsonTrace, "{\"name\":\"process_name\",\"ph\":\"M\",\"pid\":-16,\"tid\":0,\"args\":{\"name\":\"Main\"}}\n");
+		}
     } else {
-	  // todo: document why this branch even exists
+		// todo: document why this branch even exists
 		jsonTrace = nullptr;
 	}
 
@@ -120,7 +119,7 @@ extern bool hasInitGtest;
 		Sensor::setMockValue(s, v);
 	}
 
-	memset(&activeConfiguration, 0, sizeof(activeConfiguration));
+	activeConfiguration = engine_configuration_s{};
 
 	enginePins.reset();
 	enginePins.unregisterPins();
@@ -151,13 +150,13 @@ extern bool hasInitGtest;
 	commonInitEngineController();
 
 	// this is needed to have valid CLT and IAT.
-//todo: reuse 	initPeriodicEvents() method
+	//todo: reuse 	initPeriodicEvents() method
 	engine.periodicSlowCallback();
 
 	extern bool hasInitGtest;
 	if (hasInitGtest) {
-		// Setup running in mock airmass mode if running actual tests
-		engineConfiguration->fuelAlgorithm = LM_MOCK;
+		// When built in unit tests mode UNSUPPORTED_ENUM_VALUE leads to acquiring of mockAirmassModel
+		engineConfiguration->fuelAlgorithm = engine_load_mode_e::UNSUPPORTED_ENUM_VALUE;
 
 		mockAirmass = std::make_unique<::testing::NiceMock<MockAirmass>>();
 		engine.mockAirmassModel = mockAirmass.get();
@@ -220,8 +219,8 @@ EngineTestHelper::~EngineTestHelper() {
   closeUnitTestLog();
 
 	// Cleanup
-  	// reset config to an invalid state, will trigger isPinConfigurationChanged
-	memset(&persistentConfig, 0, sizeof(persistentConfig));
+  	// reset pin config state, will trigger isPinConfigurationChanged
+	enginePins.resetForUnitTest();
 	enginePins.reset();
 	enginePins.unregisterPins();
 	Sensor::resetRegistry();
@@ -380,19 +379,25 @@ void EngineTestHelper::fireTriggerEvents(int count) {
 
 void EngineTestHelper::assertInjectorUpEvent(const char *msg, int eventIndex, efitimeus_t momentUs, long injectorIndex) {
 	InjectionEvent *event = &engine.injectionEvents.elements[injectorIndex];
-	assertEvent(msg, eventIndex, (void*)turnInjectionPinHigh, momentUs, event);
+	auto const expected_action{ action_s::make<turnInjectionPinHigh>(uintptr_t{}) };
+	assertEvent(msg, eventIndex, expected_action, momentUs, event);
 }
 
 void EngineTestHelper::assertInjectorDownEvent(const char *msg, int eventIndex, efitimeus_t momentUs, long injectorIndex) {
 	InjectionEvent *event = &engine.injectionEvents.elements[injectorIndex];
-	assertEvent(msg, eventIndex, (void*)turnInjectionPinLow, momentUs, event);
+	auto const expected_action{ action_s::make<turnInjectionPinLow>((InjectionEvent*){}) };
+	assertEvent(msg, eventIndex, expected_action, momentUs, event);
 }
 
-scheduling_s * EngineTestHelper::assertEvent5(const char *msg, int index, void *callback, efitimeus_t expectedTimestamp) {
+scheduling_s * EngineTestHelper::assertEvent5(const char *msg, int index, action_s const& action_expected, efitimeus_t expectedTimestamp) {
 	TestExecutor *executor = &engine.scheduler;
 	EXPECT_TRUE(executor->size() > index) << msg << " valid index";
 	scheduling_s *event = executor->getForUnitTest(index);
-	EXPECT_NEAR_M4((void*)event->action.getCallback() == (void*) callback, 1) << msg << " callback up/down";
+	assert(event != nullptr);
+
+	auto const& action_scheduled{ event->action };
+
+	EXPECT_EQ(action_scheduled.getCallback(), action_expected.getCallback()) << msg << " callback up/down";
 	efitimeus_t start = getTimeNowUs();
 	EXPECT_NEAR(expectedTimestamp, event->getMomentUs() - start,/*3us precision to address rounding etc*/3) << msg;
 	return event;
@@ -404,47 +409,85 @@ angle_t EngineTestHelper::timeToAngle(float timeMs) {
 
 const AngleBasedEvent * EngineTestHelper::assertTriggerEvent(const char *msg,
 		int index, AngleBasedEvent *expected,
-		void *callback,
+		action_s const& action_expected,
 		angle_t enginePhase) {
 	auto event = engine.module<TriggerScheduler>()->getElementAtIndexForUnitTest(index);
 
-	if (callback) {
-		EXPECT_EQ(reinterpret_cast<void*>(event->action.getCallback()), reinterpret_cast<void*>(callback)) << " callback up/down";
+	if (action_expected) {
+		auto const& action_scheduled{ event->action };
+		EXPECT_EQ(action_scheduled.getCallback(), action_expected.getCallback()) << " callback up/down";
 	}
 
 	EXPECT_NEAR(enginePhase, event->getAngle(), EPS4D) << " angle";
 	return event;
 }
 
-scheduling_s * EngineTestHelper::assertScheduling(const char *msg, int index, scheduling_s *expected, void *callback, efitimeus_t expectedTimestamp) {
-	scheduling_s * actual = assertEvent5(msg, index, callback, expectedTimestamp);
+scheduling_s * EngineTestHelper::assertScheduling(const char *msg, int index, scheduling_s *expected, action_s const& action, efitimeus_t expectedTimestamp) {
+	scheduling_s * actual = assertEvent5(msg, index, action, expectedTimestamp);
 	return actual;
 }
 
-void EngineTestHelper::assertEvent(const char *msg, int index, void *callback, efitimeus_t momentUs, InjectionEvent *expectedEvent) {
-	scheduling_s *event = assertEvent5(msg, index, callback, momentUs);
+void EngineTestHelper::assertEvent(const char *msg, int index, action_s const& action, efitimeus_t momentUs, InjectionEvent *expectedEvent) {
+	scheduling_s *event = assertEvent5(msg, index, action, momentUs);
 
-	InjectionEvent *actualEvent = (InjectionEvent *)event->action.getArgument();
+	auto const actualEvent{ event->action.getArgument<InjectionEvent*>() };
 
 	ASSERT_EQ(expectedEvent->outputs[0], actualEvent->outputs[0]) << msg;
 // but this would not work	assertEqualsLM(msg, expectedPair, (long)eventPair);
 }
 
-bool EngineTestHelper::assertEventExistsAtEnginePhase(const char *msg, void *callback, angle_t expectedEventEnginePhase){
+bool EngineTestHelper::assertEventExistsAtEnginePhase(const char *msg, action_s const& action_expected, angle_t expectedEventEnginePhase){
 	TestExecutor *executor = &engine.scheduler;
-	for (size_t i = 0; i < executor->size(); i++) {
-		scheduling_s *event = executor->getForUnitTest(i);
-		if(reinterpret_cast<void*>(event->action.getCallback()), reinterpret_cast<void*>(callback)) {
+
+	//std::cout << "executor->size():              " << executor->size() << std::endl;
+	//std::cout << "expected_action.getCallback():  0x" << std::hex << reinterpret_cast<size_t>(action_expected.getCallback()) << "; name: " << action_expected.getCallbackName() << std::endl;
+
+	for (int i = 0; i < executor->size(); i++) {
+		auto event = executor->getForUnitTest(i);
+		assert(event != nullptr);
+
+		auto const action_scheduled{ event->action };
+
+		// Uncomment next to see what was stored in executor queue
+		// std::cout << "action_scheduled.getCallback(): 0x" << std::hex << reinterpret_cast<size_t>(action_scheduled.getCallback()) << "; name: " << action_scheduled.getCallbackName() << std::endl;
+
+		if(action_scheduled.getCallback() == action_expected.getCallback()) {
 			efitimeus_t start = getTimeNowUs();
 			efitimeus_t expectedTimestamp = angleToTimeUs(expectedEventEnginePhase);
 			// after #7245 we can increase the resolution of this test for expect 0.5 or less
 			EXPECT_NEAR( expectedTimestamp, event->getMomentUs() - start, angleToTimeUs( 1 ) )
-                            << "Expected angle: " << expectedEventEnginePhase << " but got " << event->getMomentUs() / engine.rpmCalculator.oneDegreeUs << " -- "
+                            << "Expected angle: " << expectedEventEnginePhase << " but got " << (event->getMomentUs() - start) / engine.rpmCalculator.oneDegreeUs << " -- "
                             << msg;
 			return true;
 		}
 	}
 	return false;
+}
+
+void EngineTestHelper::spin60_2UntilDeg(struct testSpinEngineUntilData& spinInfo, int targetRpm, float targetDegree) {
+  	volatile float tick_per_deg = 6000 * 60 / 360 / (float)targetRpm;
+	constexpr float tooth_per_deg = 360 / 60;
+
+	size_t targetTooth = (targetDegree - spinInfo.currentDegree) / tooth_per_deg;
+
+	for (size_t i = 0; i < targetTooth; i++) {
+		if (spinInfo.currentTooth < 30 || spinInfo.currentTooth > 31) {
+			smartFireTriggerEvents2(1 /* count */, tick_per_deg /*ms*/);
+		}
+
+		if (spinInfo.currentTooth == 30) {
+			// now fire missed tooth rise/fall
+    		fireRise(tick_per_deg * 5 /*ms*/);
+    		fireFall(tick_per_deg);
+    		executeActions();
+		}
+
+		if (spinInfo.currentTooth > 58) {
+            spinInfo.currentTooth = 0;
+		}
+
+		spinInfo.currentTooth++;
+	}
 }
 
 void EngineTestHelper::applyTriggerWaveform() {

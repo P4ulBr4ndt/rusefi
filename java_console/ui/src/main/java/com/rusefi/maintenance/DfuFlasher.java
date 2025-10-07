@@ -1,9 +1,6 @@
 package com.rusefi.maintenance;
 
-import com.rusefi.FileLog;
-import com.rusefi.Launcher;
-import com.rusefi.SerialPortScanner;
-import com.rusefi.Timeouts;
+import com.rusefi.*;
 import com.rusefi.autodetect.PortDetector;
 import com.rusefi.autodetect.SerialAutoChecker;
 import com.rusefi.config.generated.Integration;
@@ -31,12 +28,11 @@ import static com.rusefi.core.FindFileHelper.INPUT_FILES_PATH;
  * @see StLinkFlasher
  */
 public class DfuFlasher {
-    //private static final Logging log = getLogging(DfuFlasher.class);
-
     public static final String BOOTLOADER_BIN_FILE = INPUT_FILES_PATH + "/" + "openblt.bin";
     private static final String DFU_CMD_TOOL_LOCATION = Launcher.TOOLS_PATH + File.separator + "STM32_Programmer_CLI/bin";
     private static final String DFU_CMD_TOOL = "STM32_Programmer_CLI.exe";
     private static final String WMIC_DFU_QUERY_COMMAND = "wmic path win32_pnpentity where \"Caption like '%STM32%' and Caption like '%Bootloader%'\" get Caption,ConfigManagerErrorCode /format:list";
+    public static boolean dfuEnabledInCaseOfError = true;
 
     public static boolean haveBootloaderBinFile() {
         return new File(BOOTLOADER_BIN_FILE).exists();
@@ -44,14 +40,13 @@ public class DfuFlasher {
 
     public static boolean doAutoDfu(
         final JComponent parent,
-        final SerialPortScanner.PortResult port,
-        final UpdateOperationCallbacks callbacks
+        final String port,
+        final UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext
     ) {
         return CalibrationsHelper.updateFirmwareAndRestorePreviousCalibrations(
-            parent,
             port,
             callbacks,
-            () -> dfuUpdateFirmware(parent, port.port, callbacks)
+            () -> dfuUpdateFirmware(parent, port, callbacks), connectivityContext
         );
     }
 
@@ -76,7 +71,7 @@ public class DfuFlasher {
             }
 
             timeForDfuSwitch(callbacks);
-            if (executeDFU(callbacks, FindFileHelper.FIRMWARE_BIN_FILE)) {
+            if (executeDFU(callbacks, FindFileHelper.findFirmwareFile())) {
                 // We need to wait to allow connection to ECU port (see #7403)
                 timeForDfuSwitch(callbacks);
                 return true;
@@ -131,11 +126,11 @@ public class DfuFlasher {
                 return null;
             }).getSerialPort();
             if (port == null) {
-                callbacks.logLine("*** ERROR *** rusEFI serial port not detected");
+                callbacks.logLine("*** ERROR *** ECU serial port not detected");
                 callbacks.error();
                 return null;
             } else {
-                callbacks.logLine("Detected rusEFI on " + port + "\n");
+                callbacks.logLine("ECU Detected on " + port + "\n");
             }
         }
         return isSignatureValidated;
@@ -167,7 +162,7 @@ public class DfuFlasher {
     public static void runDfuProgramming(UpdateOperationCallbacks callbacks, final Runnable onJobFinished) {
         submitAction(() -> {
             JobHelper.doJob(
-                () -> executeDfuAndPaintStatusPanel(callbacks, FindFileHelper.FIRMWARE_BIN_FILE),
+                () -> executeDfuAndPaintStatusPanel(callbacks, FindFileHelper.findFirmwareFile()),
                 onJobFinished
             );
         });
@@ -232,7 +227,7 @@ public class DfuFlasher {
     }
 
     public static boolean detectSTM32BootloaderDriverState(UpdateOperationCallbacks callbacks) {
-        return MaintenanceUtil.detectDevice(callbacks, WMIC_DFU_QUERY_COMMAND, "ConfigManagerErrorCode=0", true);
+        return MaintenanceUtil.detectDevice(callbacks, WMIC_DFU_QUERY_COMMAND, "ConfigManagerErrorCode=0", dfuEnabledInCaseOfError);
     }
 
     private static void appendWindowsVersion(UpdateOperationCallbacks callbacks) {

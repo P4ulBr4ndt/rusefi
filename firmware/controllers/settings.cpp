@@ -41,6 +41,8 @@ extern int waveChartUsedSize;
 extern WaveChart waveChart;
 #endif // EFI_ENGINE_SNIFFER
 
+using namespace rusefi::stringutil;
+
 void printSpiState() {
 	efiPrintf("spi 1=%s/2=%s/3=%s/4=%s",
 		boolToString(engineConfiguration->is_enabled_spi_1),
@@ -57,7 +59,7 @@ void printConfiguration() {
 	efiPrintf("Template %s/%d trigger %s/%s/%d", getEngine_type_e(engineConfiguration->engineType),
 			(int)engineConfiguration->engineType,
 			getTrigger_type_e(engineConfiguration->trigger.type),
-			getEngine_load_mode_e(engineConfiguration->fuelAlgorithm), (int)engineConfiguration->fuelAlgorithm);
+			Enum2String(engineConfiguration->fuelAlgorithm), (int)engineConfiguration->fuelAlgorithm);
 
 	efiPrintf("configurationVersion=%d", engine->getGlobalConfigurationVersion());
 

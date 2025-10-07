@@ -24,14 +24,8 @@ void setDefaultCranking() {
 	// After start enrichment
 #if !EFI_UNIT_TEST
 	// don't set this for unit tests, as it makes things more complicated to test
-	static const int16_t defaultPostCrankingCLTBins[] = {
-		-20, 0, 20, 40, 60, 80
-	};
-	static const uint16_t defaultPostCrankingDurationBins[] = {
-		0, 15, 35, 65, 100, 150
-	};
-	copyArray(config->postCrankingCLTBins, defaultPostCrankingCLTBins);
-	copyArray(config->postCrankingDurationBins, defaultPostCrankingDurationBins);
+	setLinearCurve(config->postCrankingCLTBins, /*from*/-20, /*to*/80, 20);
+	setLinearCurve(config->postCrankingDurationBins, /*from*/0, /*to*/150, 40);
 	setTable(config->postCrankingFactor, 1.2f);
 #endif
 
@@ -41,6 +35,7 @@ void setDefaultCranking() {
 	setLinearCurve(config->cltCrankingCorrBins, CLT_CURVE_RANGE_FROM, 100, 1);
 	setLinearCurve(config->cltCrankingCorr, 50, 50, 1); // now as % of idle valve/etb
 
+#if CRANKING_CURVE_SIZE == 8
 	// Cranking temperature compensation
 	static const float crankingCoef[] = {
 		2.8,
@@ -67,7 +62,7 @@ void setDefaultCranking() {
 		90
 	};
 	copyArray(config->crankingFuelBins, crankingBins);
-
+#endif
 	// Cranking cycle compensation
 
 	setTable(config->crankingCycleBaseFuel, 27.0f);

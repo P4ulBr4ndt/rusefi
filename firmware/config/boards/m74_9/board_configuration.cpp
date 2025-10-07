@@ -61,7 +61,7 @@ static void setupEtb() {
  * @brief   Board-specific configuration defaults.
 
  */
-void setBoardDefaultConfiguration() {
+static void m74_9_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
@@ -99,7 +99,7 @@ void setBoardDefaultConfiguration() {
   setPPSInputs(EFI_ADC_10, EFI_ADC_11);
 }
 
-void setBoardConfigOverrides() {
+static void m74_9_boardConfigOverrides() {
 	//CAN 1 bus overwrites
 	engineConfiguration->canRxPin = Gpio::G0;
 	engineConfiguration->canTxPin = Gpio::G1;
@@ -110,7 +110,13 @@ static struct l9779_config l9779_cfg = {
 	.spi_bus = &SPID1,
 	.spi_config = {
 		.circular = false,
-		.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+		.end_cb = nullptr,
+#else
+		.slave = false,
+		.data_cb = nullptr,
+		.error_cb = nullptr,
+#endif
 		.ssport = GPIOE,
 		.sspad = 12,
 		.cr1 =
@@ -184,3 +190,8 @@ int getBoardMetaOutputsCount() {
 int getBoardMetaDcOutputsCount() {
     return 1;
 }
+void setup_custom_board_overrides() {
+	custom_board_DefaultConfiguration = m74_9_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  m74_9_boardConfigOverrides;
+}
+

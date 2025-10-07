@@ -3,10 +3,11 @@
 #include "defaults.h"
 #include "hellen_meta.h"
 #include "drivers/gpio/tle9104.h"
+#include "board_overrides.h"
 
 static OutputPin tempPullUp;
 
-void setBoardConfigOverrides() {
+static void alphax_4kgdi_boardConfigOverrides() {
     hellenMegaSdWithAccelerometer();
 	setHellenVbatt();
     enableHellenSpi2();
@@ -23,7 +24,7 @@ void setBoardConfigOverrides() {
 	engineConfiguration->mc33816_flag0 = Gpio::H144_IN_RES3;
 }
 
-void setBoardDefaultConfiguration() {
+static void alphax_4kgdi_defaultConfiguration() {
 	engineConfiguration->ignitionPins[0] = Gpio::H144_IGN_1;
 	engineConfiguration->ignitionPins[1] = Gpio::H144_IGN_2;
 	engineConfiguration->ignitionPins[2] = Gpio::H144_IGN_3;
@@ -65,8 +66,7 @@ void setBoardDefaultConfiguration() {
 	engineConfiguration->map.sensor.hwChannel = H144_IN_MAP1;
 	engineConfiguration->clt.adcChannel = H144_IN_CLT;
 	engineConfiguration->iat.adcChannel = H144_IN_IAT;
-	engineConfiguration->tps1_1AdcChannel = H144_IN_TPS;
-	engineConfiguration->tps1_2AdcChannel = H144_IN_TPS2;
+	setTPS1Inputs(H144_IN_TPS, H144_IN_TPS2);
 	setPPSInputs(H144_IN_PPS, H144_IN_PPS2);
 }
 
@@ -75,7 +75,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
 			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOD, // H144_GP_IO1
 			.sspad = 4,
 			.cr1 =
@@ -101,7 +107,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
 			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOD, // H144_GP_IO2
 			.sspad = 7,
 			.cr1 =
@@ -127,7 +139,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
 			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOG, // H144_GP_IO3
 			.sspad = 10,
 			.cr1 =
@@ -153,7 +171,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
    		.spi_bus = &SPID2,
    		.spi_config = {
    			.circular = false,
-   			.end_cb = nullptr,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
    			.ssport = GPIOG, // H144_GP_IO4
    			.sspad = 9,
    			.cr1 =
@@ -177,7 +201,7 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
    	}
 	};
 
-/*PUBLIC_API_WEAK*/ void boardInitHardware() {
+static void alphax_4kGDI_boardInitHardware() {
   setHellenMegaEnPin();
     {
     	static OutputPin csLs1;
@@ -201,12 +225,12 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
     }
 	{
 	  static OutputPin TleEn;
-	  TleEn.initPin("TLE9104 En", H144_UART8_RX);
+	  TleEn.initPin("TLE9104 En", Gpio::H144_UART8_RX);
 	  TleEn.setValue(1);
 	  }
 	  {
 	    static OutputPin TleReset;
-	    TleReset.initPin("TLE9104 Reset", H144_UART8_TX);
+	    TleReset.initPin("TLE9104 Reset", Gpio::H144_UART8_TX);
 	    TleReset.setValue(1);
     }
     {
@@ -260,3 +284,10 @@ Gpio* getBoardMetaOutputs() {
 int getBoardMetaDcOutputsCount() {
     return 1;
 }
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = alphax_4kGDI_boardInitHardware;
+	custom_board_DefaultConfiguration = alphax_4kgdi_defaultConfiguration;
+	custom_board_ConfigOverrides = alphax_4kgdi_boardConfigOverrides;
+}
+

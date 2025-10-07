@@ -17,6 +17,8 @@
 
 float getAnalogInputDividerCoefficient(adc_channel_e);
 float boardAdjustVoltage(float voltage, adc_channel_e hwChannel);
+/* optional, checks if measured voltage is valid */
+int boardGetAnalogInputDiagnostic(adc_channel_e, float voltage);
 
 inline bool isAdcChannelValid(adc_channel_e hwChannel) {
 	/* Compiler will optimize, keep following if as a reminder */
@@ -39,7 +41,7 @@ inline bool isAdcChannelOffChip(adc_channel_e hwChannel) {
 	return (isAdcChannelValid(hwChannel) && (hwChannel > EFI_ADC_ONCHIP_LAST));
 }
 
-int analogGetDiagnostic();
+ObdCode analogGetDiagnostic();
 
 #if !defined(GPT_FREQ_FAST) || !defined(GPT_PERIOD_FAST)
 
@@ -78,15 +80,13 @@ enum class AdcChannelMode : char {
 	Fast
 };
 
+void adcInputsUpdateSubscribers(efitick_t nowNt);
+
 AdcChannelMode getAdcMode(adc_channel_e hwChannel);
 void initAdcInputs();
 
-// wait until at least 1 slowADC sampling is complete
-void waitForSlowAdc(uint32_t lastAdcCounter = 1);
-
 void printFullAdcReportIfNeeded(void);
 int getInternalAdcValue(const char *msg, adc_channel_e index);
-float getMCUInternalTemperature(void);
 
 void addFastAdcChannel(const char *name, adc_channel_e hwChannel);
 void removeChannel(const char *name, adc_channel_e hwChannel);
@@ -94,9 +94,6 @@ void removeChannel(const char *name, adc_channel_e hwChannel);
 #define adcGetRawValue(msg, hwChannel) getInternalAdcValue(msg, hwChannel)
 
 #define adcRawValueToScaledVoltage(adc, hwChannel) (adcRawValueToRawVoltage(adc) * getAnalogInputDividerCoefficient(hwChannel))
-
-// This callback is called by the ADC driver when a new fast ADC sample is ready
-void onFastAdcComplete(adcsample_t* samples);
 
 using AdcToken = uint32_t;
 
@@ -116,6 +113,13 @@ AdcToken enableFastAdcChannel(const char* msg, adc_channel_e channel);
 adcsample_t getFastAdc(AdcToken token);
 const ADCConversionGroup* getKnockConversionGroup(uint8_t channelIdx);
 void onKnockSamplingComplete();
+
+// Slow ADC stuff
+float getMCUInternalTemperature(void);
+float getMCUVref(void);
+// wait until at least 1 slowADC sampling is complete
+void waitForSlowAdc(uint32_t lastAdcCounter = 1);
+
 #endif // HAL_USE_ADC
 
 void printFullAdcReport(void);

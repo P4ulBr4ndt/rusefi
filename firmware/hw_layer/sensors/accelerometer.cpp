@@ -45,15 +45,26 @@
  */
 static SPIConfig accelerometerSpiCfg = {
 #if SPI_SUPPORTS_CIRCULAR == TRUE
-	.circular = FALSE,
+	.circular = false,
 #endif
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
 	.end_cb = NULL,
+#else
+	.slave = false,
+	.data_cb = NULL,
+	.error_cb = NULL,
+#endif
 	/* HW dependent part.*/
 	.ssport = NULL,
 	.sspad = 0,
+#ifdef STM32H7XX
+	.cfg1 = SPI_CFG1_8BIT_MODE | SPI_CFG1_MBR_0 | SPI_CFG1_MBR_1,
+	.cfg2 = SPI_CFG2_8BIT_MODE | SPI_CFG2_CPOL | SPI_CFG2_CPHA
+#else
 	.cr1 = SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_CPOL | SPI_CR1_CPHA |
 		SPI_CR1_8BIT_MODE,
 	.cr2 = SPI_CR2_8BIT_MODE
+#endif
 };
 
 OutputPin accelerometerChipSelect;
@@ -70,7 +81,7 @@ static LIS2DW12Config lis2dw12cfg = {
 #endif
 	.accsensitivity = NULL,
 	.accbias = NULL,
-	.accoutputdatarate = LIS2DW12_ACC_ODR_25HZ,
+	.accodr = LIS2DW12_ACC_ODR_25HZ,
 	.accoutputresolution = LIS2DW12_ACC_OR_HP,
 	.acclowpowermode = LIS2DW12_ACC_LP_MODE2,
 	.accbadwidthselect = LIS2DW12_ACC_BW_ODR4,
@@ -92,7 +103,7 @@ static LSM303AGRConfig lis2dh12cfg = {
 	.accsensitivity = NULL,
 	.accbias = NULL,
 	.accfullscale = LSM303AGR_ACC_FS_4G,
-	.accoutdatarate = LSM303AGR_ACC_ODR_50Hz,
+	.accodr = LSM303AGR_ACC_ODR_50Hz,
 #if LSM303AGR_USE_ADVANCED
 	.accmode = LSM303AGR_ACC_MODE_HRES,
 	.accblockdataupdate = LSM303AGR_ACC_BDU_CONT,
@@ -101,7 +112,7 @@ static LSM303AGRConfig lis2dh12cfg = {
 	/* LIS2DW12 is Accelerometer only, ignore following */
 	.compsensitivity = NULL,
 	.compbias = NULL,
-	.compoutputdatarate = LSM303AGR_COMP_ODR_50HZ,
+	.compodr = LSM303AGR_COMP_ODR_50HZ,
 #if LSM303AGR_USE_ADVANCED
 	.compmode = LSM303AGR_COMP_MODE_NORM,
 	.complp = LSM303AGR_COMP_LPOW_EN
@@ -125,7 +136,7 @@ static LIS302DLConfig lis302dlcfg ={
 	.accsensitivity = NULL,
 	.accbias = NULL,
 	.accfullscale = LIS302DL_ACC_FS_8G,
-	.accoutputdatarate = LIS302DL_ACC_ODR_100HZ,
+	.accodr = LIS302DL_ACC_ODR_100HZ,
 #if LIS302DL_USE_ADVANCED
 	.acchighpass = LIS302DL_ACC_HP_0,
 #endif
@@ -145,7 +156,7 @@ static LIS3DSHConfig lis3dshcfg ={
 	.accsensitivity = NULL,
 	.accbias = NULL,
 	.accfullscale = LIS3DSH_ACC_FS_4G,
-	.accoutputdatarate = LIS3DSH_ACC_ODR_50HZ,
+	.accodr = LIS3DSH_ACC_ODR_50HZ,
 #if LIS3DSH_USE_ADVANCED
 	.accantialiasing = LIS3DSH_ACC_BW_50HZ,
 	.accblockdataupdate = LIS3DSH_ACC_BDU_CONTINUOUS,
@@ -171,6 +182,8 @@ public:
 	AccelController() : PeriodicController("Acc SPI") { }
 private:
 	void PeriodicTask(efitick_t nowNt) override	{
+		UNUSED(nowNt);
+
 		msg_t ret = MSG_RESET;
 		float acccooked[3];
 

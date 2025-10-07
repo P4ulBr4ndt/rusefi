@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.JAXBException;
 
+import static com.rusefi.maintenance.migration.TableAddColumnsMigrator.VE_RPM_BINS_FIELD_NAME;
+import static com.rusefi.maintenance.migration.TableAddColumnsMigrator.VE_TABLE_FIELD_NAME;
 import static com.rusefi.maintenance.migration.default_migration.DefaultTestTuneMigrationContext.*;
-import static com.rusefi.maintenance.migration.ve_table_extension.VeTableExtensionTestTuneMigrationContext.VE_RPM_BINS_FIELD_NAME;
-import static com.rusefi.maintenance.migration.ve_table_extension.VeTableExtensionTestTuneMigrationContext.VE_TABLE_FIELD_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DefaultTuneMigratorTest {
@@ -118,9 +118,121 @@ public class DefaultTuneMigratorTest {
     }
 
     @Test
+    public void testLambdaLoadBins() {
+        checkValueToUpdateExist(
+            "lambdaLoadBins",
+            "\n" +
+                "         31.0\n" +
+                "         41.0\n" +
+                "         51.0\n" +
+                "         61.0\n" +
+                "         71.0\n" +
+                "         81.0\n" +
+                "         91.0\n" +
+                "         101.0\n" +
+                "         111.0\n" +
+                "         121.0\n" +
+                "         131.0\n" +
+                "         151.0\n" +
+                "         171.0\n" +
+                "         201.0\n" +
+                "         221.0\n" +
+                "         251.0\n",
+            "\n" +
+                "         30.0\n" +
+                "         40.0\n" +
+                "         50.0\n" +
+                "         60.0\n" +
+                "         70.0\n" +
+                "         80.0\n" +
+                "         90.0\n" +
+                "         100.0\n" +
+                "         110.0\n" +
+                "         120.0\n" +
+                "         130.0\n" +
+                "         150.0\n" +
+                "         175.0\n" +
+                "         200.0\n" +
+                "         225.0\n" +
+                "         250.0\n"
+        );
+    }
+
+    @Test
+    public void testThrottlePedalUpVoltage() {
+        checkValueToUpdateExist("throttlePedalUpVoltage", "1.7", "0.0");
+    }
+
+    @Test
+    public void testCltCrankingCorr() {
+        checkValueToUpdateExist(
+            "cltCrankingCorr",
+            "\n" +
+                "         1.0\n" +
+                "         1.1\n" +
+                "         1.2\n" +
+                "         1.3\n" +
+                "         1.4\n" +
+                "         1.5\n" +
+                "         1.6\n" +
+                "         1.7\n",
+            "\n" +
+                "         1.0\n" +
+                "         1.0\n" +
+                "         1.0\n" +
+                "         1.0\n" +
+                "         1.0\n" +
+                "         1.0\n" +
+                "         1.0\n" +
+                "         1.0\n"
+        );
+    }
+
+    @Test
+    public void testFanOffTemperature() {
+        checkValueToUpdateExist("fanOffTemperature", "98.0", "88.0");
+    }
+
+    @Test
     public void testContent() {
         assertEquals(
-            "We aren't going to restore field `enableKnockSpectrogram`: it looks like its value is just renamed: `\"false\"` -> `\"no\"`\r\n",
+            "We aren't going to restore field `auxSerialRxPin`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `auxSerialSpeed`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `auxSerialTxPin`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUse2stepPullDown`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseCamPullDown`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseCamVrPullUp`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseCrankPullUp`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseD2PullDown`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseD3PullDown`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseD4PullDown`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseD5PullDown`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseTachPullUp`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boardUseTempPullUp`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `boostTpsBins`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `communityCommsLedPid`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `crankingCycleCoef`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `enableInnovateLC2`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `enableKnockSpectrogram`: it looks like its value is just renamed: `\"false\"` -> `\"no\"`\r\n" +
+                "We aren't going to restore field `etb1configured`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `etb2configured`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `etbExpAverageLength`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `etbJamIntegratorLimit`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `etbRocExpAverageLength`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `isManualSpinningMode`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `knockBandCustom`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `mapAveragingSchedulingAtIndex`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `noAccelAfterHardLimitPeriodSecs`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `oddFireEngine`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `showHumanReadableWarning`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `skipADC12bitAssert`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `skipBoardCanDash`: it is missed in new .ini file\r\n" +
+                "WARNING! Field `stft_cellCfgs1_maxAdd` cannot be migrated because type is updated: `ScalarIniField{name=stft_cellCfgs1_maxAdd, offset=1020, unit='%', type=INT8}` -> `ScalarIniField{name=stft_cellCfgs1_maxAdd, offset=1032, unit='%', type=UINT8}`\r\n" +
+                "WARNING! Field `stft_cellCfgs1_maxRemove` cannot be migrated because type is updated: `ScalarIniField{name=stft_cellCfgs1_maxRemove, offset=1021, unit='%', type=INT8}` -> `ScalarIniField{name=stft_cellCfgs1_maxRemove, offset=1033, unit='%', type=UINT8}`\r\n" +
+                "We aren't going to restore field `targetVBatt`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `test557pin`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `throttlePedalUpPin`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `throttlePedalUpPinMode`: it is missed in new .ini file\r\n",
             testContext.getTestCallbacks().getContent()
         );
     }
@@ -149,6 +261,9 @@ public class DefaultTuneMigratorTest {
 
         final Constant valueToUpdate = testContext.getMigratedConstants().get(fieldName);
         assertNotNull(valueToUpdate);
-        assertEquals(prevValue, valueToUpdate);
+        final Constant expectedValueToUpdate = updatedValue != null ?
+            updatedValue.cloneWithValue(prevValue.getValue()) :
+            prevValue;
+        assertEquals(expectedValueToUpdate, valueToUpdate);
     }
 }

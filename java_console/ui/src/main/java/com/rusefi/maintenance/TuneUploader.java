@@ -1,6 +1,7 @@
 package com.rusefi.maintenance;
 
-import com.rusefi.SerialPortScanner;
+import com.rusefi.ConnectivityContext;
+import com.rusefi.PortResult;
 import com.rusefi.binaryprotocol.BinaryProtocolLocalCache;
 import com.rusefi.io.UpdateOperationCallbacks;
 import com.rusefi.panama.PanamaClient;
@@ -10,7 +11,7 @@ import com.rusefi.ui.basic.InstanceNameEditor;
 import java.io.File;
 import java.util.Optional;
 
-import static com.rusefi.maintenance.CalibrationsHelper.readAndBackupCurrentCalibrations;
+import static com.rusefi.maintenance.CalibrationsHelper.readAndBackupCurrentCalibrationsWithSuspendedPortScanner;
 
 public enum TuneUploader {
     INSTANCE;
@@ -21,9 +22,9 @@ public enum TuneUploader {
      * @return true in case of success, false otherwise
      */
     public synchronized boolean uploadTune(
-        final SerialPortScanner.PortResult ecuPort,
+        final PortResult ecuPort,
         final String panamaUrl,
-        final UpdateOperationCallbacks callbacks
+        final UpdateOperationCallbacks callbacks, ConnectivityContext connectivityContext
     ) {
         boolean result = false;
 
@@ -34,17 +35,17 @@ public enum TuneUploader {
             return false;
         }
 
-        final Optional<CalibrationsInfo> calibrationsToUpload = readAndBackupCurrentCalibrations(
-            ecuPort,
+        final Optional<CalibrationsInfo> calibrationsToUpload = readAndBackupCurrentCalibrationsWithSuspendedPortScanner(
+            ecuPort.port,
             callbacks,
-            CALIBRATIONS_TO_UPLOAD_FILE_NAME
+            CALIBRATIONS_TO_UPLOAD_FILE_NAME, connectivityContext
         );
         if (!calibrationsToUpload.isPresent()) {
             callbacks.logLine("Failed to back up current calibrations...");
             return false;
         }
 
-        final Optional<Integer> receivedMcuSerial = OutputChannelsHelper.readMcuSerial(ecuPort, callbacks);
+        final Optional<Integer> receivedMcuSerial = OutputChannelsHelper.readMcuSerial(ecuPort, callbacks, connectivityContext);
         if (!receivedMcuSerial.isPresent()) {
             callbacks.logLine("Failed to read " + PanamaHelper.MCUSERIAL + " output channel - please update firmware first!");
             return false;

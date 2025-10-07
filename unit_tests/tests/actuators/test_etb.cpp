@@ -31,7 +31,7 @@ TEST(etb, initializationNoPedal) {
 	EXPECT_CALL(mocks[1], init(DC_Throttle2, _, _, _)).WillOnce(Return(false));
 
 	// This shouldn't throw, since no throttles are configured, but no pedal is configured either
-	EXPECT_NO_FATAL_ERROR(doInitElectronicThrottle());
+	EXPECT_NO_FATAL_ERROR(doInitElectronicThrottle(true));
 }
 
 TEST(etb, initializationMissingThrottle) {
@@ -54,7 +54,7 @@ TEST(etb, initializationMissingThrottle) {
 	Sensor::setMockValue(SensorType::AcceleratorPedalPrimary, 0);
 
 	// This should throw: a pedal is configured but no throttles
-	EXPECT_FATAL_ERROR(doInitElectronicThrottle());
+	EXPECT_FATAL_ERROR(doInitElectronicThrottle(true));
 }
 
 TEST(etb, initializationSingleThrottle) {
@@ -82,7 +82,7 @@ TEST(etb, initializationSingleThrottle) {
 	// Expect mock1 to be init as none
 	EXPECT_CALL(mocks[1], init(DC_None, _, _, _)).Times(0);
 
-	doInitElectronicThrottle();
+	doInitElectronicThrottle(false);
 }
 
 TEST(etb, initializationSingleThrottleInSecondSlot) {
@@ -110,7 +110,7 @@ TEST(etb, initializationSingleThrottleInSecondSlot) {
 	// Expect mock1 to be init as throttle 1, and PID params
 	EXPECT_CALL(mocks[1], init(DC_Throttle1, _, &engineConfiguration->etb, Ne(nullptr))).WillOnce(Return(true));
 
-	doInitElectronicThrottle();
+	doInitElectronicThrottle(false);
 }
 
 TEST(etb, initializationDualThrottle) {
@@ -143,7 +143,7 @@ TEST(etb, initializationDualThrottle) {
 	// Expect mock1 to be init as throttle 2, and PID params
 	EXPECT_CALL(mocks[1], init(DC_Throttle2, _, &engineConfiguration->etb, Ne(nullptr))).WillOnce(Return(true));
 
-	doInitElectronicThrottle();
+	doInitElectronicThrottle(false);
 }
 
 TEST(etb, initializationWastegate) {
@@ -167,7 +167,7 @@ TEST(etb, initializationWastegate) {
 	// Expect mock1 to be init as none
 	EXPECT_CALL(mocks[1], init(DC_None, _, _, _)).Times(0);
 
-	doInitElectronicThrottle();
+	doInitElectronicThrottle(false);
 }
 
 TEST(etb, initializationNoFunction) {
@@ -870,4 +870,52 @@ TEST(etb, openLoopNonThrottle) {
 	EXPECT_EQ(0, etb.getOpenLoop(50).value_or(-1));
 	EXPECT_EQ(0, etb.getOpenLoop(75).value_or(-1));
 	EXPECT_EQ(0, etb.getOpenLoop(100).value_or(-1));
+}
+
+TEST(etb, tractionControlEtbDrop) {
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+
+	setTable(engineConfiguration->tractionControlEtbDrop, -10);
+	setLinearCurve(engineConfiguration->tractionControlSlipBins, /*from*/0.9, /*to*/1.2, 0.05);
+	setLinearCurve(engineConfiguration->tractionControlSpeedBins, /*from*/10, /*to*/120, 5);
+
+	// Mock pedal map that's just passthru pedal -> target
+	StrictMock<MockVp3d> pedalMap;
+	EXPECT_CALL(pedalMap, getValue(_, _))
+		.WillRepeatedly([](float xRpm, float y) {
+			return y;
+		});
+
+	// Must have TPS & PPS initialized for ETB setup
+	Sensor::setMockValue(SensorType::Tps1Primary, 0);
+	Sensor::setMockValue(SensorType::Tps1, 0.0f, true);
+	Sensor::setMockValue(SensorType::AcceleratorPedal, 0.0f, true);
+
+	EtbController1 etb;
+	etb.init(DC_Throttle1, nullptr, nullptr, &pedalMap);
+
+	Sensor::setMockValue(SensorType::AcceleratorPedal, 47, true);
+	EXPECT_EQ(37, etb.getSetpoint().value_or(-1));
+
+	// test correct X/Y on table
+	Sensor::setMockValue(SensorType::VehicleSpeed, 40.0);
+	Sensor::setMockValue(SensorType::WheelSlipRatio, 0.9);
+
+	engineConfiguration->tractionControlEtbDrop[0][0] = -15;
+	engineConfiguration->tractionControlEtbDrop[0][1] = -15;
+
+	size_t lastYIndex = TRACTION_CONTROL_ETB_DROP_SLIP_SIZE - 1;
+	size_t lastXIndex = TRACTION_CONTROL_ETB_DROP_SPEED_SIZE - 1;
+
+	engineConfiguration->tractionControlEtbDrop[lastYIndex - 1][lastXIndex - 1] = 15;
+	engineConfiguration->tractionControlEtbDrop[lastYIndex][lastXIndex] = 15;
+
+	// we expect here that the first values are 37, and the last on the rigth side of the table are 62
+
+	EXPECT_EQ(37, etb.getSetpoint().value_or(-1));
+
+	Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+	Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+
+	EXPECT_EQ(62, etb.getSetpoint().value_or(-1));
 }

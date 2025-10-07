@@ -4,6 +4,7 @@ import com.devexperts.logging.Logging;
 import com.efiAnalytics.plugin.ApplicationPlugin;
 import com.efiAnalytics.plugin.ecu.ControllerAccess;
 import com.rusefi.core.rusEFIVersion;
+import com.rusefi.ts_plugin.headless.TsHeadlessPlugin;
 import org.putgemin.VerticalFlowLayout;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ import static com.devexperts.logging.Logging.getLogging;
  * @see Updater
  */
 public class TsPluginLauncher implements ApplicationPlugin {
-    public static final int BUILD_VERSION = 6;
+    public static final int BUILD_VERSION = 7;
     static final String VERSION = "2025.alpha." + BUILD_VERSION;
     private static final Logging log = getLogging(TsPluginLauncher.class);
     private static final String HELP_URL = "https://github.com/rusefi/rusefi/wiki/TS-Plugin";
@@ -29,6 +30,11 @@ public class TsPluginLauncher implements ApplicationPlugin {
 
     public TsPluginLauncher() {
         log.info("init " + this);
+        Thread pluginFetchThread = new Thread(() -> {
+            TsPluginBodyFetcher.downloadLatestIfNeeded();
+            TsHeadlessPlugin.start();
+        }, "pluginFetchThread");
+        pluginFetchThread.start();
     }
 
     @Override

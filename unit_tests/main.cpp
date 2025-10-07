@@ -12,6 +12,12 @@
 bool hasInitGtest = false;
 
 GTEST_API_ int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "sandbox") == 0) {
+    void runSandbox();
+    runSandbox();
+    return 0;
+  }
+
 	hasInitGtest = true;
 
 	testing::InitGoogleTest(&argc, argv);
@@ -19,6 +25,8 @@ GTEST_API_ int main(int argc, char **argv) {
 	/**
 	 * See TEST_FROM_TRIGGER_ID to limit test just for last trigger
 	 */
+// todo: can we check argc or argv and setVerboseTrigger(true) dynamically if invoked with AllTriggersFixture?
+// command line AllTriggersFixture #7946
 //	setVerboseTrigger(true);
 // --gtest_filter=*TEST_NAME*
 	//::testing::GTEST_FLAG(filter) = "*AllTriggersFixture*";

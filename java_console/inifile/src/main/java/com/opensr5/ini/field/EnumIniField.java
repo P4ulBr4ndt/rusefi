@@ -55,7 +55,7 @@ public class EnumIniField extends IniField {
         ordinal = getBitRange(ordinal, bitPosition, bitSize0 + 1);
 
         if (ordinal >= enums.size())
-            throw new IllegalStateException("Ordinal out of range " + ordinal + " in " + getName() + " while " + enums.size() + " " + type);
+            throw new OrdinalOutOfRangeException("Ordinal out of range " + ordinal + " in " + getName() + " while " + enums.size() + " " + type);
         return "\"" + enums.get(ordinal) + "\"";
     }
 
@@ -77,7 +77,7 @@ public class EnumIniField extends IniField {
         String v = constant.getValue();
         int ordinal = enums.indexOf(v);
         if (ordinal == -1)
-            throw new IllegalArgumentException("Not found " + v);
+            throw new IllegalArgumentException(constant.getName() + ": Enum name not found " + v);
         int value = getByteBuffer(image).getInt();
         value = setBitRange(value, ordinal, bitPosition, bitSize0 + 1);
         getByteBuffer(image).putInt(value);

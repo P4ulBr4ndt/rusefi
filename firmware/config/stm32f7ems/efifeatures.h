@@ -36,10 +36,6 @@
 #define EFI_USE_COMPRESSED_INI_MSD TRUE
 #endif
 
-#ifndef LUA_USER_HEAP
-#define LUA_USER_HEAP 100000
-#endif
-
 // UART driver not implemented on F7
 #ifndef AUX_SERIAL_DEVICE
 #define AUX_SERIAL_DEVICE (&SD6)
@@ -52,11 +48,6 @@
 
 #ifndef FULL_SD_LOGS
 #define FULL_SD_LOGS TRUE
-#endif
-
-// F7 may have dual bank, so flash on its own (low priority) thread so as to not block any other operations
-#ifndef EFI_FLASH_WRITE_THREAD
-#define EFI_FLASH_WRITE_THREAD TRUE
 #endif
 
 // note order of include - first we set F7 defaults (above) and only later we apply F4 defaults

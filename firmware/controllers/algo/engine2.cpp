@@ -19,6 +19,8 @@
 #include "injector_model.h"
 #include "tunerstudio.h"
 
+#include "rusefi/efistring.h"
+
 #if ! EFI_UNIT_TEST
 #include "status_loop.h"
 #endif
@@ -33,12 +35,11 @@ void WarningCodeState::clear() {
 	recentWarnings.clear();
 }
 
-void WarningCodeState::addWarningCode(ObdCode code) {
+void WarningCodeState::addWarningCode(ObdCode code, const char *text) {
 	warningCounter++;
 	lastErrorCode = code;
 
 	warning_t* existing = recentWarnings.find(code);
-
 	if (!existing) {
 		chibios_rt::CriticalSectionLocker csl;
 
@@ -49,10 +50,62 @@ void WarningCodeState::addWarningCode(ObdCode code) {
 	if (existing) {
 		// Reset the timer on the code to now
 		existing->LastTriggered.reset();
+
+		// no pending message? lets try to add this
+		if ((m_msgWarning == nullptr) && (text)) {
+			strlncpy(m_msg, text, sizeof(m_msg));
+			m_msgWarning = existing;
+		}
 	}
 
 	// Reset the "any warning" timer too
 	timeSinceLastWarning.reset();
+}
+
+void WarningCodeState::refreshTs() {
+	TunerStudioOutputChannels *tsOutputChannels = &engine->outputChannels;
+	const int period = maxI(3, engineConfiguration->warningPeriod);
+
+	// TODO: do we neet this sticky warning code?
+	tsOutputChannels->warningCounter = engine->engineState.warnings.warningCounter;
+	tsOutputChannels->lastErrorCode = static_cast<uint16_t>(engine->engineState.warnings.lastErrorCode);
+
+	// TODO: fix OBD codes "jumping" between positions when one of codes disapears
+
+	size_t i = 0;
+	for (size_t j = 0; j < recentWarnings.getCount(); j++) {
+		warning_t& warn = recentWarnings.get(j);
+		if (warn.Code != ObdCode::None) {
+			if (!warn.LastTriggered.hasElapsedSec(period)) {
+				if (i < efi::size(tsOutputChannels->recentErrorCode)) {
+					tsOutputChannels->recentErrorCode[i] = static_cast<uint16_t>(warn.Code);
+					i++;
+				}
+			} else {
+				// warning message is outdated, stop showing to TS
+				if (m_msgWarning == &warn) {
+					m_msg[0] = 0;
+					m_msgWarning = nullptr;
+				}
+				// TODO:
+				// reset warning as it is outdated
+			}
+		}
+	}
+
+	// reset rest
+	for ( ; i < efi::size(tsOutputChannels->recentErrorCode); i++) {
+		tsOutputChannels->recentErrorCode[i] = 0;
+	}
+}
+
+bool WarningCodeState::hasWarningMessage() {
+	// Do we have any error code to show as text?
+	return (m_msgWarning != nullptr);
+}
+
+const char* WarningCodeState::getWarningMessage() {
+	return m_msg;
 }
 
 /**
@@ -131,18 +184,7 @@ void EngineState::periodicFastCallback() {
 	// should be called before getInjectionMass() and getLimitingTimingRetard()
 	getLimpManager()->updateRevLimit(rpm);
 
-	// post-cranking fuel enrichment.
-	float m_postCrankingFactor = interpolate3d(
-		config->postCrankingFactor,
-		config->postCrankingCLTBins, Sensor::getOrZero(SensorType::Clt),
-		config->postCrankingDurationBins, engine->rpmCalculator.getRevolutionCounterSinceStart()
-	);
-	// for compatibility reasons, apply only if the factor is greater than unity (only allow adding fuel)
-	// if the engine run time is past the last bin, disable ASE in case the table is filled with values more than 1.0, helps with compatibility
-	if ((m_postCrankingFactor < 1.0f) || (engine->rpmCalculator.getRevolutionCounterSinceStart() > config->postCrankingDurationBins[efi::size(config->postCrankingDurationBins)-1])) {
-		m_postCrankingFactor = 1.0f;
-	}
-	engine->fuelComputer.running.postCrankingFuelCorrection = m_postCrankingFactor;
+	engine->fuelComputer.running.postCrankingFuelCorrection = getPostCrankingFuelCorrection();
 
 	baroCorrection = getBaroCorrection();
 
@@ -150,7 +192,13 @@ void EngineState::periodicFastCallback() {
 	updateTChargeK(rpm, tps.value_or(0));
 
 	float untrimmedInjectionMass = getInjectionMass(rpm) * engine->engineState.lua.fuelMult + engine->engineState.lua.fuelAdd;
-	auto clResult = fuelClosedLoopCorrection();
+	float fuelLoad = getFuelingLoad();
+
+	auto clResult = engine->module<ShortTermFuelTrim>()->getCorrection(rpm, fuelLoad);
+
+	engine->module<LongTermFuelTrim>()->learn(clResult, rpm, fuelLoad);
+
+	auto ltftResult = engine->module<LongTermFuelTrim>()->getTrims(rpm, fuelLoad);
 
 	injectionStage2Fraction = getStage2InjectionFraction(rpm, engine->fuelComputer.afrTableYAxis);
 	float stage2InjectionMass = untrimmedInjectionMass * injectionStage2Fraction;
@@ -163,7 +211,6 @@ void EngineState::periodicFastCallback() {
 		? engine->module<InjectorModelSecondary>()->getInjectionDuration(stage2InjectionMass)
 		: 0;
 
-	float fuelLoad = getFuelingLoad();
 	injectionOffset = getInjectionOffset(rpm, fuelLoad);
 	engine->lambdaMonitor.update(rpm, fuelLoad);
 
@@ -186,32 +233,31 @@ void EngineState::periodicFastCallback() {
 	engine->ignitionState.baseIgnitionAdvance = MAKE_HUMAN_READABLE_ADVANCE(baseAdvance);
 	engine->ignitionState.correctedIgnitionAdvance = MAKE_HUMAN_READABLE_ADVANCE(correctedIgnitionAdvance);
 
-
 	// compute per-bank fueling
-	for (size_t i = 0; i < STFT_BANK_COUNT; i++) {
-		float corr = clResult.banks[i];
-		// todo: move to engine_state.txt and get rid of fuelPidCorrection in output_channels.txt?
-		engine->engineState.stftCorrection[i] = corr;
+	for (size_t bankIndex = 0; bankIndex < FT_BANK_COUNT; bankIndex++) {
+		engine->engineState.stftCorrection[bankIndex] = clResult.banks[bankIndex];
 	}
 
 	// Now apply that to per-cylinder fueling and timing
-	for (size_t i = 0; i < engineConfiguration->cylindersCount; i++) {
-		uint8_t bankIndex = engineConfiguration->cylinderBankSelect[i];
-		auto bankTrim = engine->engineState.stftCorrection[bankIndex];
-		auto cylinderTrim = getCylinderFuelTrim(i, rpm, fuelLoad);
+	for (size_t cylinderIndex = 0; cylinderIndex < engineConfiguration->cylindersCount; cylinderIndex++) {
+		uint8_t bankIndex = engineConfiguration->cylinderBankSelect[cylinderIndex];
+    efiAssertVoid(ObdCode::CUSTOM_OBD_BAD_BANK_INDEX, bankIndex < FT_BANK_COUNT, "bankIndex");
+		/* TODO: add LTFT trims when ready */
+		auto bankTrim = clResult.banks[bankIndex] * ltftResult.banks[bankIndex];
+		auto cylinderTrim = getCylinderFuelTrim(cylinderIndex, rpm, fuelLoad);
 		auto knockTrim = engine->module<KnockController>()->getFuelTrimMultiplier();
 
 		// Apply both per-bank and per-cylinder trims
-		engine->engineState.injectionMass[i] = untrimmedInjectionMass * bankTrim * cylinderTrim * knockTrim;
+		engine->engineState.injectionMass[cylinderIndex] = untrimmedInjectionMass * bankTrim * cylinderTrim * knockTrim;
 
 		angle_t cylinderIgnitionAdvance = correctedIgnitionAdvance
-									+ getCylinderIgnitionTrim(i, rpm, l_ignitionLoad)
+									+ getCylinderIgnitionTrim(cylinderIndex, rpm, l_ignitionLoad)
 									// spark hardware latency correction, for implementation details see:
 									// https://github.com/rusefi/rusefi/issues/6832:
 									+ engine->ignitionState.getSparkHardwareLatencyCorrection();
 		wrapAngle(cylinderIgnitionAdvance, "EngineState::periodicFastCallback", ObdCode::CUSTOM_ERR_ADCANCE_CALC_ANGLE);
 		// todo: is it OK to apply cylinder trim with FIXED timing?
-		timingAdvance[i] = cylinderIgnitionAdvance;
+		timingAdvance[cylinderIndex] = cylinderIgnitionAdvance;
 	}
 
 	shouldUpdateInjectionTiming = getInjectorDutyCycle(rpm) < 90;

@@ -26,7 +26,7 @@ void doStartCranking() {
 		}
 }
 
-static void onStartStopButtonToggle() {
+void startStopButtonToggle() {
 	engine->engineState.startStopStateToggleCounter++;
 
 	if (engine->rpmCalculator.isStopped()) {
@@ -74,7 +74,10 @@ void slowStartStopButtonCallback() {
     }
 
   if (engine->rpmCalculator.isStopped()) {
-    if (engineConfiguration->requireFootOnBrakeToCrank && !engine->brakePedalSwitchedState) {
+    if (engineConfiguration->crankingCondition == CC_BRAKE && !engine->brakePedalSwitchedState) {
+      return;
+    }
+    if (engineConfiguration->crankingCondition == CC_CLUTCH && !engine->clutchUpSwitchedState) {
       return;
     }
 
@@ -87,7 +90,7 @@ void slowStartStopButtonCallback() {
 
 	if (startStopState && !engine->engineState.startStopState) {
 		// we are here on transition from 0 to 1
-		onStartStopButtonToggle();
+		startStopButtonToggle();
 	}
 	// todo: we shall extract start_stop.txt from engine_state.txt
 	engine->engineState.startStopState = startStopState;

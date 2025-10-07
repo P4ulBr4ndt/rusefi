@@ -111,8 +111,8 @@ void miataNAcommonEngineSettings() {
 
 	engineConfiguration->tachPulsePerRev = 2;
 
-	setCommonNTCSensor(&engineConfiguration->clt, 2700);
-	setCommonNTCSensor(&engineConfiguration->iat, 2700);
+	setCommonNTCSensorParameters(&engineConfiguration->clt);
+	setCommonNTCSensorParameters(&engineConfiguration->iat);
 
 #if IGN_LOAD_COUNT == 16 && IGN_RPM_COUNT == 16
 	copyTable(config->ignitionTable, mapBased16IgnitionTable);
@@ -141,7 +141,7 @@ void miataNAcommonEngineSettings() {
 
 	setMapVeTable();
 
-	engineConfiguration->idleMode = IM_AUTO;
+	engineConfiguration->idleMode = idle_mode_e::IM_AUTO;
 	// below 20% this valve seems to be opening for fail-safe idle air
 	engineConfiguration->idleRpmPid.minValue = 20;
 	engineConfiguration->idleRpmPid.pFactor = 0.01;
@@ -162,25 +162,7 @@ void miataNAcommonEngineSettings() {
 
 	// chartsize 200
 	engineConfiguration->engineChartSize = 200;
-
 	setTable(config->crankingCycleBaseFuel, 27.5);
-	config->crankingFuelCoef[0] = 2.8; // base cranking fuel adjustment coefficient
-	config->crankingFuelBins[0] = -20; // temperature in C
-	config->crankingFuelCoef[1] = 2.2;
-	config->crankingFuelBins[1] = -10;
-	config->crankingFuelCoef[2] = 1.8;
-	config->crankingFuelBins[2] = 5;
-	config->crankingFuelCoef[3] = 1.5;
-	config->crankingFuelBins[3] = 30;
-
-	config->crankingFuelCoef[4] = 1.0;
-	config->crankingFuelBins[4] = 35;
-	config->crankingFuelCoef[5] = 1.0;
-	config->crankingFuelBins[5] = 50;
-	config->crankingFuelCoef[6] = 1.0;
-	config->crankingFuelBins[6] = 65;
-	config->crankingFuelCoef[7] = 1.0;
-	config->crankingFuelBins[7] = 90;
 
 	engineConfiguration->displacement = 1.6;
 	strcpy(engineConfiguration->engineMake, ENGINE_MAKE_MAZDA);

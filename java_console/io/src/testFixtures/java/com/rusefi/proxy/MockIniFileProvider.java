@@ -18,7 +18,8 @@ public class MockIniFileProvider {
     public static IniFileProvider create() {
         IniFileMetaInfo mockMeta = mock(IniFileMetaInfo.class);
 
-        when(mockMeta.getTotalSize()).thenReturn(15000);
+        when(mockMeta.getPageSize(0)).thenReturn(15000);
+        when(mockMeta.getPageReadCommand(anyInt())).thenReturn("123456");
 
         IniFileModel mockModel = mock(IniFileModel.class);
         when(mockModel.getSignature()).thenReturn("rusEFI mocked-ini-file");
@@ -33,7 +34,8 @@ public class MockIniFileProvider {
             "mocked units",
             FieldType.UINT16,
             1.0,
-            "0"
+            "0",
+            0
         );
         when(mockModel.getAllIniFields()).thenReturn(Map.of(
             mockedStringIniField.getName(), mockedStringIniField,

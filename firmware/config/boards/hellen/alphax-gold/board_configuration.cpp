@@ -3,6 +3,7 @@
 #include "defaults.h"
 #include "smart_gpio.h"
 #include "drivers/gpio/tle9104.h"
+#include "board_overrides.h"
 
 // Configurable 2.7K pull-ups to 5V
 static OutputPin alphaTempPullUp;
@@ -76,7 +77,7 @@ static void setDefaultSensorInputs() {
 	engineConfiguration->iat.adcChannel = H144_IN_IAT;
 }
 
-void setBoardConfigOverrides() {
+static void alphax_gold_boardConfigOverrides() {
 	setHellenMegaEnPin();
 
 	setHellenVbatt();
@@ -100,7 +101,7 @@ static void setDefaultETBPins() {
  * See also setDefaultEngineConfiguration
  *
  */
-void setBoardDefaultConfiguration() {
+static void alphax_gold_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 	setHellenMMbaro();
@@ -112,8 +113,6 @@ void setBoardDefaultConfiguration() {
 
 	engineConfiguration->displayLogicLevelsInEngineSniffer = true;
 	engineConfiguration->isSdCardEnabled = true;
-
-	engineConfiguration->globalTriggerAngleOffset = 0;
 
 	engineConfiguration->enableSoftwareKnock = true;
 
@@ -147,7 +146,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
-			.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOC,
 			.sspad = 10,		// 9104_CSN_INJ_LO <- SPI3_SCK
 			.cr1 =
@@ -174,7 +179,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
-			.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOC,
 			.sspad = 11,		// 9104_CSN_INJ_HI <- SPI3_MISO
 			.cr1 =
@@ -201,7 +212,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
-			.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOC,
 			.sspad = 12,		// 9104_CSN_AUX1 <- SPI3_MOSI
 			.cr1 =
@@ -228,7 +245,13 @@ static const tle9104_config tle9104_cfg[BOARD_TLE9104_COUNT] = {
 		.spi_bus = &SPID2,
 		.spi_config = {
 			.circular = false,
-			.end_cb = NULL,
+#ifdef _CHIBIOS_RT_CONF_VER_6_1_
+			.end_cb = nullptr,
+#else
+			.slave = false,
+			.data_cb = nullptr,
+			.error_cb = nullptr,
+#endif
 			.ssport = GPIOA,
 			.sspad = 15,		// 9104_CSN_AUX2 <- SPI3_CS
 			.cr1 =
@@ -291,7 +314,7 @@ static void board_init_ext_gpios() {
 /**
  * @brief Board-specific initialization code.
  */
-void boardInitHardware() {
+static void alphax_gold_boardInitHardware() {
 	// TEMP_PULLUP
 	alphaTempPullUp.initPin("Temp PullUp", Gpio::H144_GP_IO3);
 	// IN_KNOCK1_PULLUP
@@ -373,5 +396,11 @@ Gpio* getBoardMetaOutputs() {
 
 int getBoardMetaDcOutputsCount() {
     return 2;
+}
+
+void setup_custom_board_overrides() {
+	custom_board_InitHardware = alphax_gold_boardInitHardware;
+	custom_board_DefaultConfiguration = alphax_gold_boardDefaultConfiguration;
+	custom_board_ConfigOverrides =  alphax_gold_boardConfigOverrides;
 }
 

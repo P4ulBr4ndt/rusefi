@@ -608,7 +608,7 @@ enum class ObdCode : uint16_t {
 	//P0559 Brake Booster Pressure Sensor Circuit Intermittent
 	OBD_System_Voltage_Malfunction = 560,
 	//P0561 System Voltage Unstable
-	//P0562 System Voltage Low
+	OBD_System_Voltage_Low = 562,
 	//P0563 System Voltage High
 	//P0564 Cruise Control Multi-Function Input "A" Circuit
 	//P0565 Cruise Control On Signal Malfunction
@@ -654,7 +654,7 @@ enum class ObdCode : uint16_t {
 	//P0605 Internal Control Module Read Only Memory (ROM) Error
 	OBD_PCM_Processor_Fault = 606,
 	//P0607 Control Module Performance
-	//P0608 Control Module VSS Output "A" Malfunction
+	OBD_ECM_VSS_OUTPUT_A_MALFUNCTION = 608,
 	//P0609 Control Module VSS Output "B" Malfunction
 	//P0610 Control Module Vehicle Options Error
 	//P0611 Fuel Injector Control Module Performance
@@ -688,8 +688,8 @@ enum class ObdCode : uint16_t {
 	//P0639 Throttle Actuator Control Range/Performance (Bank 2)
 	//P0640 Intake Air Heater Control Circuit
 	OBD_Sensor_Refence_Voltate_A_Open = 641,
-	//P0642 Sensor Reference Voltage &ldquo;A&rdquo; Circuit Low
-	//P0643 Sensor Reference Voltage &ldquo;A&rdquo; Circuit High
+	OBD_Sensor_Refence_Voltate_A_Low = 642,
+	OBD_Sensor_Refence_Voltate_A_High = 643,
 	//P0644 Driver Display Serial Communication Circuit
 	//P0645 A/C Clutch Relay Control Circuit
 	//P0646 A/C Clutch Relay Control Circuit Low
@@ -1716,8 +1716,8 @@ enum class ObdCode : uint16_t {
 	CUSTOM_NAN_ENGINE_LOAD = 6000,
 	CUSTOM_WRONG_ALGORITHM = 6001,
 	CUSTOM_NAN_ENGINE_LOAD_2 = 6002,
-	CUSTOM_OBD_6003 = 6003,
-	CUSTOM_OBD_6004 = 6004,
+	CUSTOM_FLEX_LOW = 6003,
+	CUSTOM_FLEX_HIGH = 6004,
 	CUSTOM_6005 = 6005,
 	CUSTOM_6006 = 6006,
 	CUSTOM_6007 = 6007,
@@ -1750,7 +1750,7 @@ enum class ObdCode : uint16_t {
 	CUSTOM_ZERO_DWELL = 6032,
 	CUSTOM_DWELL_TOO_LONG = 6033,
 	CUSTOM_SKIPPING_STROKE = 6034,
-	CUSTOM_6037 = 6037,
+	CUSTOM_OBD_impossibly_short_INJECTION = 6037,
 	/**
 	 * This error happens if some pinout configuration changes were applied but ECU was not reset afterwards.
 	 */
@@ -1780,7 +1780,7 @@ enum class ObdCode : uint16_t {
 
 	CUSTOM_OBD_MMC_START1 = 6060,
 	CUSTOM_OBD_MMC_START2 = 6061,
-	CUSTOM_OBD_62 = 6062,
+	CUSTOM_OBD_BAD_BANK_INDEX = 6062,
 	CUSTOM_OBD_63 = 6063,
 	CUSTOM_OBD_64 = 6064,
 	CUSTOM_OBD_65 = 6065,
@@ -2150,7 +2150,9 @@ enum class ObdCode : uint16_t {
 	CUSTOM_PRIMARY_DOUBLED_EDGE = 9006,
 
 	// A trigger tooth arrived at an unexpected time
-	CUSTOM_PRIMARY_BAD_TOOTH_TIMING = 9007,
+	CUSTOM_PRIMARY_BAD_TOOTH_TIMING_EARLY = 9007,
+	CUSTOM_PRIMARY_BAD_TOOTH_TIMING_LATE = 9008,
+
 
 	/**
 	 * This is not engine miss detection - this is only internal scheduler state validation
@@ -2172,4 +2174,20 @@ enum class ObdCode : uint16_t {
 	 * GPIO chip errors
 	 */
 	CUSTOM_GPIO_CHIP_FAILED_PWM = 9014,
+
+	/**
+	 * Coil did not receive discharge/fire signal in safe time
+	 */
+	CUSTOM_Ignition_Coil_Overcharge_1 = 9351,
+	CUSTOM_Ignition_Coil_Overcharge_2 = 9352,
+	CUSTOM_Ignition_Coil_Overcharge_3 = 9353,
+	CUSTOM_Ignition_Coil_Overcharge_4 = 9354,
+	CUSTOM_Ignition_Coil_Overcharge_5 = 9355,
+	CUSTOM_Ignition_Coil_Overcharge_6 = 9356,
+	CUSTOM_Ignition_Coil_Overcharge_7 = 9357,
+	CUSTOM_Ignition_Coil_Overcharge_8 = 9358,
+	CUSTOM_Ignition_Coil_Overcharge_9 = 9359,
+	CUSTOM_Ignition_Coil_Overcharge_10 = 9360,
+	CUSTOM_Ignition_Coil_Overcharge_11 = 9361,
+	CUSTOM_Ignition_Coil_Overcharge_12 = 9362,
 };

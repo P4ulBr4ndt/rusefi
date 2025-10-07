@@ -6,6 +6,7 @@ import com.rusefi.output.ConfigStructure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -23,11 +24,13 @@ public class MetaHelper {
 
     @NotNull
     static ReaderStateImpl getReaderState(String boardPath) throws IOException {
-        List<String> options = Files.readAllLines(Paths.get(RootHolder.ROOT + "../" + ConfigDefinition.CONFIG_PATH));
-        List<String> boardOptions = Files.readAllLines(Paths.get(boardPath + "board_config.txt"));
+        List<String> options = FileLinesHelper.readAllLinesWithRoot("/../" + ConfigDefinition.CONFIG_PATH);
+        List<String> boardOptions = FileLinesHelper.readAllLines2(boardPath + "board_config.txt");
 
         options.add(ConfigDefinition.KEY_PREPEND);
         options.add("integration/rusefi_config_shared.txt");
+        options.add(ConfigDefinition.KEY_PREPEND);
+        options.add("integration/fields_api.txt");
 
         // add board prepend
         options.add(ConfigDefinition.KEY_PREPEND);

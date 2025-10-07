@@ -32,12 +32,14 @@ public class IniFileModelImpl implements IniFileModel {
     private final Map<String, DialogModel> dialogs = new TreeMap<>();
     // this is only used while reading model - TODO extract reader
     private final List<DialogModel.Field> fieldsOfCurrentDialog = new ArrayList<>();
-    private Map<String, IniField> allIniFields = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private Map<String, IniField> allOutputChannels = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final List<DialogModel.Command> commandsOfCurrentDialog = new ArrayList<>();
+    private final Map<String, IniField> allIniFields = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, IniField> secondaryIniFields = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, IniField> allOutputChannels = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     public final Map<String, DialogModel.Field> fieldsInUiOrder = new LinkedHashMap<>();
 
-    public Map</*field name*/String, String> tooltips = new TreeMap<>();
-    public Map<String, String> protocolMeta = new TreeMap<>();
+    private final Map</*field name*/String, String> tooltips = new TreeMap<>();
+    private final Map<String, String> protocolMeta = new TreeMap<>();
     private boolean isConstantsSection;
     private boolean isOutputChannelsSection;
     private String currentYBins;
@@ -49,9 +51,10 @@ public class IniFileModelImpl implements IniFileModel {
 
     private boolean isInSettingContextHelp = false;
     private boolean isInsidePageDefinition;
-    private String signature;
     private int blockingFactor;
     // useful when connecting remotely via TCP/IP, if CUSTOM_TS_BUFFER_SIZE is available
+	// For proteus_f7 over TCP/IP recommended to set blockingFactorOverride=32000
+	// java -jar -DblockingFactorOverride=32000 rusefi_console.jar host:port
     private static final Integer blockingFactorOverride = Integer.getInteger("blockingFactorOverride");
 
     static {
@@ -59,9 +62,15 @@ public class IniFileModelImpl implements IniFileModel {
             log.info("blockingFactorOverride=" + blockingFactorOverride);
     }
 
+    private int currentPageIndex;
+
     public static IniFileModelImpl findAndReadIniFile(String iniFilePath) {
         final String fileName = findMetaInfoFile(iniFilePath);
-        return IniFileModelImpl.readIniFile(fileName);
+        try {
+            return IniFileModelImpl.readIniFile(fileName);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private IniFileModelImpl(@Nullable final IniFileMetaInfoImpl metaInfo, final String iniFilePath) {
@@ -71,7 +80,7 @@ public class IniFileModelImpl implements IniFileModel {
 
     @Override
     public String getSignature() {
-        return signature;
+        return metaInfo.getSignature();
     }
 
     @Override
@@ -89,8 +98,14 @@ public class IniFileModelImpl implements IniFileModel {
     }
 
     @Override
+    // todo: rename to 'getPrimaryPageIniFields()'?
     public Map<String, IniField> getAllIniFields() {
-        return allIniFields;
+        return Collections.unmodifiableMap(allIniFields);
+    }
+
+    @Override
+    public Map<String, IniField> getSecondaryIniFields() {
+        return Collections.unmodifiableMap(secondaryIniFields);
     }
 
     @Override
@@ -143,7 +158,8 @@ public class IniFileModelImpl implements IniFileModel {
         return fieldsInUiOrder;
     }
 
-    public static IniFileModelImpl readIniFile(String fileName) {
+    @NotNull
+    public static IniFileModelImpl readIniFile(String fileName) throws FileNotFoundException {
         Objects.requireNonNull(fileName, "fileName");
         log.info("Reading " + fileName);
         File input = new File(fileName);
@@ -181,18 +197,21 @@ public class IniFileModelImpl implements IniFileModel {
     }
 
     public static @Nullable String findIniFile(String iniFilePath) {
-        return FindFileHelper.findFile(iniFilePath, RUSEFI_INI_PREFIX, RUSEFI_INI_SUFFIX);
+        return FindFileHelper.findFile(iniFilePath, RUSEFI_INI_PREFIX, RUSEFI_INI_SUFFIX, (fileDirectory, fileName) -> {
+            throw new IllegalStateException("Unique match expected " + fileName);
+        }, true);
     }
 
     private void finishDialog() {
-        if (fieldsOfCurrentDialog.isEmpty())
+        if (fieldsOfCurrentDialog.isEmpty() && commandsOfCurrentDialog.isEmpty())
             return;
         if (dialogUiName == null)
             dialogUiName = dialogId;
-        dialogs.put(dialogUiName, new DialogModel(dialogId, dialogUiName, fieldsOfCurrentDialog));
+        dialogs.put(dialogUiName, new DialogModel(dialogId, dialogUiName, fieldsOfCurrentDialog, commandsOfCurrentDialog));
 
         dialogId = null;
         fieldsOfCurrentDialog.clear();
+        commandsOfCurrentDialog.clear();
     }
 
     private void handleLine(RawIniFile.Line line) {
@@ -206,6 +225,9 @@ public class IniFileModelImpl implements IniFileModel {
             }
 
             if (!list.isEmpty() && list.get(0).equals(SECTION_PAGE)) {
+                if (list.size() >= 2) {
+                    currentPageIndex = Integer.parseInt(list.get(1));
+                }
                 isInsidePageDefinition = true;
                 return;
             }
@@ -218,10 +240,6 @@ public class IniFileModelImpl implements IniFileModel {
                 }
                 if (list.size() == 2)
                     tooltips.put(list.get(0), list.get(1));
-                return;
-            } else if (rawText.contains("SettingContextHelp")) {
-                isInsidePageDefinition = false;
-                isInSettingContextHelp = true;
                 return;
             }
 
@@ -238,15 +256,18 @@ public class IniFileModelImpl implements IniFileModel {
 
             String first = list.getFirst();
 
-            if (first.equalsIgnoreCase("signature")) {
-                signature = list.get(1);
-            } else if (first.equalsIgnoreCase("blockingFactor")) {
-                blockingFactor = Integer.valueOf(list.get(1));
+            if (first.equalsIgnoreCase("blockingFactor")) {
+                blockingFactor = Integer.parseInt(list.get(1));
             }
 
 
             if (first.startsWith("[") && first.endsWith("]")) {
                 log.info("Section " + first);
+                if (first.contains("[SettingContextHelp]")) {
+                    isInsidePageDefinition = false;
+                    isInSettingContextHelp = true;
+                    return;
+                }
                 isConstantsSection = first.equals("[Constants]");
                 isOutputChannelsSection = first.equals("[OutputChannels]");
             }
@@ -270,6 +291,9 @@ public class IniFileModelImpl implements IniFileModel {
             switch (first) {
                 case "field":
                     handleField(list);
+                    break;
+                case "commandButton":
+                    handleCommand(list);
                     break;
                 case "slider":
                     handleSlider(list);
@@ -305,7 +329,7 @@ public class IniFileModelImpl implements IniFileModel {
                 String scalarType = list.get(2);
                 int offset = Integer.parseInt(list.get(3));
                 // todo: reuse ScalarIniField#parse but would need changes?
-                allOutputChannels.put(name, new ScalarIniField(name, offset, scalarType, null, 1, "0"));
+                allOutputChannels.put(name, new ScalarIniField(name, offset, scalarType, null, 1, "0", 0));
             }
         }
     }
@@ -377,6 +401,11 @@ public class IniFileModelImpl implements IniFileModel {
     }
 
     private void registerField(IniField field) {
+        if (currentPageIndex != 1) {
+            log.info("Skipping field from secondary page: " + field);
+            secondaryIniFields.put(field.getName(), field);
+            return;
+        }
         if (allIniFields.containsKey(field.getName()))
             return;
         allIniFields.put(field.getName(), field);
@@ -391,6 +420,13 @@ public class IniFileModelImpl implements IniFileModel {
 
         registerUiField(key, uiFieldName);
         log.debug("IniFileModel: Slider label=[" + uiFieldName + "] : key=[" + key + "]");
+    }
+
+    private void handleCommand(LinkedList<String> list) {
+        list.removeFirst(); // "commandButton"
+        String uiName = list.removeFirst();
+        String command = list.removeFirst();
+        commandsOfCurrentDialog.add(new DialogModel.Command(uiName, command));
     }
 
     private void handleField(LinkedList<String> list) {

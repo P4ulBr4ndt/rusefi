@@ -11,16 +11,16 @@ jobs:
     runs-on: macos-13
 
     steps:
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
 
       - uses: carlosperate/arm-none-eabi-gcc-action@v1
         with:
-          release: '12.3.Rel1' # 13 fails overloaded-virtual
+          release: '14.2.Rel1'
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Checkout Submodules
         run: |

@@ -33,7 +33,6 @@ static void     Rs232TransmitByte(blt_int8u data);
 ****************************************************************************************/
 void Rs232TransmitPacket(blt_int8u *data, blt_int8u len)
 {
-  blt_int16u data_index;
 
   /* verify validity of the len-paramenter */
   // ASSERT_RT(len <= BOOT_COM_RS232_TX_MAX_DATA);
@@ -41,14 +40,7 @@ void Rs232TransmitPacket(blt_int8u *data, blt_int8u len)
   /* first transmit the length of the packet */
   Rs232TransmitByte(len);
 
-  /* transmit all the packet bytes one-by-one */
-  for (data_index = 0; data_index < len; data_index++)
-  {
-    /* keep the watchdog happy */
-    CopService();
-    /* write byte */
-    Rs232TransmitByte(data[data_index]);
-  }
+  chnWriteTimeout(&SDU1, data, len, TIME_INFINITE);
 } /*** end of Rs232TransmitPacket ***/
 
 PUBLIC_API_WEAK void openBltUnexpectedByte(blt_int8u firstByte) {

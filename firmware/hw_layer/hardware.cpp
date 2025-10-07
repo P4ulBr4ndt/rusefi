@@ -32,9 +32,8 @@
 
 #include "mmc_card.h"
 
-#include "AdcDevice.h"
+#include "adc_device.h"
 #include "idle_hardware.h"
-#include "mcp3208.h"
 
 #include "histogram.h"
 #include "gps_uart.h"
@@ -71,6 +70,13 @@
 #if EFI_CAN_SUPPORT
 #include "can_vss.h"
 #endif
+
+#include "board_overrides.h"
+
+std::optional<setup_custom_board_overrides_type> custom_board_InitHardwareEarly;
+std::optional<setup_custom_board_overrides_type> custom_board_InitHardware;
+std::optional<setup_custom_board_overrides_type> custom_board_InitHardwareExtra;
+
 
 #if HAL_USE_SPI
 /* zero index is SPI_NONE */
@@ -279,8 +285,10 @@ void onFastAdcComplete(adcsample_t*) {
 	 */
 	efiAssertVoid(ObdCode::CUSTOM_STACK_ADC, hasLotsOfRemainingStack(), "lowstck#9b");
 
+	auto mapRaw = adcRawValueToScaledVoltage(getFastAdc(fastMapSampleIndex), engineConfiguration->map.sensor.hwChannel);
+	engine->outputChannels.rawMapFast = mapRaw;
 #if EFI_MAP_AVERAGING && defined (MODULE_MAP_AVERAGING)
-	mapAveragingAdcCallback(adcRawValueToScaledVoltage(getFastAdc(fastMapSampleIndex), engineConfiguration->map.sensor.hwChannel));
+	mapAveragingAdcCallback(mapRaw);
 #endif /* EFI_MAP_AVERAGING */
 }
 #endif /* HAL_USE_ADC */
@@ -340,10 +348,6 @@ void applyNewHardwareSettings() {
 		// bug? duplication with stopSwitchPins?
 		efiSetPadUnused(activeConfiguration.clutchUpPin);
 	}
-
-#if EFI_SHAFT_POSITION_INPUT
-	stopTriggerDebugPins();
-#endif // EFI_SHAFT_POSITION_INPUT
 
 	enginePins.unregisterPins();
 
@@ -408,6 +412,17 @@ void setBor(int borValue) {
 }
 #endif /* EFI_BOR_LEVEL */
 
+// Called before configuration is loaded
+void boardInitHardwareEarly() {
+  // forcing migration to custom_board_InitHardwareEarly
+}
+void boardInitHardware() {
+  // time to force migration to custom_board_InitHardware
+}
+void boardInitHardwareExtra() {
+  // forcing migration to custom_board_InitHardwareExtra
+}
+
 // This function initializes hardware that can do so before configuration is loaded
 void initHardwareNoConfig() {
 	efiAssertVoid(ObdCode::CUSTOM_IH_STACK, hasLotsOfRemainingStack(), "init h");
@@ -416,6 +431,11 @@ void initHardwareNoConfig() {
 
 #if EFI_PROD_CODE
 	initPinRepository();
+#endif
+
+#if EFI_PROD_CODE
+	boardInitHardwareEarly();
+	call_board_override(custom_board_InitHardwareEarly);
 #endif
 
 #if EFI_HISTOGRAMS
@@ -496,8 +516,6 @@ void startHardware() {
 #if EFI_SHAFT_POSITION_INPUT
 	validateTriggerInputs();
 
-	startTriggerDebugPins();
-
 #endif // EFI_SHAFT_POSITION_INPUT
 
 	startSwitchPins();
@@ -506,10 +524,6 @@ void startHardware() {
 	startCanPins();
 #endif /* EFI_CAN_SUPPORT */
 }
-
-// Weak link a stub so that every board doesn't have to implement this function
-PUBLIC_API_WEAK void boardInitHardware() { }
-PUBLIC_API_WEAK void boardInitHardwareExtra() { }
 
 PUBLIC_API_WEAK void setPinConfigurationOverrides() { }
 
@@ -533,17 +547,16 @@ void initHardware() {
 #endif // STM32_I2C_USE_I2C3
 
 	boardInitHardware();
+	call_board_override(custom_board_InitHardware);
 #if EFI_PROD_CODE
 	// this applies some board configurations
 	boardOnConfigurationChange(nullptr);
 #endif // EFI_PROD_CODE
 	boardInitHardwareExtra();
+	call_board_override(custom_board_InitHardwareExtra);
 
 #if HAL_USE_ADC
 	initAdcInputs();
-
-	// wait for first set of ADC values so that we do not produce invalid sensor data
-	waitForSlowAdc();
 #endif /* HAL_USE_ADC */
 
 #if EFI_SOFTWARE_KNOCK
