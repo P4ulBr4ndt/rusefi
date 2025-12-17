@@ -23,6 +23,7 @@
 #include "status_loop.h"
 #include "engine_sniffer.h"
 #include "auto_generated_sync_edge.h"
+#include "harley_advanced_acr.h"
 
 #if EFI_TUNER_STUDIO
 #include "tunerstudio.h"
@@ -833,7 +834,12 @@ void TriggerCentral::handleShaftSignal(trigger_event_e signal, efitick_t timesta
 
 	isSpinningJustForWatchdog = true;
 
-#if EFI_HD_ACR
+#if EFI_HD_ADVANCED_ACR
+	bool firstEventInAWhile = m_lastEventTimer.hasElapsedSec(1);
+	if (firstEventInAWhile) {
+		engine->module<HarleyAdvancedAcr>()->updateAdvancedAcr();
+	}
+#elif EFI_HD_ACR
     bool firstEventInAWhile = m_lastEventTimer.hasElapsedSec(1);
 	if (firstEventInAWhile) {
         // let's open that valve on first sign of movement

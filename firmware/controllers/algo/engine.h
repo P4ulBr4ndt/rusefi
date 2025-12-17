@@ -44,6 +44,7 @@
 #include "boost_control.h"
 #include "ignition_controller.h"
 #include "alternator_controller.h"
+#include "harley_advanced_acr.h"
 #include "harley_acr.h"
 #include "dfco.h"
 #include "fuel_computer.h"
@@ -162,7 +163,11 @@ public:
         PrimeController,
         DfcoController,
 #if EFI_HD_ACR
+#if EFI_HD_ADVANCED_ACR
+        HarleyAdvancedAcr,
+#else
         HarleyAcr,
+#endif // EFI_HD_ADVANCED_ACR
 #endif // EFI_HD_ACR
         Mockable<WallFuelController>,
         KnockController,
