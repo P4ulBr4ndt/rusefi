@@ -12,7 +12,7 @@
 
 struct HarleyAdvancedAcrActor {
 	HarleyAdvancedAcr* owner = nullptr;
-	NamedOutputPin* output = nullptr;
+	RegisteredOutputPin* output = nullptr;
 	AngleBasedEvent openEvent;
 	AngleBasedEvent closeEvent;
 	angle_t openAngle = 0;
@@ -32,6 +32,8 @@ angle_t normalizeAngle(angle_t angle) {
 }
 
 static void scheduleOpen(HarleyAdvancedAcrActor& actor);
+
+static void scheduleClose(HarleyAdvancedAcrActor& actor);
 
 static void harleyAdvAcrClose(HarleyAdvancedAcrActor* actor) {
 	if (!actor) {
