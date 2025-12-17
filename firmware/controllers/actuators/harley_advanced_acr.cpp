@@ -47,7 +47,7 @@ static void harleyAdvAcrClose(HarleyAdvancedAcrActor* actor) {
 		return;
 	}
 
-	actor->output->setLow();
+	actor->output->setValue(false);
 }
 
 static void harleyAdvAcrOpen(HarleyAdvancedAcrActor* actor) {
@@ -62,7 +62,7 @@ static void harleyAdvAcrOpen(HarleyAdvancedAcrActor* actor) {
 		return;
 	}
 
-	actor->output->setHigh();
+	actor->output->setValue(true);
 
 	scheduleClose(*actor);
 	scheduleOpen(*actor); // plan next cycle
