@@ -2,6 +2,10 @@
 #define EFI_HD_ADVANCED_ACR FALSE
 #endif
 
+#ifndef EFI_HD_ADVANCED_ACR_DEBUG
+#define EFI_HD_ADVANCED_ACR_DEBUG FALSE
+#endif
+
 #pragma once
 
 #if EFI_HD_ADVANCED_ACR

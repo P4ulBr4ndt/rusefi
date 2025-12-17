@@ -1,5 +1,5 @@
 // Advanced per-cylinder Harley ACR scheduling
-// Both actuators stay on until sync is achieved, then follow angle windows.
+// Initially off, once cranking both actuators stay on until sync is achieved, then follow angle windows.
 // Once the engine is running, both actuators are held off.
 
 #include "pch.h"
@@ -9,6 +9,12 @@
 #include "harley_advanced_acr.h"
 #include "trigger_central.h"
 #include "trigger_scheduler.h"
+
+#if EFI_HD_ADVANCED_ACR_DEBUG
+#define ACR_DEBUG(fmt, ...) efiPrintf("ADV_ACR: " fmt, ##__VA_ARGS__)
+#else
+#define ACR_DEBUG(fmt, ...) do { } while (0)
+#endif
 
 struct HarleyAdvancedAcrActor {
 	HarleyAdvancedAcr* owner = nullptr;
@@ -125,6 +131,7 @@ void HarleyAdvancedAcr::initializeActors() {
 	m_rear = &rear;
 	m_front = &front;
 	m_initialized = true;
+	ACR_DEBUG("init rear[%d-%d] front[%d-%d]", (int)rear.openAngle, (int)rear.closeAngle, (int)front.openAngle, (int)front.closeAngle);
 }
 
 void HarleyAdvancedAcr::armSchedule(int syncCounter) {
@@ -137,6 +144,7 @@ void HarleyAdvancedAcr::armSchedule(int syncCounter) {
 
 	scheduleOpen(*m_rear);
 	scheduleOpen(*m_front);
+	ACR_DEBUG("arm schedule syncCnt=%d", syncCounter);
 }
 
 void HarleyAdvancedAcr::updateAdvancedAcr() {
@@ -145,17 +153,19 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 	if (!isBrainPinValid(engineConfiguration->acrPin) || !isBrainPinValid(engineConfiguration->acrPin2)) {
 		m_mode = AcrMode::Off;
 		setOutputs(false);
+		ACR_DEBUG("pins invalid p1=%d p2=%d", (int)engineConfiguration->acrPin, (int)engineConfiguration->acrPin2);
 		return;
 	}
 
 	bool running = engine->rpmCalculator.isRunning();
 	bool cranking = engine->rpmCalculator.isCranking();
+	bool spinningUp = engine->rpmCalculator.isSpinningUp();
 	bool synced = getTriggerCentral()->triggerState.getShaftSynchronized();
 	AcrMode desiredMode = AcrMode::Off;
 
 	if (running) {
 		desiredMode = AcrMode::Off;
-	} else if (!synced && cranking) {
+	} else if (!synced && (cranking || spinningUp)) {
 		desiredMode = AcrMode::ForceOn;
 	} else if (synced) {
 		desiredMode = AcrMode::Windowed;
@@ -167,6 +177,7 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		if (desiredMode != AcrMode::Windowed) {
 			m_scheduled = false;
 		}
+		ACR_DEBUG("mode %d->%d run=%d crank=%d spin=%d sync=%d syncCnt=%d", (int)m_mode, (int)desiredMode, running, cranking, spinningUp, synced, getTriggerCentral()->triggerState.getSynchronizationCounter());
 		m_mode = desiredMode;
 	}
 
