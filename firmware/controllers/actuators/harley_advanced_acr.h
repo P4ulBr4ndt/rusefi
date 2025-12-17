@@ -17,7 +17,7 @@
 #endif
 
 #ifndef HARLEY_ADVANCED_ACR_R_CLOSE
-#define HARLEY_ADVANCED_ACR_R_CLOSE 720
+#define HARLEY_ADVANCED_ACR_R_CLOSE 715
 #endif
 
 #ifndef HARLEY_ADVANCED_ACR_F_OPEN
@@ -25,7 +25,7 @@
 #endif
 
 #ifndef HARLEY_ADVANCED_ACR_F_CLOSE
-#define HARLEY_ADVANCED_ACR_F_CLOSE 405
+#define HARLEY_ADVANCED_ACR_F_CLOSE 400
 #endif
 
 struct HarleyAdvancedAcrActor;

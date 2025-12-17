@@ -173,6 +173,7 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		desiredMode = AcrMode::Off;
 	}
 
+	AcrMode prevMode = m_mode;
 	if (desiredMode != m_mode) {
 		if (desiredMode != AcrMode::Windowed) {
 			m_scheduled = false;
@@ -180,6 +181,7 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		ACR_DEBUG("mode %d->%d run=%d crank=%d spin=%d sync=%d syncCnt=%d", (int)m_mode, (int)desiredMode, running, cranking, spinningUp, synced, getTriggerCentral()->triggerState.getSynchronizationCounter());
 		m_mode = desiredMode;
 	}
+	bool enteringWindowed = (m_mode == AcrMode::Windowed && prevMode != AcrMode::Windowed);
 
 	switch (m_mode) {
 	case AcrMode::ForceOn:
@@ -189,7 +191,10 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		setOutputs(false);
 		break;
 	case AcrMode::Windowed:
-		setOutputs(false); // default low, windows will raise as needed
+		if (enteringWindowed) {
+			// keep valves open until the first scheduled close fires
+			setOutputs(true);
+		}
 		if (!m_scheduled || m_lastSyncCounter != getTriggerCentral()->triggerState.getSynchronizationCounter()) {
 			armSchedule(getTriggerCentral()->triggerState.getSynchronizationCounter());
 		}
