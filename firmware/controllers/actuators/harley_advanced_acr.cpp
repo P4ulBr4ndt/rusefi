@@ -161,11 +161,15 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 	bool cranking = engine->rpmCalculator.isCranking();
 	bool spinningUp = engine->rpmCalculator.isSpinningUp();
 	bool synced = getTriggerCentral()->triggerState.getShaftSynchronized();
+	uint8_t mapSyncCounter = getTriggerCentral()->mapVvt_sync_counter;
 	AcrMode desiredMode = AcrMode::Off;
 
 	if (running) {
 		desiredMode = AcrMode::Off;
 	} else if (!synced && (cranking || spinningUp)) {
+		desiredMode = AcrMode::ForceOn;
+	} else if (synced && mapSyncCounter < 3 && (cranking || spinningUp)) {
+		// keep valves open until we've seen enough instant MAP sync confirmations
 		desiredMode = AcrMode::ForceOn;
 	} else if (synced) {
 		desiredMode = AcrMode::Windowed;
@@ -178,7 +182,7 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		if (desiredMode != AcrMode::Windowed) {
 			m_scheduled = false;
 		}
-		ACR_DEBUG("mode %d->%d run=%d crank=%d spin=%d sync=%d syncCnt=%d", (int)m_mode, (int)desiredMode, running, cranking, spinningUp, synced, getTriggerCentral()->triggerState.getSynchronizationCounter());
+		ACR_DEBUG("mode %d->%d run=%d crank=%d spin=%d sync=%d mapCnt=%d syncCnt=%d", (int)m_mode, (int)desiredMode, running, cranking, spinningUp, synced, mapSyncCounter, getTriggerCentral()->triggerState.getSynchronizationCounter());
 		m_mode = desiredMode;
 	}
 	bool enteringWindowed = (m_mode == AcrMode::Windowed && prevMode != AcrMode::Windowed);
