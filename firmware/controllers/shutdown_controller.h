@@ -21,10 +21,12 @@ enum class StopRequestedReason : uint8_t {
 };
 
 void doScheduleStopEngine(StopRequestedReason reason);
+void doCancelStopEngine();
 
 class ShutdownController {
 public:
 	void stopEngine(StopRequestedReason reason);
+	void cancelStopEngine();
 
 	bool isEngineStop(efitick_t nowNt) const {
 		float timeSinceStopRequested = m_engineStopTimer.getElapsedSeconds(nowNt);

@@ -18,7 +18,18 @@ void doScheduleStopEngine(StopRequestedReason reason) {
 #endif // EFI_PROD_CODE
 }
 
+void doCancelStopEngine() {
+#if EFI_SHAFT_POSITION_INPUT
+	getLimpManager()->shutdownController.cancelStopEngine();
+#endif // EFI_SHAFT_POSITION_INPUT
+}
+
 	void ShutdownController::stopEngine(StopRequestedReason reason) {
 		m_engineStopTimer.reset();
     engine->outputChannels.stopEngineCode = (uint8_t)reason;
+	}
+
+	void ShutdownController::cancelStopEngine() {
+		m_engineStopTimer.init();
+		engine->outputChannels.stopEngineCode = (uint8_t)StopRequestedReason::None;
 	}
