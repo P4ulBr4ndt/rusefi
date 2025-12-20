@@ -1,6 +1,7 @@
 // Advanced per-cylinder Harley ACR scheduling
 // Initially off, once cranking both actuators stay on until sync is achieved, then follow angle windows.
 // Once the engine is running, both actuators are held off.
+// Angles should be tuned to be open at compression phase and closed at about TDC of each cylinder
 
 #include "pch.h"
 
@@ -168,7 +169,7 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		desiredMode = AcrMode::Off;
 	} else if (!synced && (cranking || spinningUp)) {
 		desiredMode = AcrMode::ForceOn;
-	} else if (synced && mapSyncCounter < 3 && (cranking || spinningUp)) {
+	} else if (synced && mapSyncCounter < 2 && (cranking || spinningUp)) {
 		// keep valves open until we've seen enough instant MAP sync confirmations
 		desiredMode = AcrMode::ForceOn;
 	} else if (synced) {
