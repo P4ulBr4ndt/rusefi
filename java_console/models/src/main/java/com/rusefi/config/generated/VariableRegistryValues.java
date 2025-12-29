@@ -306,8 +306,8 @@ public class VariableRegistryValues {
 	public static final String CMD_TRIGGERINFO = "triggerinfo";
 	public static final String CMD_VSS_PIN = "vss_pin";
 	public static final String CMD_WRITECONFIG = "writeconfig";
-	public static final String COIL_1_NAME = "Spark #1";
-	public static final String COIL_2_NAME = "Spark #2";
+	public static final String COIL_1_NAME = "Rear Spark";
+	public static final String COIL_2_NAME = "Front Spark";
 	public static final int COMPOSITE_PACKET_SIZE = 5;
 	public static final String CONSOLE_DATA_PROTOCOL_TAG = " @";
 	public static final int CRANKING_ADVANCE_CURVE_SIZE = 4;
@@ -432,7 +432,7 @@ public class VariableRegistryValues {
 	public static final int ego_sensor_e_ES_PLX = 4;
 	public static final String egoSettings_NAME = "CAN O2 sensors";
 	public static final int EGT_CHANNEL_COUNT = 8;
-	public static final int engine_configuration_s_size = 3964;
+	public static final int engine_configuration_s_size = 3972;
 	public static final int engine_load_mode_e_LM_ALPHA_N = 2;
 	public static final int engine_load_mode_e_LM_LUA = 3;
 	public static final int engine_load_mode_e_LM_REAL_MAF = 1;
@@ -571,11 +571,11 @@ public class VariableRegistryValues {
 	public static final int FT_BANK_COUNT = 2;
 	public static final int fuel_cyl_trim_s_size = 16;
 	public static final int FUEL_LEVEL_TABLE_COUNT = 8;
-	public static final int FUEL_LOAD_COUNT = 16;
+	public static final int FUEL_LOAD_COUNT = 14;
 	public static final int fuel_pressure_sensor_mode_e_FPM_Absolute = 0;
 	public static final int fuel_pressure_sensor_mode_e_FPM_Differential = 2;
 	public static final int fuel_pressure_sensor_mode_e_FPM_Gauge = 1;
-	public static final int FUEL_RPM_COUNT = 16;
+	public static final int FUEL_RPM_COUNT = 19;
 	public static final int FUEL_TRIM_SIZE = 4;
 	public static final int GAP_TRACKING_LENGTH = 18;
 	public static final String GAUGE_CATEGORY_BOOST_CONTROL = "Boost Control";
@@ -623,8 +623,8 @@ public class VariableRegistryValues {
 	public static final String GAUGE_NAME_AUX_LINEAR_2 = "Aux linear #2";
 	public static final String GAUGE_NAME_AUX_LINEAR_3 = "Aux linear #3";
 	public static final String GAUGE_NAME_AUX_LINEAR_4 = "Aux linear #4";
-	public static final String GAUGE_NAME_AUX_TEMP1 = "Aux temp 1";
-	public static final String GAUGE_NAME_AUX_TEMP2 = "Aux temp 2";
+	public static final String GAUGE_NAME_AUX_TEMP1 = "Engine Temperature";
+	public static final String GAUGE_NAME_AUX_TEMP2 = "Coolant Temperature";
 	public static final String GAUGE_NAME_BARO_PRESSURE = "Barometric pressure";
 	public static final String GAUGE_NAME_BOOST_CLOSED_LOOP = "Boost: Closed loop";
 	public static final String GAUGE_NAME_BOOST_OPEN_LOOP = "Boost: Open loop";
@@ -1264,6 +1264,7 @@ public class VariableRegistryValues {
 	public static final int InjectorNonlinearMode_INJ_FordModel = 2;
 	public static final int InjectorNonlinearMode_INJ_None = 0;
 	public static final int InjectorNonlinearMode_INJ_PolynomialAdder = 1;
+	public static final int INSTANT_ACCEL_SHOT_TPS_COUNT = 6;
 	public static final String KNOCK_RPM_TABLE_NAME = "Engine Knock Threshold RPM Based";
 	public static final int KNOCK_TABLE_RPM_SIZE = 6;
 	public static final int KNOCK_TABLE_SIZE = 6;
@@ -1300,7 +1301,7 @@ public class VariableRegistryValues {
 	public static final int LUA_PWM_COUNT = 8;
 	public static final int LUA_SCRIPT_SIZE = 8000;
 	public static final int MAF_DECODING_COUNT = 32;
-	public static final String MAIN_HELP_URL = "http://www.rusefi.com/";
+	public static final String MAIN_HELP_URL = "https://don-performance.com";
 	public static final int MAP_ANGLE_SIZE = 8;
 	public static final int MAP_EST_LOAD_COUNT = 16;
 	public static final int MAP_EST_RPM_COUNT = 16;
@@ -1315,8 +1316,8 @@ public class VariableRegistryValues {
 	public static final int mc33810maxDwellTimer_e_DWELL_4MS = 1;
 	public static final int mc33810maxDwellTimer_e_DWELL_64MS = 5;
 	public static final int mc33810maxDwellTimer_e_DWELL_8MS = 2;
-	public static final String MENU_NAME_AUX_TEMP1 = "AuxTemp1 sensor";
-	public static final String MENU_NAME_AUX_TEMP2 = "AuxTemp2 sensor";
+	public static final String MENU_NAME_AUX_TEMP1 = "Engine Temperature Sensor";
+	public static final String MENU_NAME_AUX_TEMP2 = "Coolant Temperature Sensor";
 	public static final int MLQ_FIELD_HEADER_SIZE = 89;
 	public static final int MLQ_HEADER_SIZE = 24;
 	public static final int MsIoBox_config_s_size = 4;
@@ -1359,10 +1360,10 @@ public class VariableRegistryValues {
 	public static final int PAGE_SIZE_1 = 256;
 	public static final int PAGE_SIZE_2 = 2048;
 	public static final int PEDAL_TO_TPS_RPM_SIZE = 8;
-	public static final int PEDAL_TO_TPS_SIZE = 8;
+	public static final int PEDAL_TO_TPS_SIZE = 14;
 	public static final String pedalSensor_NAME = "Accelerator pedal";
 	public static final String pedalToTpsTbl_NAME = "ETB pedal target";
-	public static final int persistent_config_s_size = 23808;
+	public static final int persistent_config_s_size = 24448;
 	public static final int pid_s_size = 20;
 	public static final int pin_input_mode_e_PI_DEFAULT = 0;
 	public static final int pin_input_mode_e_PI_INVERTED_DEFAULT = 4;
@@ -1430,7 +1431,7 @@ public class VariableRegistryValues {
 	public static final int SentInput_INPUT6 = 6;
 	public static final int SentInput_INPUT7 = 7;
 	public static final int SentInput_NONE = 0;
-	public static final int SIGNATURE_HASH = 1281931034;
+	public static final int SIGNATURE_HASH = 1185576855;
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME = "generated/simulator_tune_image.bin";
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX = "generated/simulator_tune_image";
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX = ".bin";
@@ -1498,7 +1499,7 @@ public class VariableRegistryValues {
 	public static final int torqueReductionActivationMode_e_TORQUE_REDUCTION_BUTTON = 0;
 	public static final int torqueReductionActivationMode_e_TORQUE_REDUCTION_CLUTCH_DOWN_SWITCH = 2;
 	public static final int torqueReductionActivationMode_e_TORQUE_REDUCTION_CLUTCH_UP_SWITCH = 3;
-	public static final int TOTAL_CONFIG_SIZE = 23808;
+	public static final int TOTAL_CONFIG_SIZE = 24448;
 	public static final int TPS_2_BYTE_PACKING_MULT = 100;
 	public static final int TPS_PPS_TOO_HIGH_THRESHOLD = 110;
 	public static final int TPS_PPS_TOO_LOW_THRESHOLD = -10;
@@ -1737,7 +1738,7 @@ public class VariableRegistryValues {
 	public static final int TS_RESPONSE_UNRECOGNIZED_COMMAND = 0x83;
 	public static final int TS_SCATTER_OFFSETS_COUNT = 128;
 	public static final char TS_SET_LOGGER_SWITCH = 'l';
-	public static final String TS_SIGNATURE = "rusEFI master.2025.12.25.stm32h743_nucleo.1281931034";
+	public static final String TS_SIGNATURE = "rusEFI master.2025.12.29.hellen-bremen.1185576855";
 	public static final char TS_SIMULATE_CAN = '>';
 	public static final char TS_TEST_COMMAND = 't';
 	public static final int TS_TOTAL_OUTPUT_SIZE = 2068;
