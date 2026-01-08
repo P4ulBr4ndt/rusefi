@@ -197,6 +197,14 @@ static bool btRN4678SetBaud(SerialTsChannelBase* tsChannel)
 	return btWaitAok(tsChannel, "SU");
 }
 
+static bool btRN4678DisableFlowControl(SerialTsChannelBase* tsChannel)
+{
+	const char cmdRequest[] = "SQ,0000\r";
+	btReadIntoVoid(tsChannel);
+	btWrite(tsChannel, cmdRequest, sizeof(cmdRequest) - 1);
+	return btWaitAok(tsChannel, "SQ");
+}
+
 static bool btRN4678Reboot(SerialTsChannelBase* tsChannel)
 {
 	const char cmdRequest[] = "R,1\r";
@@ -249,6 +257,11 @@ static void runCommands(SerialTsChannelBase* tsChannel) {
 
 	if (!btRN4678SetName(tsChannel)) {
 		efiPrintf("Setting name failed");
+		return;
+	}
+
+	if (!btRN4678DisableFlowControl(tsChannel)) {
+		efiPrintf("Disabling flow control failed");
 		return;
 	}
 
