@@ -25,6 +25,14 @@
 #define EFI_BLUETOOTH_SETUP_DEBUG TRUE
 #endif
 
+#ifndef EFI_BLUETOOTH_RN4678_SET_ESCAPE
+#define EFI_BLUETOOTH_RN4678_SET_ESCAPE FALSE
+#endif
+
+#ifndef EFI_BLUETOOTH_RN4678_ESCAPE_CHAR
+#define EFI_BLUETOOTH_RN4678_ESCAPE_CHAR '#'
+#endif
+
 static volatile bool btSetupIsRequested = false;
 
 bluetooth_module_e btModuleType;
@@ -98,6 +106,30 @@ static bool btReadUntilToken(TsChannelBase* tsChannel, const char *token, const 
 	}
 
 	efiPrintf("Unexpected response while waiting for %s: %s", context, response);
+	return false;
+}
+
+static bool btReadUntilPrompt(TsChannelBase* tsChannel, const char *context, char *response, size_t responseLen)
+{
+	size_t read = 0;
+
+	while (read < (responseLen - 1)) {
+		if (tsChannel->readTimeout((uint8_t *)&response[read], 1, btModuleTimeout) != 1) {
+			if (read > 0) {
+				efiPrintf("Partial response to %s: %s", context, response);
+				return true;
+			}
+			efiPrintf("Timeout waiting for %s response", context);
+			return false;
+		}
+		read++;
+		response[read] = 0;
+		if (strstr(response, "CMD>") != nullptr) {
+			return true;
+		}
+	}
+
+	efiPrintf("Response too long for %s: %s", context, response);
 	return false;
 }
 
@@ -217,6 +249,41 @@ static bool btRN4678Reboot(SerialTsChannelBase* tsChannel)
 	return true;
 }
 
+static bool btRN4678GetFeatureSet(SerialTsChannelBase* tsChannel)
+{
+	char response[64];
+	const char cmdRequest[] = "GQ\r";
+	btReadIntoVoid(tsChannel);
+	btWrite(tsChannel, cmdRequest, sizeof(cmdRequest) - 1);
+	if (!btReadUntilPrompt(tsChannel, "GQ", response, sizeof(response))) {
+		return false;
+	}
+	efiPrintf("GQ response: %s", response);
+	return true;
+}
+
+static bool btRN4678DumpSettings(SerialTsChannelBase* tsChannel)
+{
+	char response[192];
+	const char cmdRequest[] = "D\r";
+	btReadIntoVoid(tsChannel);
+	btWrite(tsChannel, cmdRequest, sizeof(cmdRequest) - 1);
+	if (!btReadUntilPrompt(tsChannel, "D", response, sizeof(response))) {
+		return false;
+	}
+	efiPrintf("D response: %s", response);
+	return true;
+}
+
+static bool btRN4678SetEscapeChar(SerialTsChannelBase* tsChannel)
+{
+	char cmd[8];
+	chsnprintf(cmd, sizeof(cmd), "S$,%c\r", (int)EFI_BLUETOOTH_RN4678_ESCAPE_CHAR);
+	btReadIntoVoid(tsChannel);
+	btWrite(tsChannel, cmd, strlen(cmd));
+	return btWaitAok(tsChannel, "S$");
+}
+
 uint8_t findBaudIndex(SerialTsChannelBase* tsChannel)
 {
 	for (uint8_t baudIdx = 0; baudIdx < efi::size(baudRates); baudIdx++) {
@@ -278,6 +345,26 @@ static void runCommands(SerialTsChannelBase* tsChannel) {
 	if (!btRN4678Reboot(tsChannel)) {
 		efiPrintf("Rebooting failed");
 		return;
+	}
+
+#if EFI_BLUETOOTH_RN4678_SET_ESCAPE
+	chThdSleepMilliseconds(500);
+	if (btRN4678EnterCmdMode(tsChannel)) {
+		if (!btRN4678SetEscapeChar(tsChannel)) {
+			efiPrintf("Setting escape char failed");
+			return;
+		}
+		btRN4678ExitCmdMode(tsChannel);
+	} else {
+		efiPrintf("Failed to re-enter CMD mode after reboot");
+	}
+#endif
+
+	chThdSleepMilliseconds(500);
+	if (btRN4678EnterCmdMode(tsChannel)) {
+		btRN4678DumpSettings(tsChannel);
+		btRN4678GetFeatureSet(tsChannel);
+		btRN4678ExitCmdMode(tsChannel);
 	}
 
 	efiPrintf("SUCCESS! All commands passed to the Bluetooth module!");
