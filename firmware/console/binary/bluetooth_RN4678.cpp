@@ -275,6 +275,7 @@ static bool btRN4678DumpSettings(SerialTsChannelBase* tsChannel)
 	return true;
 }
 
+#if EFI_BLUETOOTH_RN4678_SET_ESCAPE
 static bool btRN4678SetEscapeChar(SerialTsChannelBase* tsChannel)
 {
 	char cmd[8];
@@ -283,6 +284,7 @@ static bool btRN4678SetEscapeChar(SerialTsChannelBase* tsChannel)
 	btWrite(tsChannel, cmd, strlen(cmd));
 	return btWaitAok(tsChannel, "S$");
 }
+#endif
 
 uint8_t findBaudIndex(SerialTsChannelBase* tsChannel)
 {
