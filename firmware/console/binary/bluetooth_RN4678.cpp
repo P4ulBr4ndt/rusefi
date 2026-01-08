@@ -126,6 +126,34 @@ static bool btWaitAok(SerialTsChannelBase* tsChannel, const char *context)
 	return false;
 }
 
+static bool btWaitAokOrReboot(SerialTsChannelBase* tsChannel, const char *context)
+{
+	char response[64];
+	size_t read = 0;
+
+	while (read < (sizeof(response) - 1)) {
+		if (tsChannel->readTimeout((uint8_t *)&response[read], 1, btModuleTimeout) != 1) {
+			if (read > 0) {
+				efiPrintf("Partial response to %s: %s", context, response);
+			}
+			// Module likely rebooted before sending a full response.
+			return true;
+		}
+		read++;
+		response[read] = 0;
+		if (strstr(response, "AOK") != nullptr || strstr(response, "Reboot") != nullptr) {
+			return true;
+		}
+		if (strstr(response, "ERR") != nullptr) {
+			efiPrintf("RN4678 error on %s: %s", context, response);
+			return false;
+		}
+	}
+
+	efiPrintf("Unexpected response to %s: %s", context, response);
+	return false;
+}
+
 static bool btRN4678EnterCmdMode(SerialTsChannelBase* tsChannel)
 {
 	const char cmdRequest[] = { '$', '$', '$' };
@@ -174,7 +202,7 @@ static bool btRN4678Reboot(SerialTsChannelBase* tsChannel)
 	const char cmdRequest[] = "R,1\r";
 	btReadIntoVoid(tsChannel);
 	btWrite(tsChannel, cmdRequest, sizeof(cmdRequest) - 1);
-	if (!btWaitAok(tsChannel, "R,1")) {
+	if (!btWaitAokOrReboot(tsChannel, "R,1")) {
 		return false;
 	}
 	chThdSleepMilliseconds(250);
