@@ -362,7 +362,7 @@ static void runCommands(SerialTsChannelBase* tsChannel) {
 	}
 #endif
 
-	chThdSleepMilliseconds(500);
+	chThdSleepMilliseconds(2000);
 	if (btRN4678EnterCmdMode(tsChannel)) {
 		btRN4678DumpSettings(tsChannel);
 		btRN4678GetFeatureSet(tsChannel);
