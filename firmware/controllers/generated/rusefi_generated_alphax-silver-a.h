@@ -2102,7 +2102,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI master.2026.01.08.alphax-silver-a.1446592502"
+#define TS_SIGNATURE "rusEFI master.2026.01.21.alphax-silver-a.1446592502"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_TEST_COMMAND 't'
