@@ -688,6 +688,33 @@ Output Min Duty Cycle
 ### boostPid.maxValue
 Output Max Duty Cycle
 
+### cruisePid.pFactor
+
+
+### cruisePid.iFactor
+
+
+### cruisePid.dFactor
+
+
+### cruisePid.offset
+Linear addition to PID logic\nAlso known as feedforward.
+
+### cruisePid.periodMs
+PID dTime
+
+### cruisePid.minValue
+Output Min Duty Cycle
+
+### cruisePid.maxValue
+Output Max Duty Cycle
+
+### cruiseMinSpeed
+Minimum cruise speed. Set to 0 to disable.
+
+### cruiseMaxSpeed
+Maximum cruise speed. Set to 0 to disable.
+
 ### boostPwmFrequency
 
 

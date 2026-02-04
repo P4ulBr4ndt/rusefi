@@ -694,6 +694,33 @@ float getConfigValueByHash(const int hash) {
 // boostPid.maxValue
 		case -572500550:
 			return engineConfiguration->boostPid.maxValue;
+// cruisePid.pFactor
+		case 766252970:
+			return engineConfiguration->cruisePid.pFactor;
+// cruisePid.iFactor
+		case 315911779:
+			return engineConfiguration->cruisePid.iFactor;
+// cruisePid.dFactor
+		case -1846460770:
+			return engineConfiguration->cruisePid.dFactor;
+// cruisePid.offset
+		case 504883106:
+			return engineConfiguration->cruisePid.offset;
+// cruisePid.periodMs
+		case -1102698242:
+			return engineConfiguration->cruisePid.periodMs;
+// cruisePid.minValue
+		case 620277532:
+			return engineConfiguration->cruisePid.minValue;
+// cruisePid.maxValue
+		case -730177698:
+			return engineConfiguration->cruisePid.maxValue;
+// cruiseMinSpeed
+		case 1514698309:
+			return engineConfiguration->cruiseMinSpeed;
+// cruiseMaxSpeed
+		case 164243079:
+			return engineConfiguration->cruiseMaxSpeed;
 // boostPwmFrequency
 		case -1990709262:
 			return engineConfiguration->boostPwmFrequency;
@@ -3196,6 +3223,51 @@ bool setConfigValueByName(const char *name, float value) {
 		case -572500550:
 	{
 		engineConfiguration->boostPid.maxValue = (int)value;
+		return 1;
+	}
+		case 766252970:
+	{
+		engineConfiguration->cruisePid.pFactor = value;
+		return 1;
+	}
+		case 315911779:
+	{
+		engineConfiguration->cruisePid.iFactor = value;
+		return 1;
+	}
+		case -1846460770:
+	{
+		engineConfiguration->cruisePid.dFactor = value;
+		return 1;
+	}
+		case 504883106:
+	{
+		engineConfiguration->cruisePid.offset = (int)value;
+		return 1;
+	}
+		case -1102698242:
+	{
+		engineConfiguration->cruisePid.periodMs = (int)value;
+		return 1;
+	}
+		case 620277532:
+	{
+		engineConfiguration->cruisePid.minValue = (int)value;
+		return 1;
+	}
+		case -730177698:
+	{
+		engineConfiguration->cruisePid.maxValue = (int)value;
+		return 1;
+	}
+		case 1514698309:
+	{
+		engineConfiguration->cruiseMinSpeed = (int)value;
+		return 1;
+	}
+		case 164243079:
+	{
+		engineConfiguration->cruiseMaxSpeed = (int)value;
 		return 1;
 	}
 		case -1990709262:

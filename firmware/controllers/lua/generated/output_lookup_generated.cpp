@@ -736,6 +736,15 @@ float getOutputValueByHash(const int hash) {
 // vehicleSpeedKph
 		case -1925174695:
 			return engine->outputChannels.vehicleSpeedKph;
+// cruiseDesiredSpeed
+		case 726168865:
+			return engine->outputChannels.cruiseDesiredSpeed;
+// cruiseStatus
+		case -555784396:
+			return engine->outputChannels.cruiseStatus;
+// cruiseThrottleOffset
+		case -1240417939:
+			return engine->outputChannels.cruiseThrottleOffset;
 // Gego
 		case 2090288615:
 			return engine->outputChannels.Gego;
