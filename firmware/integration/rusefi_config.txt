@@ -1048,6 +1048,9 @@ bit verboseCan2,"Print all","Do not print";Print incoming and outgoing second bu
     switch_input_pin_e launchActivatePin;
 
     pid_s boostPid;
+    pid_s cruisePid;Cruise control PID
+    uint16_t cruiseMinSpeed;Minimum cruise speed. Set to 0 to disable.;"SPECIAL_CASE_SPEED", 1, 0, 0, 300, 0
+    uint16_t cruiseMaxSpeed;Maximum cruise speed. Set to 0 to disable.;"SPECIAL_CASE_SPEED", 1, 0, 0, 300, 0
 	custom boostType_e 1 bits, U08, @OFFSET@, [0:0], "Open Loop", "Open + Closed Loop"
     boostType_e boostType;
     pin_input_mode_e ignitionKeyDigitalPinMode

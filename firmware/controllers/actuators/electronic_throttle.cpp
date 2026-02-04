@@ -44,6 +44,7 @@
 #include "dc_motor.h"
 #include "dc_motors.h"
 #include "defaults.h"
+#include "cruise_control.h"
 #include "tunerstudio.h"
 #include "tunerstudio_calibration_channel.h"
 #include "transition_events.h"
@@ -334,6 +335,7 @@ expected<percent_t> EtbController::getSetpointEtb() {
 	targetWithIdlePosition = interpolateClamped(0, etbIdleAddition, 100, 100, etbCurrentTarget);
 
 	percent_t targetPosition = targetWithIdlePosition + getLuaAdjustment();
+	targetPosition += getCruiseControlThrottleOffset();
 	// just an additional logging data point
 	adjustedEtbTarget = targetPosition;
 

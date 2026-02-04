@@ -12,11 +12,11 @@ struct page2_s {
 	float ltft_table_bank1[VE_LOAD_COUNT][VE_RPM_COUNT] = {};
 	/**
 	 * units: %
-	 * offset 1024
+	 * offset 1536
 	 */
 	float ltft_table_bank2[VE_LOAD_COUNT][VE_RPM_COUNT] = {};
 };
-static_assert(sizeof(page2_s) == 2048);
+static_assert(sizeof(page2_s) == 3072);
 
 // end
 // this section was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh integration/config_page_2.txt
