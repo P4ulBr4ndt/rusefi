@@ -20,13 +20,13 @@ public:
 	void onIgnitionStateChanged(bool ignitionOn) override;
 	void onConfigurationChange(engine_configuration_s const * previousConfig) override;
 
-	float getDesiredSpeed() const;
-	void setDesiredSpeed(float speedKph);
-	void IncreaseDesiredSpeed();
-	void DecreaseDesiredSpeed();
-	void setStatus(CruiseControlStatus status);
-	CruiseControlStatus getStatus() const;
-	void engageAtCurrentSpeed();
+	float getDesiredCCSpeed() const;
+	void setDesiredCCSpeed(float speedKph);
+	void increaseDesiredCCSpeed();
+	void decreaseDesiredCCSpeed();
+	void setCCStatus(CruiseControlStatus status);
+	CruiseControlStatus getCCStatus() const;
+	void engageCCAtCurrentSpeed();
 
 	percent_t getThrottleOffset() const {
 		return m_throttleOffset;
@@ -49,11 +49,11 @@ private:
 	bool m_shouldResetPid = true;
 };
 
-float getDesiredSpeed();
-void setDesiredSpeed(float speedKph);
-void IncreaseDesiredSpeed();
-void DecreaseDesiredSpeed();
-void setStatus(CruiseControlStatus status);
-CruiseControlStatus getStatus();
-void engageAtCurrentSpeed();
+float getDesiredCCSpeed();
+void setDesiredCCSpeed(float speedKph);
+void increaseDesiredCCSpeed();
+void decreaseDesiredCCSpeed();
+void setCCStatus(CruiseControlStatus status);
+CruiseControlStatus getCCStatus();
+void engageCCAtCurrentSpeed();
 percent_t getCruiseControlThrottleOffset();

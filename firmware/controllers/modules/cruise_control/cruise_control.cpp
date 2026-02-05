@@ -28,8 +28,8 @@ void CruiseControl::setDefaultConfiguration() {
 	engineConfiguration->cruisePid.minValue = kCruisePidMin;
 	engineConfiguration->cruisePid.maxValue = kCruisePidMax;
 
-	engineConfiguration->cruiseMinSpeed = 0;
-	engineConfiguration->cruiseMaxSpeed = 0;
+	engineConfiguration->cruiseMinSpeed = 42;
+	engineConfiguration->cruiseMaxSpeed = 146;
 }
 
 void CruiseControl::onConfigurationChange(engine_configuration_s const * /*previousConfig*/) {
@@ -63,23 +63,23 @@ void CruiseControl::onIgnitionStateChanged(bool ignitionOn) {
 	}
 }
 
-float CruiseControl::getDesiredSpeed() const {
+float CruiseControl::getDesiredCCSpeed() const {
 	return m_desiredSpeedKph;
 }
 
-void CruiseControl::setDesiredSpeed(float speedKph) {
+void CruiseControl::setDesiredCCSpeed(float speedKph) {
 	m_desiredSpeedKph = sanitizeSpeed(speedKph);
 }
 
-void CruiseControl::IncreaseDesiredSpeed() {
+void CruiseControl::increaseDesiredCCSpeed() {
 	m_desiredSpeedKph = sanitizeSpeed(m_desiredSpeedKph + 1.0f);
 }
 
-void CruiseControl::DecreaseDesiredSpeed() {
+void CruiseControl::decreaseDesiredCCSpeed() {
 	m_desiredSpeedKph = sanitizeSpeed(m_desiredSpeedKph - 1.0f);
 }
 
-void CruiseControl::setStatus(CruiseControlStatus status) {
+void CruiseControl::setCCStatus(CruiseControlStatus status) {
 	if (m_status == status) {
 		return;
 	}
@@ -92,18 +92,20 @@ void CruiseControl::setStatus(CruiseControlStatus status) {
 	}
 }
 
-CruiseControlStatus CruiseControl::getStatus() const {
+CruiseControlStatus CruiseControl::getCCStatus() const {
 	return m_status;
 }
 
-void CruiseControl::engageAtCurrentSpeed() {
+void CruiseControl::engageCCAtCurrentSpeed() {
 	auto speed = Sensor::get(SensorType::VehicleSpeed);
 	if (!speed.Valid) {
 		return;
 	}
 
 	m_desiredSpeedKph = sanitizeSpeed(speed.Value);
-	setStatus(CruiseControlStatus::Enabled);
+	if (m_desiredSpeedKph) {
+		setCCStatus(CruiseControlStatus::Enabled);
+}
 }
 
 expected<float> CruiseControl::getSetpoint() {
@@ -172,32 +174,32 @@ float CruiseControl::sanitizeSpeed(float speedKph) const {
 	return result;
 }
 
-float getDesiredSpeed() {
-	return engine->module<CruiseControl>().unmock().getDesiredSpeed();
+float getDesiredCCSpeed() {
+	return engine->module<CruiseControl>().unmock().getDesiredCCSpeed();
 }
 
-void setDesiredSpeed(float speedKph) {
-	engine->module<CruiseControl>().unmock().setDesiredSpeed(speedKph);
+void setDesiredCCSpeed(float speedKph) {
+	engine->module<CruiseControl>().unmock().setDesiredCCSpeed(speedKph);
 }
 
-void IncreaseDesiredSpeed() {
-	engine->module<CruiseControl>().unmock().IncreaseDesiredSpeed();
+void increaseDesiredCCSpeed() {
+	engine->module<CruiseControl>().unmock().increaseDesiredCCSpeed();
 }
 
-void DecreaseDesiredSpeed() {
-	engine->module<CruiseControl>().unmock().DecreaseDesiredSpeed();
+void decreaseDesiredCCSpeed() {
+	engine->module<CruiseControl>().unmock().decreaseDesiredCCSpeed();
 }
 
-void setStatus(CruiseControlStatus status) {
-	engine->module<CruiseControl>().unmock().setStatus(status);
+void setCCStatus(CruiseControlStatus status) {
+	engine->module<CruiseControl>().unmock().setCCStatus(status);
 }
 
-CruiseControlStatus getStatus() {
-	return engine->module<CruiseControl>().unmock().getStatus();
+CruiseControlStatus getCCStatus() {
+	return engine->module<CruiseControl>().unmock().getCCStatus();
 }
 
-void engageAtCurrentSpeed() {
-	engine->module<CruiseControl>().unmock().engageAtCurrentSpeed();
+void engageCCAtCurrentSpeed() {
+	engine->module<CruiseControl>().unmock().engageCCAtCurrentSpeed();
 }
 
 percent_t getCruiseControlThrottleOffset() {
