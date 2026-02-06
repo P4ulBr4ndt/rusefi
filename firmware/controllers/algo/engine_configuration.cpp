@@ -229,8 +229,8 @@ void prepareVoidConfiguration(engine_configuration_s *p_engineConfiguration) {
 	p_engineConfiguration->clutchUpPinMode = PI_PULLUP;
 	p_engineConfiguration->brakePedalPinMode = PI_PULLUP;
 #ifdef EFI_HD_DP
-  p_engineConfiguration->jssPinMode = PI_PULLUP;
-  p_engineConfiguration->opsPinMode = PI_PULLUP;
+  p_engineConfiguration->jssPinMode = PI_PULLDOWN;
+  p_engineConfiguration->opsPinMode = PI_PULLDOWN;
 #endif
 }
 
