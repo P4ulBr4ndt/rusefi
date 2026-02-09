@@ -102,6 +102,13 @@ void CruiseControl::engageCCAtCurrentSpeed() {
 		return;
 	}
 
+	float minSpeed = static_cast<float>(engineConfiguration->cruiseMinSpeed);
+	float maxSpeed = static_cast<float>(engineConfiguration->cruiseMaxSpeed);
+
+	if (((minSpeed > 0) && (speed.Value < minSpeed)) || ((maxSpeed > 0) && (speed.Value > maxSpeed))) {
+		return;
+	}
+
 	m_desiredSpeedKph = sanitizeSpeed(speed.Value);
 	if (m_desiredSpeedKph) {
 		setCCStatus(CruiseControlStatus::Enabled);
@@ -159,6 +166,9 @@ void CruiseControl::resetPid() {
 }
 
 float CruiseControl::sanitizeSpeed(float speedKph) const {
+	if (speedKph == 0.0f) {
+		return 0.0f;
+	}
 	float result = maxF(0.0f, speedKph);
 	float minSpeed = static_cast<float>(engineConfiguration->cruiseMinSpeed);
 	float maxSpeed = static_cast<float>(engineConfiguration->cruiseMaxSpeed);
