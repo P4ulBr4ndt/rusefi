@@ -2100,7 +2100,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI master.2026.02.06.uaefi.3667901736"
+#define TS_SIGNATURE "rusEFI master.2026.02.09.uaefi.3667901736"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_TEST_COMMAND 't'
