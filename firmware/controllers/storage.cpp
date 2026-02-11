@@ -20,7 +20,8 @@ bool storageAllowWriteID(StorageItemId id)
 {
 #if (EFI_STORAGE_INT_FLASH == TRUE) || defined(EFI_UNIT_TEST)
 	if ((id == EFI_SETTINGS_RECORD_ID) ||
-		(id == EFI_SETTINGS_BACKUP_RECORD_ID)) {
+		(id == EFI_SETTINGS_BACKUP_RECORD_ID) ||
+		(id == EFI_LTFT_RECORD_ID)) {
 		// special case, settings can be stored in internal flash
 
 		// writing internal flash can cause cpu freeze

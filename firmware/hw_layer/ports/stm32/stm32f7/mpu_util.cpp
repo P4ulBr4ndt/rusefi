@@ -143,6 +143,22 @@ uintptr_t getFlashAddrSecondCopy() {
 	}
 }
 
+uintptr_t getFlashAddrLtft() {
+	switch (determineDevice()) {
+		case DeviceType::DualBank2MB:
+		case DeviceType::SingleBank2MB:
+#ifdef EFI_FLASH_USE_1500_OF_2MB
+			// No free sector reserved for LTFT when settings use the top 512K
+			return 0;
+#else
+			// Use the last 256K sector
+			return 0x081C0000;
+#endif // EFI_FLASH_USE_1500_OF_2MB
+		default:
+			return 0;
+	}
+}
+
 #define FLASH_ACR           (*(volatile uint32_t *)(FLASH_BASE + 0x00))
 #define FLASH_KEYR          (*(volatile uint32_t *)(FLASH_BASE + 0x04))
 #define FLASH_OPTKEYR       (*(volatile uint32_t *)(FLASH_BASE + 0x08))
