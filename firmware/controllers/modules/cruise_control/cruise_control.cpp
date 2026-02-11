@@ -112,7 +112,20 @@ void CruiseControl::engageCCAtCurrentSpeed() {
 	m_desiredSpeedKph = sanitizeSpeed(speed.Value);
 	if (m_desiredSpeedKph) {
 		setCCStatus(CruiseControlStatus::Enabled);
+	}
 }
+
+void CruiseControl::resumeCC() {
+	float minSpeed = static_cast<float>(engineConfiguration->cruiseMinSpeed);
+	float maxSpeed = static_cast<float>(engineConfiguration->cruiseMaxSpeed);
+
+	if (((minSpeed > 0) && (m_desiredSpeedKph < minSpeed)) || ((maxSpeed > 0) && (m_desiredSpeedKph > maxSpeed))) {
+		return;
+	}
+
+	if (m_desiredSpeedKph) {
+		setCCStatus(CruiseControlStatus::Enabled);
+	}
 }
 
 expected<float> CruiseControl::getSetpoint() {
@@ -210,6 +223,10 @@ CruiseControlStatus getCCStatus() {
 
 void engageCCAtCurrentSpeed() {
 	engine->module<CruiseControl>().unmock().engageCCAtCurrentSpeed();
+}
+
+void resumeCC() {
+	engine->module<CruiseControl>().unmock().resumeCC();
 }
 
 percent_t getCruiseControlThrottleOffset() {

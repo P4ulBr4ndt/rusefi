@@ -27,6 +27,7 @@ public:
 	void setCCStatus(CruiseControlStatus status);
 	CruiseControlStatus getCCStatus() const;
 	void engageCCAtCurrentSpeed();
+	void resumeCC();
 
 	percent_t getThrottleOffset() const {
 		return m_throttleOffset;
@@ -56,4 +57,5 @@ void decreaseDesiredCCSpeed();
 void setCCStatus(CruiseControlStatus status);
 CruiseControlStatus getCCStatus();
 void engageCCAtCurrentSpeed();
+void resumeCC();
 percent_t getCruiseControlThrottleOffset();
