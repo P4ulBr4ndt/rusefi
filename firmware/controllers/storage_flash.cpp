@@ -15,7 +15,7 @@
 #include "mpu_util.h"
 #include "flash_int.h"
 
-#ifdef DEFI_HD_DP
+#ifdef EFI_HD_DP
 // LTFT lives in a dedicated internal flash sector on STM32F7
 extern uintptr_t getFlashAddrLtft(void);
 #endif
@@ -37,7 +37,7 @@ flashaddr_t SettingStorageFlash::getIdAddress(size_t id) {
 		return getFlashAddrFirstCopy();
 	} else if (id == EFI_SETTINGS_BACKUP_RECORD_ID) {
 		return getFlashAddrSecondCopy();
-#ifdef DEFI_HD_DP
+#ifdef EFI_HD_DP
 	} else if (id == EFI_LTFT_RECORD_ID) {
 		return getFlashAddrLtft();
 #endif
