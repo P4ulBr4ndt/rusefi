@@ -41,7 +41,9 @@ TEST(Storage, AllowWriteID) {
     engine->rpmCalculator.setRpmValue(1000);
     EXPECT_FALSE(storageAllowWriteID(EFI_SETTINGS_RECORD_ID));
 
-    // Non-settings record (should always allow write)
+	// We want to write LTFT only on engine stopped for not having so many flash writes
     EXPECT_TRUE(storageAllowWriteID(EFI_LTFT_RECORD_ID));
+	
+	// Non-settings record (should always allow write)
     EXPECT_TRUE(storageAllowWriteID((StorageItemId)123)); // Some random ID
 }
