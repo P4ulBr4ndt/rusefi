@@ -42,7 +42,7 @@ TEST(Storage, AllowWriteID) {
     EXPECT_FALSE(storageAllowWriteID(EFI_SETTINGS_RECORD_ID));
 
 	// We want to write LTFT only on engine stopped for not having so many flash writes
-    EXPECT_TRUE(storageAllowWriteID(EFI_LTFT_RECORD_ID));
+    EXPECT_FALSE(storageAllowWriteID(EFI_LTFT_RECORD_ID));
 	
 	// Non-settings record (should always allow write)
     EXPECT_TRUE(storageAllowWriteID((StorageItemId)123)); // Some random ID
