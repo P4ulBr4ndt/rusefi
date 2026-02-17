@@ -46,11 +46,13 @@ static void initOldAnalogInputs() {
         criticalError("Please pick either analog AFR or CAN AFR input not both.");
     }
 	initIfValid("AFR", engineConfiguration->afr.hwChannel);
+	initIfValid("AFR2", engineConfiguration->afr.hwChannel2);
 	initIfValid("AUXF#1", engineConfiguration->auxFastSensor1_adcChannel);
 }
 
 static void deInitOldAnalogInputs() {
 	deInitIfValid("AFR", activeConfiguration.afr.hwChannel);
+	deInitIfValid("AFR2", activeConfiguration.afr.hwChannel2);
 	deInitIfValid("AUXF#1", activeConfiguration.auxFastSensor1_adcChannel);
 }
 
