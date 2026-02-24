@@ -21,7 +21,8 @@ bool storageAllowWriteID(StorageItemId id)
 #if (EFI_STORAGE_INT_FLASH == TRUE) || defined(EFI_UNIT_TEST)
 	if ((id == EFI_SETTINGS_RECORD_ID) ||
 		(id == EFI_SETTINGS_BACKUP_RECORD_ID) ||
-		(id == EFI_LTFT_RECORD_ID)) {
+		(id == EFI_LTFT_RECORD_ID) ||
+		(id == EFI_TRIP_ODOMETER_RECORD_ID)) {
 		// special case, settings can be stored in internal flash
 
 		// writing internal flash can cause cpu freeze
@@ -87,6 +88,10 @@ static bool storageWriteID(uint32_t id) {
 		return writeToFlashNowImpl();
 	} else if (id == EFI_LTFT_RECORD_ID) {
 		engine->module<LongTermFuelTrim>()->store();
+#ifdef MODULE_ODOMETER
+	} else if (id == EFI_TRIP_ODOMETER_RECORD_ID) {
+		engine->module<TripOdometer>()->store();
+#endif // MODULE_ODOMETER
 		return true;
 	} else {
 		efiPrintf("Requested to write unknown record id %ld", id);
@@ -101,6 +106,10 @@ static bool storageReadID(uint32_t id) {
 
 	if (id == EFI_LTFT_RECORD_ID) {
 		engine->module<LongTermFuelTrim>()->load();
+#ifdef MODULE_ODOMETER
+	} else if (id == EFI_TRIP_ODOMETER_RECORD_ID) {
+		engine->module<TripOdometer>()->load();
+#endif // MODULE_ODOMETER
 		return true;
 	} else {
 		efiPrintf("Requested to read unknown record id %ld", id);

@@ -1,4 +1,24 @@
 #include "pch.h"
+#include "storage.h"
+
+namespace {
+struct trip_odometer_persistent_state_s {
+	uint32_t consumedGrams;
+	float consumedRemainder;
+	uint32_t distanceMeters;
+	float distanceRemainder;
+	uint32_t ignitionOnSeconds;
+	uint32_t engineRunningSeconds;
+};
+}
+
+void TripOdometer::initNoConfiguration() {
+	reset();
+
+#if EFI_CONFIGURATION_STORAGE
+	storageReqestReadID(EFI_TRIP_ODOMETER_RECORD_ID);
+#endif // EFI_CONFIGURATION_STORAGE
+}
 
 void TripOdometer::reset() {
 	m_consumedGrams = 0;
@@ -10,6 +30,43 @@ void TripOdometer::reset() {
 	m_slowCallbackCounter = 0;
 	m_engineRunningSeconds = 0;
 	m_ignitionOnSeconds = 0;
+
+	m_rate = 0;
+	m_timer.reset();
+}
+
+void TripOdometer::store() {
+#if EFI_CONFIGURATION_STORAGE
+	trip_odometer_persistent_state_s state = {
+		.consumedGrams = m_consumedGrams,
+		.consumedRemainder = m_consumedRemainder,
+		.distanceMeters = m_distanceMeters,
+		.distanceRemainder = m_distanceRemainder,
+		.ignitionOnSeconds = m_ignitionOnSeconds,
+		.engineRunningSeconds = m_engineRunningSeconds,
+	};
+
+	storageWrite(EFI_TRIP_ODOMETER_RECORD_ID, reinterpret_cast<const uint8_t*>(&state), sizeof(state));
+#endif // EFI_CONFIGURATION_STORAGE
+}
+
+void TripOdometer::load() {
+#if EFI_CONFIGURATION_STORAGE
+	trip_odometer_persistent_state_s state;
+	if (storageRead(EFI_TRIP_ODOMETER_RECORD_ID, reinterpret_cast<uint8_t*>(&state), sizeof(state)) != StorageStatus::Ok) {
+		return;
+	}
+
+	m_consumedGrams = state.consumedGrams;
+	m_consumedRemainder = state.consumedRemainder;
+	m_distanceMeters = state.distanceMeters;
+	m_distanceRemainder = state.distanceRemainder;
+	m_ignitionOnSeconds = state.ignitionOnSeconds;
+	m_engineRunningSeconds = state.engineRunningSeconds;
+	m_slowCallbackCounter = 0;
+	m_rate = 0;
+	m_timer.reset();
+#endif // EFI_CONFIGURATION_STORAGE
 }
 
 void TripOdometer::consumeFuel(float grams, efitick_t nowNt) {
@@ -39,6 +96,12 @@ void TripOdometer::consumeFuel(float grams, efitick_t nowNt) {
 		m_rate = grams / elapsedSecond;
 	}
 #endif // EFI_PROD_CODE || EFI_UNIT_TEST
+}
+
+void TripOdometer::onEngineStop() {
+#if EFI_CONFIGURATION_STORAGE
+	storageRequestWriteID(EFI_TRIP_ODOMETER_RECORD_ID, false);
+#endif // EFI_CONFIGURATION_STORAGE
 }
 
 uint32_t TripOdometer::getConsumedGrams() const {

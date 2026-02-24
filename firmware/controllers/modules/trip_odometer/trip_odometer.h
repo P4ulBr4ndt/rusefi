@@ -2,8 +2,12 @@
 
 class TripOdometer : public EngineModule {
 public:
+	void initNoConfiguration() override;
 	void onSlowCallback() override;
+	void onEngineStop() override;
 	void reset();
+	void store();
+	void load();
 
 	void consumeFuel(float grams, efitick_t nowNt);
 
