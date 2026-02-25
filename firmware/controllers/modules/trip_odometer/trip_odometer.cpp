@@ -17,6 +17,7 @@ void TripOdometer::initNoConfiguration() {
 	reset();
 	m_dirty = false;
 	m_stopWriteQueued = false;
+	m_seenRunningSinceBoot = false;
 
 #if EFI_CONFIGURATION_STORAGE
 	storageReqestReadID(EFI_TRIP_ODOMETER_RECORD_ID);
@@ -38,6 +39,7 @@ void TripOdometer::reset() {
 	m_timer.reset();
 	m_dirty = true;
 	m_stopWriteQueued = false;
+	m_seenRunningSinceBoot = false;
 }
 
 void TripOdometer::store() {
@@ -89,6 +91,7 @@ void TripOdometer::load() {
 	m_timer.reset();
 	m_dirty = false;
 	m_stopWriteQueued = false;
+	m_seenRunningSinceBoot = false;
 #endif // EFI_CONFIGURATION_STORAGE
 }
 
@@ -96,6 +99,7 @@ void TripOdometer::consumeFuel(float grams, efitick_t nowNt) {
 // we have some drama with simulator busy loop in reality :(
 #if EFI_PROD_CODE || EFI_UNIT_TEST
 	m_stopWriteQueued = false;
+	m_seenRunningSinceBoot = true;
 
 	m_consumedRemainder += grams;
 
@@ -126,6 +130,12 @@ void TripOdometer::consumeFuel(float grams, efitick_t nowNt) {
 
 void TripOdometer::onEngineStop() {
 #if EFI_CONFIGURATION_STORAGE
+	// On single-bank STM32, flash erase/write stalls CPU for ~1s.
+	// Avoid a write right after boot (engine is already "stopped") until we've seen a real run.
+	if (!m_seenRunningSinceBoot) {
+		return;
+	}
+
 	if (m_stopWriteQueued || !m_dirty) {
 		return;
 	}
@@ -174,6 +184,7 @@ void TripOdometer::onSlowCallback() {
 		if (engine->rpmCalculator.isRunning()) {
 			m_engineRunningSeconds++;
 			m_stopWriteQueued = false;
+			m_seenRunningSinceBoot = true;
 		}
 #endif // EFI_SHAFT_POSITION_INPUT
 	}

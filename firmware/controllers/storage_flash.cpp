@@ -67,6 +67,10 @@ StorageStatus SettingStorageFlash::store(size_t id, const uint8_t *ptr, size_t s
 	efiPrintf("Flash: Writing storage ID %d  @0x%x... %d bytes", id, addr, size);
 	efitick_t startNt = getTimeNowNt();
 
+	// Any internal flash erase/program on single-bank parts can stall execution long enough
+	// to trigger linear-time diagnostics. Reuse this timer gate for all storage IDs.
+	engine->configBurnTimer.reset();
+
 	if (!mcuCanFlashWhileRunning()) {
 		// there's no wdgStop() for STM32, so we cannot disable it.
 		// we just set a long timeout of 5 secs to wait until flash is done.

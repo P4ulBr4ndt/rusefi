@@ -39,6 +39,7 @@ private:
 	// Persistence state
 	bool m_dirty = false;
 	bool m_stopWriteQueued = false;
+	bool m_seenRunningSinceBoot = false;
 
 	Timer m_timer;
 };
