@@ -36,5 +36,9 @@ private:
 	uint32_t m_ignitionOnSeconds = 0;
 	uint32_t m_engineRunningSeconds = 0;
 
+	// Persistence state
+	bool m_dirty = false;
+	bool m_stopWriteQueued = false;
+
 	Timer m_timer;
 };
