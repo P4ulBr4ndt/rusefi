@@ -6,5 +6,6 @@
 #include "fan_control.h"
 #include "map_averaging.h"
 #include "example_module.h"
+#include "cruise_control.h"
 #include "vvl_controller.h"
 #include "configuration_wizard.h"
