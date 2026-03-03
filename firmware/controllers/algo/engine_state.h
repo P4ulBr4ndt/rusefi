@@ -85,6 +85,8 @@ public:
 EngineState * getEngineState();
 
 bool getClutchDownState();
+// 0 not pressed
+// 1 pressed
 bool getBrakePedalState();
 #ifdef EFI_HD_DP
 bool getJSSState();

@@ -17,6 +17,8 @@
 #ifndef MCUCONF_H
 #define MCUCONF_H
 
+#include "interrupt_priority.h"
+
 /*
  * STM32H7xx drivers configuration.
  * The following settings override the default settings present in
@@ -80,14 +82,14 @@
 // we hijack this interrupt handler as the EXTI chained handler, see digital_input_exti.cpp
 #define STM32_I2C_I2C1_IRQ_PRIORITY         6
 
-#define STM32_IRQ_EXTI_PRIORITY             CORTEX_MAXIMUM_PRIORITY
-#define STM32_IRQ_EXTI0_PRIORITY            STM32_IRQ_EXTI_PRIORITY
-#define STM32_IRQ_EXTI1_PRIORITY            STM32_IRQ_EXTI_PRIORITY
-#define STM32_IRQ_EXTI2_PRIORITY            STM32_IRQ_EXTI_PRIORITY
-#define STM32_IRQ_EXTI3_PRIORITY            STM32_IRQ_EXTI_PRIORITY
-#define STM32_IRQ_EXTI4_PRIORITY            STM32_IRQ_EXTI_PRIORITY
-#define STM32_IRQ_EXTI5_9_PRIORITY          STM32_IRQ_EXTI_PRIORITY
-#define STM32_IRQ_EXTI10_15_PRIORITY        STM32_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI_PRIORITY             EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI0_PRIORITY            EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI1_PRIORITY            EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI2_PRIORITY            EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI3_PRIORITY            EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI4_PRIORITY            EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI5_9_PRIORITY          EFI_IRQ_EXTI_PRIORITY
+#define STM32_IRQ_EXTI10_15_PRIORITY        EFI_IRQ_EXTI_PRIORITY
 
 #define STM32_IRQ_EXTI16_PRIORITY           6
 #define STM32_IRQ_EXTI17_PRIORITY           6
@@ -95,9 +97,9 @@
 #define STM32_IRQ_EXTI19_PRIORITY           6
 #define STM32_IRQ_EXTI20_21_PRIORITY        6
 
-#define STM32_IRQ_FDCAN1_PRIORITY           10
-#define STM32_IRQ_FDCAN2_PRIORITY           10
-#define STM32_IRQ_FDCAN3_PRIORITY           10
+#define STM32_IRQ_FDCAN1_PRIORITY           EFI_IRQ_CAN_PRIORITY
+#define STM32_IRQ_FDCAN2_PRIORITY           EFI_IRQ_CAN_PRIORITY
+#define STM32_IRQ_FDCAN3_PRIORITY           EFI_IRQ_CAN_PRIORITY
 
 #define STM32_IRQ_MDMA_PRIORITY             9
 
@@ -106,15 +108,15 @@
 
 #define STM32_IRQ_QUADSPI1_PRIORITY         10
 
-#define STM32_IRQ_SDMMC1_PRIORITY           9
-#define STM32_IRQ_SDMMC2_PRIORITY           9
+#define STM32_IRQ_SDMMC1_PRIORITY           EFI_IRQ_SDMMC_PRIORITY
+#define STM32_IRQ_SDMMC2_PRIORITY           EFI_IRQ_SDMMC_PRIORITY
 
 #define STM32_IRQ_TIM1_UP_PRIORITY          7
 #define STM32_IRQ_TIM1_CC_PRIORITY          7
 #define STM32_IRQ_TIM2_PRIORITY             7
 #define STM32_IRQ_TIM3_PRIORITY             7
 #define STM32_IRQ_TIM4_PRIORITY             7
-#define STM32_IRQ_TIM5_PRIORITY             7
+#define STM32_IRQ_TIM5_PRIORITY             EFI_IRQ_SCHEDULING_TIMER_PRIORITY
 #define STM32_IRQ_TIM6_PRIORITY             7
 #define STM32_IRQ_TIM7_PRIORITY             7
 #define STM32_IRQ_TIM8_BRK_TIM12_PRIORITY   7
@@ -125,17 +127,17 @@
 #define STM32_IRQ_TIM16_PRIORITY            7
 #define STM32_IRQ_TIM17_PRIORITY            7
 
-#define STM32_IRQ_USART1_PRIORITY           12
-#define STM32_IRQ_USART2_PRIORITY           12
-#define STM32_IRQ_USART3_PRIORITY           12
-#define STM32_IRQ_UART4_PRIORITY            12
-#define STM32_IRQ_UART5_PRIORITY            12
-#define STM32_IRQ_USART6_PRIORITY           12
-#define STM32_IRQ_UART7_PRIORITY            12
-#define STM32_IRQ_UART8_PRIORITY            12
-#define STM32_IRQ_UART9_PRIORITY            12
-#define STM32_IRQ_USART10_PRIORITY          12
-#define STM32_IRQ_LPUART1_PRIORITY          12
+#define STM32_IRQ_USART1_PRIORITY           EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_USART2_PRIORITY           EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_USART3_PRIORITY           EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_UART4_PRIORITY            EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_UART5_PRIORITY            EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_USART6_PRIORITY           EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_UART7_PRIORITY            EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_UART8_PRIORITY            EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_UART9_PRIORITY            EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_USART10_PRIORITY          EFI_IRQ_UART_PRIORITY
+#define STM32_IRQ_LPUART1_PRIORITY          EFI_IRQ_UART_PRIORITY
 
 /*
  * ADC driver system settings.
@@ -152,8 +154,8 @@
 #define STM32_ADC_ADC3_BDMA_STREAM          STM32_BDMA_STREAM_ID_ANY
 #define STM32_ADC_ADC12_DMA_PRIORITY        2
 #define STM32_ADC_ADC3_DMA_PRIORITY         2
-#define STM32_ADC_ADC12_IRQ_PRIORITY        5
-#define STM32_ADC_ADC3_IRQ_PRIORITY         5
+#define STM32_ADC_ADC12_IRQ_PRIORITY        EFI_IRQ_ADC_PRIORITY
+#define STM32_ADC_ADC3_IRQ_PRIORITY         EFI_IRQ_ADC_PRIORITY
 #define STM32_ADC_ADC12_CLOCK_MODE          ADC_CCR_CKMODE_AHB_DIV4
 #define STM32_ADC_ADC3_CLOCK_MODE           ADC_CCR_CKMODE_AHB_DIV4
 
@@ -320,12 +322,30 @@
 /*
  * SERIAL driver system settings.
  */
+#ifndef STM32_SERIAL_USE_USART1
 #define STM32_SERIAL_USE_USART1             TRUE
+#endif
+
+#ifndef STM32_SERIAL_USE_USART2
 #define STM32_SERIAL_USE_USART2             FALSE
+#endif
+
+#ifndef STM32_SERIAL_USE_USART3
 #define STM32_SERIAL_USE_USART3             FALSE
+#endif
+
+#ifndef STM32_SERIAL_USE_UART4
 #define STM32_SERIAL_USE_UART4              FALSE
+#endif
+
+#ifndef STM32_SERIAL_USE_UART5
 #define STM32_SERIAL_USE_UART5              FALSE
+#endif
+
+#ifndef STM32_SERIAL_USE_USART6
 #define STM32_SERIAL_USE_USART6             TRUE
+#endif
+
 #define STM32_SERIAL_USE_UART7              FALSE
 #define STM32_SERIAL_USE_UART8              FALSE
 #define STM32_SERIAL_USE_LPUART1            FALSE
@@ -370,18 +390,18 @@
 #define STM32_SPI_SPI4_DMA_PRIORITY         1
 #define STM32_SPI_SPI5_DMA_PRIORITY         1
 #define STM32_SPI_SPI6_DMA_PRIORITY         1
-#define STM32_SPI_SPI1_IRQ_PRIORITY         10
-#define STM32_SPI_SPI2_IRQ_PRIORITY         10
-#define STM32_SPI_SPI3_IRQ_PRIORITY         10
-#define STM32_SPI_SPI4_IRQ_PRIORITY         10
-#define STM32_SPI_SPI5_IRQ_PRIORITY         10
-#define STM32_SPI_SPI6_IRQ_PRIORITY         10
+#define STM32_SPI_SPI1_IRQ_PRIORITY         EFI_IRQ_SPI_PRIORITY
+#define STM32_SPI_SPI2_IRQ_PRIORITY         EFI_IRQ_SPI_PRIORITY
+#define STM32_SPI_SPI3_IRQ_PRIORITY         EFI_IRQ_SPI_PRIORITY
+#define STM32_SPI_SPI4_IRQ_PRIORITY         EFI_IRQ_SPI_PRIORITY
+#define STM32_SPI_SPI5_IRQ_PRIORITY         EFI_IRQ_SPI_PRIORITY
+#define STM32_SPI_SPI6_IRQ_PRIORITY         EFI_IRQ_SPI_PRIORITY
 #define STM32_SPI_DMA_ERROR_HOOK(spip)      osalSysHalt("DMA failure")
 
 /*
  * ST driver system settings.
  */
-#define STM32_ST_IRQ_PRIORITY               8
+#define STM32_ST_IRQ_PRIORITY               EFI_IRQ_SYSTICK_PRIORITY
 #define STM32_ST_USE_TIMER                  2
 
 /*
@@ -431,6 +451,12 @@
 #define STM32_UART_DMA_ERROR_HOOK(uartp)    osalSysHalt("DMA failure")
 
 /*
+ * USB driver system settings.
+ */
+#define STM32_USB_OTG1_IRQ_PRIORITY         EFI_IRQ_USB_PRIORITY
+#define STM32_USB_OTG2_IRQ_PRIORITY         EFI_IRQ_USB_PRIORITY
+
+/*
  * WDG driver system settings.
  */
 #define STM32_WDG_USE_IWDG                  TRUE
@@ -446,8 +472,18 @@
 
 #define STM32_SYSCLK STM32_SYS_CK
 
-#ifndef ENABLE_AUTO_DETECT_HSE
-    #define ENABLE_AUTO_DETECT_HSE          TRUE
+/* Some boards need to know clock early on boot. */
+#ifndef STM32_HSECLK
+    // Some boards has no HSE oscillator at all and obviously disable HSE detections
+    #ifndef ENABLE_AUTO_DETECT_HSE
+        // Pretend we have a 25MHz external crystal.  This value isn't actually used since we
+        // configure the PLL to start on the HSI oscillator, then compute HSE's speed at runtime
+        // and reconfigure the PLL appropriately.
+        #define STM32_HSECLK 25000000
+
+        // After boot, we will detect the real frequency, and adjust the PLL M value to suit
+        #define ENABLE_AUTO_DETECT_HSE TRUE
+    #endif
 #endif
 
 #endif /* MCUCONF_H */

@@ -8,6 +8,7 @@ import com.rusefi.io.tcp.TcpConnector;
 import com.rusefi.maintenance.*;
 import com.rusefi.io.UpdateOperationCallbacks;
 import com.rusefi.updater.OpenbltDetectorStrategy;
+import com.rusefi.util.CompatibilityOptional;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -205,11 +206,14 @@ public enum SerialPortScanner {
             stLinkConnected = false;
             PCANConnected = false;
         }
+/*
         if (PCANConnected)
             ports.add(new PortResult(LinkManager.PCAN, SerialPortType.CAN));
+ */
+/*
         if (SHOW_SOCKETCAN)
             ports.add(new PortResult(LinkManager.SOCKET_CAN, SerialPortType.CAN));
-
+*/
         boolean isListUpdated;
         AvailableHardware currentHardware = new AvailableHardware(ports, dfuConnected, stLinkConnected, PCANConnected);
         synchronized (lock) {

@@ -47,9 +47,9 @@ static void setupDefaultSensorInputs() {
 	engineConfiguration->triggerInputPins[1] = Gpio::Unassigned;
 	engineConfiguration->camInputs[0] = Gpio::H144_IN_SENS4;
 
-	setTPS1Inputs(H144_IN_TPS, H144_IN_AUX1);
+	setTPS1Inputs(H144_IN_TPS, H144_IN_AUX1_ANALOG);
 
-	setPPSInputs(H144_IN_PPS, H144_IN_AUX2);
+	setPPSInputs(H144_IN_PPS, H144_IN_AUX2_ANALOG);
 
 	engineConfiguration->mafAdcChannel = EFI_ADC_10;
 	engineConfiguration->map.sensor.hwChannel = EFI_ADC_11;
@@ -77,7 +77,7 @@ static void hellen_gm_e67_boardConfigOverrides() {
 /**
  * @brief   Board-specific configuration defaults.
  *
- * See also setDefaultEngineConfiguration
+
  *
 
  */
@@ -123,5 +123,5 @@ static void hellen_gm_e67_boardDefaultConfiguration() {
 
 void setup_custom_board_overrides() {
 	custom_board_DefaultConfiguration = hellen_gm_e67_boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  hellen_gm_e67_boardConfigOverrides;
+	custom_board_ConfigOverrides = hellen_gm_e67_boardConfigOverrides;
 }

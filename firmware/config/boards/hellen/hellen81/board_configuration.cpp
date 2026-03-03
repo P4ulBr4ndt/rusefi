@@ -77,7 +77,7 @@ static void hellen81_boardConfigOverrides() {
 /**
  * @brief   Board-specific configuration defaults.
  *
- * See also setDefaultEngineConfiguration
+
  *
 
  */
@@ -110,6 +110,6 @@ static void hellen81_boardDefaultConfiguration() {
 
 void setup_custom_board_overrides() {
 	custom_board_DefaultConfiguration = hellen81_boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  hellen81_boardConfigOverrides;
+	custom_board_ConfigOverrides = hellen81_boardConfigOverrides;
 }
 

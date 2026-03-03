@@ -84,7 +84,6 @@
 #include "bench_test.h"
 #include "status_loop.h"
 #include "mmc_card.h"
-#include "tuner_detector_utils.h"
 
 #if EFI_SIMULATOR
 #include "rusEfiFunctionalTest.h"
@@ -166,6 +165,9 @@ void tunerStudioDebug(TsChannelBase* tsChannel, const char *msg) {
 #endif /* EFI_TUNER_STUDIO_VERBOSE */
 }
 
+// use this array for any disabled pages on TS
+uint8_t ts_blank_page_placeholder[256];
+
 static uint8_t* getWorkingPageAddr(TsChannelBase* tsChannel, size_t page, size_t offset) {
 	// TODO: validate offset?
 	switch (page) {
@@ -176,13 +178,15 @@ static uint8_t* getWorkingPageAddr(TsChannelBase* tsChannel, size_t page, size_t
 #if EFI_TS_SCATTER
 	case TS_PAGE_SCATTER_OFFSETS:
 		return (uint8_t *)tsChannel->page1.highSpeedOffsets + offset;
+#else
+	case TS_PAGE_SCATTER_OFFSETS:
+		return (uint8_t *)&ts_blank_page_placeholder;
 #endif
 #if EFI_LTFT_CONTROL
 	case TS_PAGE_LTFT_TRIMS:
 		return (uint8_t *)ltftGetTsPage() + offset;
 #endif
 	default:
-// technical dept: TS seems to try to read the 3 pages sequentially, does not look like we properly handle 'EFI_TS_SCATTER=FALSE'
 		tunerStudioError(tsChannel, "ERROR: page address out of range");
 		return nullptr;
 	}
@@ -195,6 +199,10 @@ static constexpr size_t getTunerStudioPageSize(size_t page) {
 #if EFI_TS_SCATTER
 	case TS_PAGE_SCATTER_OFFSETS:
 		return PAGE_SIZE_1;
+#else
+	case TS_PAGE_SCATTER_OFFSETS:
+		// min read from TS seems to be 256b?
+		return 256;
 #endif
 #if EFI_LTFT_CONTROL
 	case TS_PAGE_LTFT_TRIMS:
@@ -206,13 +214,11 @@ static constexpr size_t getTunerStudioPageSize(size_t page) {
 }
 
 // Validate whether the specified offset and count would cause an overrun in the tune.
-// Returns true if an overrun would occur.
-static bool validateOffsetCount(size_t page, size_t offset, size_t count, TsChannelBase* tsChannel) {
+// Returns true if an overrun would occur. Callers are responsible for sending the error code.
+static bool validateOffsetCount(size_t page, size_t offset, size_t count) {
 	size_t allowedSize = getTunerStudioPageSize(page);
 	if (offset + count > allowedSize) {
 		efiPrintf("TS: Project mismatch? Too much configuration requested %d+%d>%d", offset, count, allowedSize);
-		tunerStudioError(tsChannel, "ERROR: out of range");
-		sendErrorCode(tsChannel, TS_RESPONSE_OUT_OF_RANGE, "bad_offset");
 		return true;
 	}
 
@@ -304,7 +310,7 @@ void TunerStudio::handleWriteChunkCommand(TsChannelBase* tsChannel, uint16_t pag
 		page, offset, count, tsState.outputChannelsCommandCounter);
 
 
-	if (validateOffsetCount(page, offset, count, tsChannel)) {
+	if (validateOffsetCount(page, offset, count)) {
 		tunerStudioError(tsChannel, "ERROR: WR out of range");
 		sendErrorCode(tsChannel, TS_RESPONSE_OUT_OF_RANGE);
 		return;
@@ -351,7 +357,7 @@ void TunerStudio::handleCrc32Check(TsChannelBase *tsChannel, uint16_t page, uint
 	tsState.crc32CheckCommandCounter++;
 
 	// Ensure we are reading from in bounds
-	if (validateOffsetCount(page, offset, count, tsChannel)) {
+	if (validateOffsetCount(page, offset, count)) {
 		tunerStudioError(tsChannel, "ERROR: CRC out of range");
 		sendErrorCode(tsChannel, TS_RESPONSE_OUT_OF_RANGE);
 		return;
@@ -365,7 +371,8 @@ void TunerStudio::handleCrc32Check(TsChannelBase *tsChannel, uint16_t page, uint
 
 	uint32_t crc = SWAP_UINT32(crc32(start, count));
 	tsChannel->sendResponse(TS_CRC, (const uint8_t *) &crc, 4);
-	efiPrintf("TS <- Get CRC page %d offset %d count %d result %08x", page, offset, count, (unsigned int)crc);
+	// todo: rename to onConfigCrc?
+	ConfigurationWizard::onConfigOnStartUpOrBurn(false);
 }
 
 #if EFI_TS_SCATTER
@@ -417,9 +424,8 @@ void TunerStudio::handleScatteredReadCommand(TsChannelBase* tsChannel) {
 
 void TunerStudio::handlePageReadCommand(TsChannelBase* tsChannel, uint16_t page, uint16_t offset, uint16_t count) {
 	tsState.readPageCommandsCounter++;
-	efiPrintf("TS <- Page %d read chunk offset %d count %d", page, offset, count);
 
-	if (validateOffsetCount(page, offset, count, tsChannel)) {
+	if (validateOffsetCount(page, offset, count)) {
 		tunerStudioError(tsChannel, "ERROR: RD out of range");
 		sendErrorCode(tsChannel, TS_RESPONSE_OUT_OF_RANGE);
 		return;
@@ -468,7 +474,7 @@ static void handleBurnCommand(TsChannelBase* tsChannel, uint16_t page) {
 		tsState.burnCommandCounter++;
 
 		efiPrintf("TS -> Burn");
-		validateConfigOnStartUpOrBurn();
+		validateConfigOnStartUpOrBurn(true);
 
 		// problem: 'popular vehicles' dialog has 'Burn' which is very NOT helpful on that dialog
 		// since users often click both buttons producing a conflict between ECU desire to change settings
@@ -476,13 +482,12 @@ static void handleBurnCommand(TsChannelBase* tsChannel, uint16_t page) {
 		// Skip the burn if a preset was just loaded - we don't want to overwrite it
 		// [tag:popular_vehicle]
 		if (!needToTriggerTsRefresh()) {
+			efiPrintf("TS -> Burn, we are allowed to burn");
 			requestBurn();
 		}
 		efiPrintf("Burned in %.1fms", t.getElapsedSeconds() * 1e3);
-#if EFI_TS_SCATTER
 	} else if (page == TS_PAGE_SCATTER_OFFSETS) {
 		/* do nothing */
-#endif
 	} else {
 		sendErrorCode(tsChannel, TS_RESPONSE_OUT_OF_RANGE, "ERROR: Burn invalid page");
 		return;
@@ -564,7 +569,6 @@ void TunerStudio::handleQueryCommand(TsChannelBase* tsChannel, ts_response_forma
 	tsState.queryCommandCounter++;
 	const char *signature = getTsSignature();
 
-	efiPrintf("TS <- Query signature: %s", signature);
 	tsChannel->sendResponse(mode, (const uint8_t *)signature, strlen(signature) + 1);
 }
 
@@ -868,7 +872,6 @@ int TunerStudio::handleCrcCommand(TsChannelBase* tsChannel, char *data, int inco
 #endif // EFI_TS_SCATTER
 		break;
 	case TS_HELLO_COMMAND:
-		tunerStudioDebug(tsChannel, "got Query command");
 		handleQueryCommand(tsChannel, TS_CRC);
 		break;
 	case TS_GET_FIRMWARE_VERSION:
@@ -1052,8 +1055,8 @@ static char tsErrorBuff[80];
 #endif // EFI_PROD_CODE || EFI_SIMULATOR
 
 bool isTuningVeNow() {
-	return (!TunerDetectorUtils::isTuningDetectorUndefined()) &&
-		!calibrationsVeWriteTimer.hasElapsedSec(TunerDetectorUtils::getUserEnteredTuningDetector());
+  int tuningDetector = engineConfiguration->isTuningDetectorEnabled ? 0 : 20;
+	return !calibrationsVeWriteTimer.hasElapsedSec(tuningDetector);
 }
 
 void startTunerStudioConnectivity() {

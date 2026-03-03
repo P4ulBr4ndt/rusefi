@@ -118,7 +118,7 @@ trigger_type_e getVvtTriggerType(vvt_mode_e vvtMode) {
 		return trigger_type_e::TT_TOYOTA_3_TOOTH_UZ;
 	case VVT_NISSAN_MR:
 		return trigger_type_e::TT_NISSAN_MR18_CAM_VVT;
-	case VVT_UNUSED_17:
+	case VVT_BMW_N63TU:
 	case VVT_MITSUBISHI_4G63:
 		return trigger_type_e::TT_MITSU_4G63_CAM;
 	case VVT_HR12DDR_IN:
@@ -143,9 +143,18 @@ void Engine::updateTriggerConfiguration() {
 #endif /* EFI_ENGINE_CONTROL && EFI_SHAFT_POSITION_INPUT */
 }
 
-PUBLIC_API_WEAK void boardPeriodicSlowCallback() { }
+#include "board_overrides.h"
 
-PUBLIC_API_WEAK void boardPeriodicFastCallback() { }
+std::optional<setup_custom_board_overrides_type> custom_board_periodicSlowCallback;
+std::optional<setup_custom_board_overrides_type> custom_board_periodicFastCallback;
+
+void boardPeriodicSlowCallback() {
+  // placeholder to force upgrade
+}
+
+void boardPeriodicFastCallback() {
+  // placeholder to force upgrade
+}
 
 void Engine::periodicSlowCallback() {
 	ScopePerf perf(PE::EnginePeriodicSlowCallback);
@@ -199,6 +208,7 @@ void Engine::periodicSlowCallback() {
 	baroLps25Update();
 #endif // EFI_PROD_CODE
   boardPeriodicSlowCallback();
+  call_board_override(custom_board_periodicSlowCallback);
 }
 
 /**
@@ -306,26 +316,8 @@ extern bool kAcRequestState;
 #endif // EFI_GPIO_HARDWARE
 }
 
-Engine::Engine()
-    : clutchUpSwitchedState(&engineState.clutchUpState),
-	brakePedalSwitchedState(&engineState.brakePedalState),
-	acButtonSwitchedState(&module<AcController>().unmock().acButtonState)
-#ifdef EFI_HD_DP
-  ,jssSwitchedState(&engineState.jssState),
-  opsSwitchedState(&engineState.opsState)
-#endif
-
-#if EFI_LAUNCH_CONTROL
-
-	, softSparkLimiter(false), hardSparkLimiter(true)
-
-#if EFI_ANTILAG_SYSTEM
-//	, ALSsoftSparkLimiter(false)
-#endif /* EFI_ANTILAG_SYSTEM */
-
-#endif // EFI_LAUNCH_CONTROL
-{
-	reset();
+Engine::Engine() {
+	resetLua();
 }
 
 int Engine::getGlobalConfigurationVersion() const {
@@ -348,6 +340,7 @@ void Engine::resetLua() {
 	engineState.lua.luaDisableEtb = false;
 	engineState.lua.luaIgnCut = false;
 	engineState.lua.luaFuelCut = false;
+	engineState.lua.engineTorque = NAN;
 	engineState.lua.disableDecelerationFuelCutOff = false;
 #if EFI_BOOST_CONTROL
 	module<BoostController>().unmock().resetLua();
@@ -468,8 +461,9 @@ static void assertTimeIsLinear() {
 
 void Engine::efiWatchdog() {
     assertTimeIsLinear();
-	if (isRunningPwmTest)
+	if (isRunningPwmTest) {
 		return;
+	}
 
 #if EFI_ENGINE_CONTROL && EFI_SHAFT_POSITION_INPUT
 	if (module<PrimeController>()->isPriming() || triggerCentral.engineMovedRecently()) {
@@ -578,15 +572,6 @@ bool Engine::isInShutdownMode() const {
 	return false;
 }
 
-bool Engine::isMainRelayEnabled() const {
-#if EFI_MAIN_RELAY_CONTROL
-	return enginePins.mainRelay.getLogicValue();
-#else
-	// if no main relay control, we assume it's always turned on
-	return true;
-#endif /* EFI_MAIN_RELAY_CONTROL */
-}
-
 injection_mode_e getCurrentInjectionMode() {
 	return getEngineRotationState()->isCranking() ? engineConfiguration->crankingInjectionMode : engineConfiguration->injectionMode;
 }
@@ -599,6 +584,7 @@ void Engine::periodicFastCallback() {
 	ScopePerf pc(PE::EnginePeriodicFastCallback);
 
 	boardPeriodicFastCallback();
+	call_board_override(custom_board_periodicFastCallback);
 
 
 	engineState.periodicFastCallback();

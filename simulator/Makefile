@@ -20,13 +20,6 @@ US_TO_NT_MULTIPLIER = 100
 
 PROJECT_CPU=simulator
 
-# todo: reduce copy/paste between all three Makefiles!
-ifneq ($(BOARD_DIR),)
-ifneq ("$(wildcard ../firmware/$(BOARD_DIR)/default_tune.cpp)","")
-  BOARDCPPSRC += ../firmware/$(BOARD_DIR)/default_tune.cpp
-endif
-endif
-
 # OS is a windows-specific environment variable
 ifneq ($(OS),Windows_NT)
   OS = $(shell uname)
@@ -35,6 +28,7 @@ $(info OS is [${OS}])
 
 include ../firmware/rusefi.mk
 include ../firmware/rusefi_rules.mk
+-include ${BOARD_DIR}/firmware/firmware.mk
 
 # Configure precompiled header
 PCH_DIR = $(PROJECT_DIR)/pch
@@ -178,6 +172,15 @@ include $(PROJECT_DIR)/console/console.mk
 include $(PROJECT_DIR)/common.mk
 include $(PROJECT_DIR)/controllers/modules/modules.mk
 
+ifneq ($(BOARD_DIR),)
+  # used by custom board custom live data
+  INCDIR += $(BOARD_DIR)/firmware
+  ifneq ("$(wildcard $(BOARD_DIR)/board_common.mk)","")
+    # part common between PROD, simulator and unit tests
+    include $(BOARD_DIR)/board_common.mk
+  endif
+endif
+
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC =  $(ALLCSRC) \
@@ -206,15 +209,6 @@ CPPSRC = $(ALLCPPSRC) \
 
 # List ASM source files here
 ASMSRC = $(PORTASM)
-
-ifneq ($(BOARD_DIR),)
-  # used by custom board custom live data
-  INCDIR += $(BOARD_DIR)/firmware
-  ifneq ("$(wildcard $(BOARD_DIR)/board_common.mk)","")
-    # part common between PROD, simulator and unit tests
-    include $(BOARD_DIR)/board_common.mk
-  endif
-endif
 
 INCDIR += . \
   $(PCH_DIR) \
@@ -318,6 +312,7 @@ ifeq ($(SHORT_BOARD_NAME),)
   SHORT_BOARD_NAME = f407-discovery
 endif
 include $(PROJECT_DIR)/rusefi_config.mk
+include $(PROJECT_DIR)/docs_enums.mk
 endif
 
 # Enable precompiled header

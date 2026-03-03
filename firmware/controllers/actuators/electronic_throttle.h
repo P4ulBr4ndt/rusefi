@@ -20,6 +20,8 @@ void setEtbLuaAdjustment(percent_t adjustment);
 void setEwgLuaAdjustment(percent_t pos);
 void setHitachiEtbCalibration();
 
+void pickEtbOrStepper();
+
 void blinkEtbErrorCodes(bool blinkPhase);
 
 // same plug as 18919 AM810 but have different calibrations
@@ -36,6 +38,7 @@ void unregisterEtbPins();
 void setProteusHitachiEtbDefaults();
 
 void etbAutocal(dc_function_e function, bool reportToTs = true);
+void etbBenchTestStart(size_t throttleIndex);
 EtbStatus etbGetState(size_t throttleIndex);
 
 float getSanitizedPedal();
@@ -70,6 +73,7 @@ public:
 	virtual void setWastegatePosition(percent_t pos) = 0;
 	virtual void update() = 0;
 	virtual void autoCalibrateTps(bool reportToTs = true) { (void)reportToTs; }
+	virtual void startBenchTest() {}
 	virtual bool isEtbMode() const = 0;
 
 	virtual const pid_state_s& getPidState() const = 0;

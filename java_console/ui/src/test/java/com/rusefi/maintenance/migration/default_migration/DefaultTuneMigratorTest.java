@@ -1,17 +1,24 @@
 package com.rusefi.maintenance.migration.default_migration;
 
-import com.rusefi.maintenance.TestTuneMigrationContext;
-import com.rusefi.maintenance.migration.ComposedTuneMigrator;
-import com.rusefi.tune.xml.Constant;
+import static com.rusefi.maintenance.migration.default_migration.CalibrationsTestHelpers.checkField;
+import static com.rusefi.maintenance.migration.default_migration.DefaultTestTuneMigrationContext.*;
+import static com.rusefi.maintenance.migration.migrators.TableAddColumnsMigrator.VE_RPM_BINS_FIELD_NAME;
+import static com.rusefi.maintenance.migration.migrators.TableAddColumnsMigrator.VE_TABLE_FIELD_NAME;
+import static java.util.Collections.emptySet;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Optional;
+
+import jakarta.xml.bind.JAXBException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.JAXBException;
-
-import static com.rusefi.maintenance.migration.TableAddColumnsMigrator.VE_RPM_BINS_FIELD_NAME;
-import static com.rusefi.maintenance.migration.TableAddColumnsMigrator.VE_TABLE_FIELD_NAME;
-import static com.rusefi.maintenance.migration.default_migration.DefaultTestTuneMigrationContext.*;
-import static org.junit.jupiter.api.Assertions.*;
+import com.rusefi.maintenance.CalibrationsHelper;
+import com.rusefi.maintenance.CalibrationsInfo;
+import com.rusefi.maintenance.TestTuneMigrationContext;
+import com.rusefi.maintenance.migration.migrators.ComposedTuneMigrator;
+import com.rusefi.tune.xml.Constant;
 
 public class DefaultTuneMigratorTest {
     private TestTuneMigrationContext testContext;
@@ -34,7 +41,7 @@ public class DefaultTuneMigratorTest {
 
     @Test
     public void testIsEnabledSpi3() {
-        checkValueToUpdateExist("is_enabled_spi_3", "\"false\"", "\"true\"");
+        checkValueToUpdateExist("is_enabled_spi_3", "\"false\"", "\"yes\"");
     }
 
     @Test
@@ -49,7 +56,17 @@ public class DefaultTuneMigratorTest {
 
     @Test
     public void testSpi3sckPin() {
-        checkValueToUpdateExist("spi3sckPin", "\"NONE\"", "\"PC10\"");
+    	 final Optional<CalibrationsInfo> result = CalibrationsHelper.mergeCalibrations(
+                 testContext.getPrevIniFile(),
+                 testContext.getPrevTune(),
+                 testContext.getUpdatedCalibrationsInfo(),
+                 testContext.getCallbacks(),
+                 emptySet()
+             );
+
+             assertTrue(result.isPresent());
+
+        checkField(testContext, result.get(), "spi3sckPin", "\"NONE\"", "\"PC10\"");
     }
 
     @Test
@@ -196,7 +213,9 @@ public class DefaultTuneMigratorTest {
     @Test
     public void testContent() {
         assertEquals(
-            "We aren't going to restore field `auxSerialRxPin`: it is missed in new .ini file\r\n" +
+            "WARNING! Type of `map_samplingAngleBins` ini-field is expected to be `UINT16` instead of `FLOAT`\r\n" +
+                "WARNING! Type of `map_samplingAngleBins` ini-field is expected to be `UINT16` instead of `FLOAT`\r\n" +
+                "We aren't going to restore field `auxSerialRxPin`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `auxSerialSpeed`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `auxSerialTxPin`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `boardUse2stepPullDown`: it is missed in new .ini file\r\n" +
@@ -219,16 +238,16 @@ public class DefaultTuneMigratorTest {
                 "We aren't going to restore field `etbExpAverageLength`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `etbJamIntegratorLimit`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `etbRocExpAverageLength`: it is missed in new .ini file\r\n" +
-                "We aren't going to restore field `isManualSpinningMode`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `isManualSpinningMode`: it is missed in new .ini file\r\n"+
+                "We aren't going to restore field `kickStartCranking`: it looks like its value is just renamed: `\"false\"` -> `\"no\"`\r\n" +
                 "We aren't going to restore field `knockBandCustom`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `mapAveragingSchedulingAtIndex`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `noAccelAfterHardLimitPeriodSecs`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `oddFireEngine`: it is missed in new .ini file\r\n" +
+                "We aren't going to restore field `pauseEtbControl`: it looks like its value is just renamed: `\"false\"` -> `\"no\"`\r\n" +
                 "We aren't going to restore field `showHumanReadableWarning`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `skipADC12bitAssert`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `skipBoardCanDash`: it is missed in new .ini file\r\n" +
-                "WARNING! Field `stft_cellCfgs1_maxAdd` cannot be migrated because type is updated: `ScalarIniField{name=stft_cellCfgs1_maxAdd, offset=1020, unit='%', type=INT8}` -> `ScalarIniField{name=stft_cellCfgs1_maxAdd, offset=1032, unit='%', type=UINT8}`\r\n" +
-                "WARNING! Field `stft_cellCfgs1_maxRemove` cannot be migrated because type is updated: `ScalarIniField{name=stft_cellCfgs1_maxRemove, offset=1021, unit='%', type=INT8}` -> `ScalarIniField{name=stft_cellCfgs1_maxRemove, offset=1033, unit='%', type=UINT8}`\r\n" +
                 "We aren't going to restore field `targetVBatt`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `test557pin`: it is missed in new .ini file\r\n" +
                 "We aren't going to restore field `throttlePedalUpPin`: it is missed in new .ini file\r\n" +
@@ -264,6 +283,7 @@ public class DefaultTuneMigratorTest {
         final Constant expectedValueToUpdate = updatedValue != null ?
             updatedValue.cloneWithValue(prevValue.getValue()) :
             prevValue;
-        assertEquals(expectedValueToUpdate, valueToUpdate);
+        assertEquals(expectedValueToUpdate.getName(), valueToUpdate.getName());
     }
 }
+

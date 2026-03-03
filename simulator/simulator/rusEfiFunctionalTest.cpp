@@ -30,7 +30,7 @@
 #include "script_impl.h"
 #include <vector>
 
-extern fifo_buffer<CANTxFrame, 1024> txCanBuffer;
+extern fifo_buffer<CANTxFrame, TEST_CAN_BUFFER_SIZE> txCanBuffer;
 
 #define DEFAULT_SIM_RPM 1200
 #define DEFAULT_SNIFFER_THR 2500
@@ -265,15 +265,21 @@ void logMsg(const char * /*format*/, ...) {
 }
 
 #if HAL_USE_CAN
-static bool didInitCan = false;
-CANDriver* detectCanDevice(brain_pin_e /*pinRx*/, brain_pin_e /*pinTx*/) {
-	if (didInitCan) {
-		return nullptr;
+
+CANDriver* getCanDevice(size_t index)
+{
+	switch (index) {
+	case 0:
+		return &CAND1;
+	case 1:
+		return &CAND2;
+	case 2:
+		return &CAND3;
 	}
 
-	didInitCan = true;
-	return &CAND1;
+	return nullptr;
 }
+
 #endif // HAL_USE_CAN
 
 static uint8_t wrapOutBuffer[BLOCKING_FACTOR + 2];

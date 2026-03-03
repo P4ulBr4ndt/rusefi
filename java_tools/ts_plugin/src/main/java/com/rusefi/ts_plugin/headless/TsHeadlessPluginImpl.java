@@ -1,5 +1,6 @@
 package com.rusefi.ts_plugin.headless;
 
+import com.efiAnalytics.plugin.ecu.ControllerAccess;
 import com.opensr5.ini.IniFileModel;
 import com.rusefi.autoupdate.Autoupdate;
 import com.rusefi.core.RusEfiSignature;
@@ -7,8 +8,7 @@ import com.rusefi.core.SignatureHelper;
 import com.rusefi.core.io.BundleInfo;
 import com.rusefi.core.io.BundleInfoStrategy;
 import com.rusefi.updater.PlainSerialPortScanner;
-
-import java.util.function.Function;
+import com.rusefi.ts_plugin.wizard.BackgroundWizard;
 
 /**
  * this class is invoked by TsHeadlessPlugin via reflection
@@ -23,20 +23,29 @@ public class TsHeadlessPluginImpl implements TsHeadlessPlugin {
 
     @Override
     public void run() {
-        PlainSerialPortScanner.findEcu((port, iniFileModel) -> {
-            RusEfiSignature s = SignatureHelper.parse(iniFileModel.getSignature());
-            System.out.println(port + " with OpenBlt, signature=" + s);
+        BackgroundWizard.start(ControllerAccess::getInstance);
+        PlainSerialPortScanner.findEcu(TsHeadlessPluginImpl::onEcuDiscoveredAction, 5000);
+    }
 
-            String updateUrl = TsHeadlessPluginImpl.getUpdateUrl(iniFileModel);
-            String isObfuscated = iniFileModel.getProtocolMeta().get("RE_obfuscated");
-            if (updateUrl == null) {
-                log.warn(String.format("Not sure where to download from [%s]/[%s]", updateUrl, isObfuscated));
-                return;
-            }
-            BundleInfo bi = s.asBundleInfo();
-            String downloadFrom = BundleInfoStrategy.getDownloadUrl(bi, updateUrl, BundleInfo::getBranchName);
-            Autoupdate.downloadAutoupdateZipFile(bi, downloadFrom, Boolean.valueOf(isObfuscated));
+    private static void onEcuDiscoveredAction(String port, IniFileModel iniFileModel) {
+        RusEfiSignature s = SignatureHelper.parse(iniFileModel.getSignature());
+        System.out.println(port + " with OpenBlt, signature=" + s);
 
-        }, 5000);
+        BackgroundWizard.onEcuDiscovery(s.getBundleTarget());
+
+        String updateUrl = TsHeadlessPluginImpl.getUpdateUrl(iniFileModel);
+        String isObfuscated = iniFileModel.getProtocolMeta().get("RE_obfuscated");
+        if (updateUrl == null) {
+            log.warn(String.format("Not sure where to download from [%s]/[%s]", updateUrl, isObfuscated));
+            return;
+        }
+        BundleInfo bi = s.asBundleInfo();
+        String downloadFrom = BundleInfoStrategy.getDownloadUrl(bi, updateUrl, BundleInfo::getBranchName);
+        Autoupdate.downloadAutoupdateZipFile(bi, downloadFrom, Boolean.parseBoolean(isObfuscated));
+    }
+
+    @Override
+    public boolean getDisplayPlugin(String serialSignature) {
+        return BackgroundWizard.displayPlugin(serialSignature);
     }
 }

@@ -70,6 +70,7 @@ pins:
     type: ign
     color: grey
     ts_name: ___ Coil 6
+    function: coil 6 (5v)
 
   - pin: B11
     meta: MM100_IGN4
@@ -105,6 +106,7 @@ pins:
     type: ign
     color: green
     ts_name: ___ Coil 1
+    function: coil 1 (5v)
 
   - pin: B16
     meta: MM100_OUT_PWM2
@@ -118,20 +120,20 @@ pins:
     class: outputs
     color: yellow
     type: ls
-    ts_name: ___ Low Side output 3 (has flyback D4)
+    ts_name: ___ Low Side output 3 or injector 7 (has flyback D4)
 
   - pin: B18
     meta: MM100_INJ8
     class: outputs
     color: grey
     type: ls
-    ts_name: ___ VVT2 or Idle or Low Side output 2 (has flyback D3)
+    ts_name: ___ VVT2 or Idle or Low Side output 2 or injector 8 (has flyback D3)
 
 info:
   cid: b
   title: uaefi
   directory: hellen/uaefi
-  board_url: https://github.com/rusefi/rusefi/wiki/uaefi
+  board_url: https://wiki.rusefi.com/uaefi
   image:
     file: uaefi-B.jpg
   pins:

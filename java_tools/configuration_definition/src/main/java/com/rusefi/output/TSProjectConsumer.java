@@ -3,21 +3,22 @@ package com.rusefi.output;
 import com.devexperts.logging.Logging;
 import com.opensr5.ConfigurationImage;
 import com.opensr5.ini.IniFileModel;
-import com.opensr5.ini.IniFileModelImpl;
+import com.rusefi.ini.reader.IniFileReaderUtil;
 import com.rusefi.*;
-import com.rusefi.binaryprotocol.MsqFactory;
+import com.rusefi.tune.xml.MsqFactory;
 import com.rusefi.tools.tune.FileLinesHelper;
 import com.rusefi.tune.xml.Msq;
 import com.rusefi.util.LazyFileImpl;
 import com.rusefi.util.Output;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.*;
 import java.util.List;
 
 import static com.rusefi.ReaderStateImpl.INCLUDE_FILE;
-import static com.rusefi.util.IoUtils.CHARSET;
+import static com.rusefi.VariableRegistry.unquote;
+import static com.rusefi.util.LazyFile.CHARSET;
 
 /**
  * [Constants]
@@ -76,7 +77,7 @@ public class TSProjectConsumer implements ConfigurationConsumer {
 
         // File.getPath() would eliminate potential separator at the end of the path
         String fileName = getTsFileOutputName(new File(ConfigDefinitionRootOutputFolder.getValue() + tsPath).getPath());
-        Output tsHeader = new LazyFileImpl(fileName);
+        Output tsHeader = new LazyFileImpl(fileName, ConfigDefinitionRootOutputFolder.getValue() + "generated.patch");
         writeContent(fieldsSection, tsContent, tsHeader);
         try {
             testFreshlyProducedIniFile(fileName);
@@ -87,7 +88,7 @@ public class TSProjectConsumer implements ConfigurationConsumer {
 
     private void testFreshlyProducedIniFile(String fileName) {
         try {
-            IniFileModel ini = IniFileModelImpl.readIniFile(fileName);
+            IniFileModel ini = IniFileReaderUtil.readIniFile(fileName);
             ConfigurationImage ci = new ConfigurationImage(ini.getMetaInfo().getPageSize(0));
             Msq msq = MsqFactory.valueOf(ci, ini);
             msq.writeXmlFile("quick-self-test.xml");
@@ -139,6 +140,7 @@ public class TSProjectConsumer implements ConfigurationConsumer {
         while ((line = r.readLine()) != null) {
             if (line.startsWith(INCLUDE_FILE)) {
                 String fileName = line.substring(INCLUDE_FILE.length()).trim();
+                fileName = unquote(state.getVariableRegistry().applyVariables(fileName));
                 log.info("Including " + fileName);
                 List<String> lines = FileLinesHelper.readAllLinesWithRoot(fileName);
                 for (String includedLine : lines) {
@@ -228,3 +230,4 @@ public class TSProjectConsumer implements ConfigurationConsumer {
         return consumerState.tsOutput.getContent();
     }
 }
+

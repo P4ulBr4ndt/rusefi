@@ -20,27 +20,32 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+static bool unitTestsCreateLogs = false;
+
 bool unitTestBusyWaitHack;
 bool unitTestTaskPrecisionHack;
+bool unitTestTaskNoFastCallWhileAdvancingTimeHack;
 
 #if EFI_ENGINE_SNIFFER
 #include "engine_sniffer.h"
 extern WaveChart waveChart;
 #endif /* EFI_ENGINE_SNIFFER */
 
+#include "fw_configuration.h"
+
 extern engine_configuration_s & activeConfiguration;
 extern PinRepository pinRepository;
 extern bool printTriggerDebug;
 extern bool printTriggerTrace;
 extern bool printFuelDebug;
-extern int minCrankingRpm;
+extern bool hasRememberedConfiguration;
 
 EngineTestHelperBase::EngineTestHelperBase(Engine * eng, engine_configuration_s * econfig, persistent_config_s * pers) {
 	// todo: make this not a global variable, we need currentTimeProvider interface on engine
 	setTimeNowUs(0);
-	minCrankingRpm = 0;
 	ButtonDebounce::resetForUnitTests();
 	unitTestBusyWaitHack = false;
+	unitTestTaskPrecisionHack = false;
 	EnableToothLogger();
 	if (engine || engineConfiguration || config) {
 		firmwareError(ObdCode::OBD_PCM_Processor_Fault,
@@ -49,6 +54,8 @@ EngineTestHelperBase::EngineTestHelperBase(Engine * eng, engine_configuration_s 
 	engine = eng;
 	engineConfiguration = econfig;
 	config = pers;
+
+	setup_custom_fw_overrides();
 }
 
 EngineTestHelperBase::~EngineTestHelperBase() {
@@ -93,7 +100,10 @@ EngineTestHelper::EngineTestHelper(engine_type_e engineType, configuration_callb
 		#else
 		  mkdir(TEST_RESULTS_DIR, 0777);
 		#endif
-		createUnitTestLog();
+		if (unitTestsCreateLogs) {
+			// this logging is pretty heavy, not running unless specifically requested
+			createUnitTestLog();
+		}
 
 		std::stringstream filePath;
 		filePath << TEST_RESULTS_DIR << "/unittest_" << testInfo->test_case_name() << "_" << testInfo->name() << "_trace.json";
@@ -120,6 +130,7 @@ EngineTestHelper::EngineTestHelper(engine_type_e engineType, configuration_callb
 	}
 
 	activeConfiguration = engine_configuration_s{};
+	hasRememberedConfiguration = false;
 
 	enginePins.reset();
 	enginePins.unregisterPins();
@@ -163,6 +174,8 @@ EngineTestHelper::EngineTestHelper(engine_type_e engineType, configuration_callb
 	}
 
 	memset(mockPinStates, 0, sizeof(mockPinStates));
+
+	setVerboseTrigger(false);
 
 	initHardware();
 	rememberCurrentConfiguration();
@@ -225,6 +238,7 @@ EngineTestHelper::~EngineTestHelper() {
 	enginePins.unregisterPins();
 	Sensor::resetRegistry();
 	memset(mockPinStates, 0, sizeof(mockPinStates));
+	unitTestTaskNoFastCallWhileAdvancingTimeHack = false;
 }
 
 void EngineTestHelper::writeEventsLogicData(const char *fileName) {
@@ -347,30 +361,52 @@ void EngineTestHelper::moveTimeForwardAndInvokeEventsUs(int deltaTimeUs) {
 	setTimeAndInvokeEventsUs(getTimeNowUs() + deltaTimeUs);
 }
 
+void EngineTestHelper::setTimeNtAndInvokeCallBacks(efitick_t nt)
+{
+	// we need to call fast callback every FAST_CALLBACK_PERIOD_MS
+	efitick_t step = MS2US(FAST_CALLBACK_PERIOD_MS) * US_TO_NT_MULTIPLIER;
+
+	while (getTimeNowNt() < nt) {
+		// get next FAST_CALLBACK_PERIOD_MS tick time
+		efitick_t nextStep = (getTimeNowNt() + step) / step * step;
+
+		if (nextStep > nt) {
+			setTimeNowNt(nt);
+			return;
+		}
+
+		setTimeNowNt(nextStep);
+		engine.periodicFastCallback();
+	}
+}
+
 void EngineTestHelper::setTimeAndInvokeEventsUs(int targetTimeUs) {
 	int counter = 0;
 	while (true) {
-	  criticalAssertVoid(counter++ < 100'000, "EngineTestHelper: failing to setTimeAndInvokeEventsUs");
+		criticalAssertVoid(counter++ < 100'000, "EngineTestHelper: failing to setTimeAndInvokeEventsUs");
 		scheduling_s* nextScheduledEvent = engine.scheduler.getHead();
 		if (nextScheduledEvent == nullptr) {
 			// nothing pending - we are done here
 			break;
 		}
-		int nextEventTime = nextScheduledEvent->getMomentUs();
-		if (nextEventTime > targetTimeUs) {
+		efitick_t nextEventNt = nextScheduledEvent->getMomentNt();
+		if (nextEventNt > US2NT(targetTimeUs)) {
 			// next event is too far in the future
 			break;
 		}
-		setTimeNowUs(nextEventTime);
-		extern bool unitTestTaskPrecisionHack;
-		if (unitTestTaskPrecisionHack) {
-			engine.scheduler.executeAll(getTimeNowUs());
+		// see #8725 for details
+		if (unitTestTaskNoFastCallWhileAdvancingTimeHack) {
+			setTimeNowNt(nextEventNt);
 		} else {
-			engine.scheduler.executeAll(getTimeNowNt());
+			setTimeNtAndInvokeCallBacks(nextEventNt);
 		}
+		engine.scheduler.executeAllNt(getTimeNowNt());
 	}
-
-	setTimeNowUs(targetTimeUs);
+	if (unitTestTaskNoFastCallWhileAdvancingTimeHack) {
+		setTimeNowUs(targetTimeUs);
+	} else {
+		setTimeNtAndInvokeCallBacks(US_TO_NT_MULTIPLIER * targetTimeUs);
+	}
 }
 
 void EngineTestHelper::fireTriggerEvents(int count) {

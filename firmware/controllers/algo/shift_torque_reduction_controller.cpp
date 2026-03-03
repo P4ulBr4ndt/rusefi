@@ -26,9 +26,10 @@ void ShiftTorqueReductionController::update() {
     }
 }
 
-float ShiftTorqueReductionController::getSparkSkipRatio() const {
+float ShiftTorqueReductionController::getSparkSkipRatio() {
     float result = 0.0f;
     auto torqueReductionXAxis = readGppwmChannel(config->torqueReductionCutXaxis);
+    trqRedCutXaxisValue = torqueReductionXAxis.Value;
     int8_t currentGear = Sensor::getOrZero(SensorType::DetectedGear);
 
     if (engineConfiguration->torqueReductionEnabled && isFlatShiftConditionSatisfied) {
@@ -47,6 +48,7 @@ void ShiftTorqueReductionController::updateTriggerPinState() {
             updateTriggerPinState(
                 engineConfiguration->torqueReductionTriggerPin,
                 engineConfiguration->torqueReductionTriggerPinMode,
+                /*invertPhysicalPin*/false,
                 engine->engineState.lua.torqueReductionState
             );
             break;
@@ -55,6 +57,7 @@ void ShiftTorqueReductionController::updateTriggerPinState() {
             updateTriggerPinState(
                 engineConfiguration->launchActivatePin,
                 engineConfiguration->launchActivatePinMode,
+                /*invertPhysicalPin*/false,
                 false
             );
             break;
@@ -63,6 +66,7 @@ void ShiftTorqueReductionController::updateTriggerPinState() {
             updateTriggerPinState(
                 engineConfiguration->clutchDownPin,
                 engineConfiguration->clutchDownPinMode,
+                /*invertPhysicalPin*/false,
                 engine->engineState.lua.clutchDownState
             );
             break;
@@ -71,6 +75,7 @@ void ShiftTorqueReductionController::updateTriggerPinState() {
             updateTriggerPinState(
                 engineConfiguration->clutchUpPin,
                 engineConfiguration->clutchUpPinMode,
+                /*invertPhysicalPin*/true,
                 engine->engineState.lua.clutchUpState
             );
             break;
@@ -92,6 +97,7 @@ static bool isShiftTorqueBelowTemperatureThreshold() {
 void ShiftTorqueReductionController::updateTriggerPinState(
     const switch_input_pin_e pin,
     const pin_input_mode_e mode,
+    const bool invertPhysicalPin,
     const bool invalidPinState
 ) {
   if (!torqueReductionTriggerPinState) {
@@ -106,7 +112,7 @@ void ShiftTorqueReductionController::updateTriggerPinState(
     isTorqueReductionTriggerPinValid = isBrainPinValid(pin);
     const bool previousTorqueReductionTriggerPinState = torqueReductionTriggerPinState;
     if (isTorqueReductionTriggerPinValid) {
-        torqueReductionTriggerPinState = efiReadPin(pin, mode);
+        torqueReductionTriggerPinState = efiReadPin(pin, mode) ^ invertPhysicalPin;
     } else {
         torqueReductionTriggerPinState = invalidPinState;
     }
@@ -118,6 +124,7 @@ void ShiftTorqueReductionController::updateTriggerPinState(
 
 void ShiftTorqueReductionController::updateTimeConditionSatisfied() {
     auto torqueReductionTimeXaxis = readGppwmChannel(config->torqueReductionTimeXaxis);
+	trqRedTimeXaxisValue = torqueReductionTimeXaxis.Value;
     int8_t currentGear = Sensor::getOrZero(SensorType::DetectedGear);
 
     auto torqueReductionTime = interpolate3d(
@@ -149,8 +156,9 @@ void ShiftTorqueReductionController::updateAppConditionSatisfied() {
     }
 }
 
-float ShiftTorqueReductionController::getTorqueReductionIgnitionRetard() const {
+float ShiftTorqueReductionController::getTorqueReductionIgnitionRetard() {
     auto torqueReductionXAxis = readGppwmChannel(config->torqueReductionIgnitionRetardXaxis);
+    trqRedIgnRetXaxisValue = torqueReductionXAxis.Value;
     int8_t currentGear = Sensor::getOrZero(SensorType::DetectedGear);
 
     return interpolate3d(

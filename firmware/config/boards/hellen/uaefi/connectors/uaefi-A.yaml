@@ -4,12 +4,13 @@ pins:
   - pin: On-board MAP
     meta: MM100_IN_MAP2_ANALOG
     class: analog_inputs
+    type: av
     function: MAP Sensor Input
     ts_name: On-board MAP
     color: orange
 
   - pin: A1
-    function: DC1-
+    function: DC1- (usually electronic throttle body)
     type: etb
     color: white
 
@@ -29,7 +30,7 @@ pins:
     type: gnd
 
   - pin: A5
-    function: DC1+
+    function: DC1+ (usually electronic throttle body)
     type: etb
     color: blue
 
@@ -53,7 +54,7 @@ info:
   cid: a
   title: uaefi
   directory: hellen/uaefi
-  board_url: https://github.com/rusefi/rusefi/wiki/uaefi
+  board_url: https://wiki.rusefi.com/uaefi
   image:
     file: uaefi-A.jpg
   pins:

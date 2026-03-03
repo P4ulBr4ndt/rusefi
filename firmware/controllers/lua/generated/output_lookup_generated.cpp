@@ -118,6 +118,9 @@ float getOutputValueByHash(const int hash) {
 // internalVref
 		case -1221814987:
 			return engine->outputChannels.internalVref;
+// internalVbat
+		case -1221832529:
+			return engine->outputChannels.internalVbat;
 // coolant
 		case -746111499:
 			return engine->outputChannels.coolant;
@@ -808,9 +811,6 @@ float getOutputValueByHash(const int hash) {
 // mc33810spiErrorCounter
 		case -1225980502:
 			return engine->outputChannels.mc33810spiErrorCounter;
-// sadDwellRatioCounter
-		case -2146292012:
-			return engine->outputChannels.sadDwellRatioCounter;
 // injectionPrimingCounter
 		case 1526237246:
 			return engine->outputChannels.injectionPrimingCounter;
@@ -1051,29 +1051,17 @@ float getOutputValueByHash(const int hash) {
 // fan2radiatorFanStatus
 		case -1778606949:
 			return engine->module<FanControl2>()->radiatorFanStatus;
-// fan1isPrime
-		case -2088993020:
+// isPrime
+		case -1429286498:
 			return engine->module<FuelPumpController>()->isPrime;
-// fan1engineTurnedRecently
-		case -2137243687:
+// engineTurnedRecently
+		case -1270448973:
 			return engine->module<FuelPumpController>()->engineTurnedRecently;
-// fan1isFuelPumpOn
-		case -1297204398:
+// isFuelPumpOn
+		case -344048084:
 			return engine->module<FuelPumpController>()->isFuelPumpOn;
-// fan1ignitionOn
-		case -35327159:
-			return engine->module<FuelPumpController>()->ignitionOn;
-// fan2isPrime
-		case 1874744293:
-			return engine->module<FuelPumpController>()->isPrime;
-// fan2engineTurnedRecently
-		case -777438630:
-			return engine->module<FuelPumpController>()->engineTurnedRecently;
-// fan2isFuelPumpOn
-		case 34424019:
-			return engine->module<FuelPumpController>()->isFuelPumpOn;
-// fan2ignitionOn
-		case -2092849014:
+// ignitionOn
+		case -381519965:
 			return engine->module<FuelPumpController>()->ignitionOn;
 // lua.fuelAdd
 		case 1649801578:
@@ -1081,6 +1069,9 @@ float getOutputValueByHash(const int hash) {
 // lua.fuelMult
 		case -1390672637:
 			return engine->engineState.lua.fuelMult;
+// lua.engineTorque
+		case 958239307:
+			return engine->engineState.lua.engineTorque;
 // lua.clutchUpState
 		case -427776066:
 			return engine->engineState.lua.clutchUpState;
@@ -1222,15 +1213,24 @@ float getOutputValueByHash(const int hash) {
 // veTableIdleYAxis
 		case -860328524:
 			return engine->engineState.veTableIdleYAxis;
-// overDwellCounter
-		case 1513852665:
-			return engine->engineState.overDwellCounter;
+// overDwellCanceledCounter
+		case -1327994008:
+			return engine->engineState.overDwellCanceledCounter;
 // overDwellNotScheduledCounter
 		case 1629214715:
 			return engine->engineState.overDwellNotScheduledCounter;
 // sparkOutOfOrderCounter
 		case -1595596945:
 			return engine->engineState.sparkOutOfOrderCounter;
+// dwellUnderChargeCounter
+		case -1256359963:
+			return engine->engineState.dwellUnderChargeCounter;
+// dwellOverChargeCounter
+		case 1221247747:
+			return engine->engineState.dwellOverChargeCounter;
+// dwellActualRatio
+		case -175046954:
+			return engine->engineState.dwellActualRatio;
 // dcOutput0
 		case 1242329357:
 			return engine->dc_motors.dcOutput0;
@@ -1416,6 +1416,15 @@ float getOutputValueByHash(const int hash) {
 // isBelowTemperatureThreshold
 		case 319978869:
 			return engine->shiftTorqueReductionController.isBelowTemperatureThreshold;
+// trqRedCutXaxisValue
+		case 468022861:
+			return engine->shiftTorqueReductionController.trqRedCutXaxisValue;
+// trqRedTimeXaxisValue
+		case 1227553104:
+			return engine->shiftTorqueReductionController.trqRedTimeXaxisValue;
+// trqRedIgnRetXaxisValue
+		case 892591242:
+			return engine->shiftTorqueReductionController.trqRedIgnRetXaxisValue;
 // isNitrousArmed
 		case 595683774:
 			return engine->module<NitrousController>()->isNitrousArmed;
@@ -1442,18 +1451,27 @@ float getOutputValueByHash(const int hash) {
 			return engine->module<NitrousController>()->isNitrousCondition;
 #endif
 #if EFI_PROD_CODE && EFI_ELECTRONIC_THROTTLE_BODY && FULL_SD_LOGS
-// etb1targetWithIdlePosition
-		case 99356871:
-			return getLiveDataConstexpr<electronic_throttle_s, 0>()->targetWithIdlePosition;
-// etb1trim
-		case 2069994349:
-			return getLiveDataConstexpr<electronic_throttle_s, 0>()->trim;
+// etb1etbCurrentTarget
+		case -1044288778:
+			return getLiveDataConstexpr<electronic_throttle_s, 0>()->etbCurrentTarget;
 // etb1boardEtbAdjustment
 		case 1055284435:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->boardEtbAdjustment;
+// etb1targetWithIdlePosition
+		case 99356871:
+			return getLiveDataConstexpr<electronic_throttle_s, 0>()->targetWithIdlePosition;
 // etb1luaAdjustment
 		case 1246430386:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->luaAdjustment;
+// etb1trim
+		case 2069994349:
+			return getLiveDataConstexpr<electronic_throttle_s, 0>()->trim;
+// etb1adjustedEtbTarget
+		case -762743481:
+			return getLiveDataConstexpr<electronic_throttle_s, 0>()->adjustedEtbTarget;
+// etb1m_adjustedTarget
+		case 28274136:
+			return getLiveDataConstexpr<electronic_throttle_s, 0>()->m_adjustedTarget;
 // etb1m_wastegatePosition
 		case 561614935:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->m_wastegatePosition;
@@ -1466,12 +1484,6 @@ float getOutputValueByHash(const int hash) {
 // etb1integralError
 		case -1507281103:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->integralError;
-// etb1etbCurrentTarget
-		case -1044288778:
-			return getLiveDataConstexpr<electronic_throttle_s, 0>()->etbCurrentTarget;
-// etb1m_adjustedTarget
-		case 28274136:
-			return getLiveDataConstexpr<electronic_throttle_s, 0>()->m_adjustedTarget;
 // etb1etbRevLimitActive
 		case -1808516876:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->etbRevLimitActive;
@@ -1499,24 +1511,30 @@ float getOutputValueByHash(const int hash) {
 // etb1jamTimer
 		case -213258422:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->jamTimer;
-// etb1adjustedEtbTarget
-		case -762743481:
-			return getLiveDataConstexpr<electronic_throttle_s, 0>()->adjustedEtbTarget;
 // etb1state
 		case -410785646:
 			return getLiveDataConstexpr<electronic_throttle_s, 0>()->state;
-// etb2targetWithIdlePosition
-		case -836653176:
-			return getLiveDataConstexpr<electronic_throttle_s, 1>()->targetWithIdlePosition;
-// etb2trim
-		case 2071180270:
-			return getLiveDataConstexpr<electronic_throttle_s, 1>()->trim;
+// etb2etbCurrentTarget
+		case 1419463927:
+			return getLiveDataConstexpr<electronic_throttle_s, 1>()->etbCurrentTarget;
 // etb2boardEtbAdjustment
 		case -272579820:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->boardEtbAdjustment;
+// etb2targetWithIdlePosition
+		case -836653176:
+			return getLiveDataConstexpr<electronic_throttle_s, 1>()->targetWithIdlePosition;
 // etb2luaAdjustment
 		case -2054472109:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->luaAdjustment;
+// etb2trim
+		case 2071180270:
+			return getLiveDataConstexpr<electronic_throttle_s, 1>()->trim;
+// etb2adjustedEtbTarget
+		case -1063282840:
+			return getLiveDataConstexpr<electronic_throttle_s, 1>()->adjustedEtbTarget;
+// etb2m_adjustedTarget
+		case -1802940455:
+			return getLiveDataConstexpr<electronic_throttle_s, 1>()->m_adjustedTarget;
 // etb2m_wastegatePosition
 		case -308232520:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->m_wastegatePosition;
@@ -1529,12 +1547,6 @@ float getOutputValueByHash(const int hash) {
 // etb2integralError
 		case -513216302:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->integralError;
-// etb2etbCurrentTarget
-		case 1419463927:
-			return getLiveDataConstexpr<electronic_throttle_s, 1>()->etbCurrentTarget;
-// etb2m_adjustedTarget
-		case -1802940455:
-			return getLiveDataConstexpr<electronic_throttle_s, 1>()->m_adjustedTarget;
 // etb2etbRevLimitActive
 		case -2109056235:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->etbRevLimitActive;
@@ -1562,9 +1574,6 @@ float getOutputValueByHash(const int hash) {
 // etb2jamTimer
 		case 1741054027:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->jamTimer;
-// etb2adjustedEtbTarget
-		case -1063282840:
-			return getLiveDataConstexpr<electronic_throttle_s, 1>()->adjustedEtbTarget;
 // etb2state
 		case -371650253:
 			return getLiveDataConstexpr<electronic_throttle_s, 1>()->state;
@@ -1600,9 +1609,6 @@ float getOutputValueByHash(const int hash) {
 // wasResetPid
 		case 1830486000:
 			return engine->module<IdleController>().unmock().wasResetPid;
-// mustResetPid
-		case 1685322158:
-			return engine->module<IdleController>().unmock().mustResetPid;
 // isCranking
 		case -1055526802:
 			return engine->module<IdleController>().unmock().isCranking;

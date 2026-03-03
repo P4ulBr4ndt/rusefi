@@ -117,7 +117,7 @@ void errorHandlerInit() {
 	}
 #endif // EFI_PROD_CODE
 
-	// see https://github.com/rusefi/rusefi/wiki/Resilience
+	// see https://wiki.rusefi.com/Resilience
 	addConsoleAction("chibi_fault", [](){ chDbgCheck(0); } );
 	addConsoleAction("soft_fault", [](){ firmwareError(ObdCode::RUNTIME_CRITICAL_TEST_ERROR, "firmwareError: %d", getRusEfiVersion()); });
 	addConsoleAction("hard_fault", [](){ causeHardFault(); } );
@@ -490,6 +490,10 @@ void chDbgPanic3(const char *msg, const char * file, int line) {
 }
 #endif /* EFI_SIMULATOR || EFI_PROD_CODE */
 
+#if EFI_UNIT_TEST
+bool silentUnitTest = true; // performance optimization since console output is pricey
+#endif // EFI_UNIT_TEST
+
 /**
  * @returns TRUE in case there were warnings recently
  */
@@ -516,7 +520,13 @@ bool warningVA(ObdCode code, bool reportToTs, const char *fmt, va_list args) {
 	chvsnprintf(warningBuffer + size, sizeof(warningBuffer) - size, fmt, args);
 
 	engine->engineState.warnings.addWarningCode(code, reportToTs ? warningBuffer : nullptr);
+#if EFI_SIMULATOR || EFI_PROD_CODE
 	efiPrintf("WARNING: %s", warningBuffer);
+#else
+	if (!silentUnitTest) {
+		printf("WARNING: %s\n", warningBuffer);
+	}
+#endif /* EFI_SIMULATOR || EFI_PROD_CODE */
 
 	return false;
 }

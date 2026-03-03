@@ -70,7 +70,7 @@ static void hellen121_nissan_boardConfigOverrides() {
 /**
  * @brief   Board-specific configuration defaults.
  *
- * See also setDefaultEngineConfiguration
+
  *
 
  */
@@ -163,5 +163,5 @@ int getBoardMetaDcOutputsCount() {
 
 void setup_custom_board_overrides() {
 	custom_board_DefaultConfiguration = hellen121_nissan_boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  hellen121_nissan_boardConfigOverrides;
+	custom_board_ConfigOverrides = hellen121_nissan_boardConfigOverrides;
 }

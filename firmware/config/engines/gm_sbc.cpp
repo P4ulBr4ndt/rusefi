@@ -16,37 +16,30 @@ void setStepperHw() {
 	engineConfiguration->useStepperIdle = true;
 	engineConfiguration->useHbridgesToDriveIdleStepper = true;
 	engineConfiguration->stepper_dc_use_two_wires = false;
-	engineConfiguration->stepperDcInvertedPins = false; // or true?
+	engineConfiguration->stepperDcInvertedPins = false;
 
-    // for instance IWP069
-	engineConfiguration->injector.flow = 482.5;
+  for (size_t i = 0;i<ETB_COUNT;i++) {
+	  engineConfiguration->etbFunctions[i] = DC_None;
+	}
+
   setPPSInputs(EFI_ADC_NONE, EFI_ADC_NONE);
 
 #ifdef HW_HELLEN_8CHAN
-	// using 8chan pinout for DC1: A26 (OUT_DC1+ AH pin "D") and A27 (OUT_DC1- AL pin "C")
-	engineConfiguration->stepperDcIo[0].controlPin = Gpio::H144_GP_IO4; // DC1_PWM
-	engineConfiguration->stepperDcIo[0].directionPin1 = Gpio::H144_GP_IO3; // DC1_DIR
-	engineConfiguration->stepperDcIo[0].directionPin2 = Gpio::Unassigned;
-	engineConfiguration->stepperDcIo[0].disablePin = Gpio::H144_GP_IO5; // ETB_DIS
-	// using 8chan pinout for DC2: A28 (OUT_DC2+ BL pin "A") and A29 (OUT_DC2- BH pin "B")
-	engineConfiguration->stepperDcIo[1].controlPin = Gpio::H144_UART8_TX; // DC2_PWM
-	engineConfiguration->stepperDcIo[1].directionPin1 = H_SPI3_CS; // DC2_DIR
-	engineConfiguration->stepperDcIo[1].directionPin2 = Gpio::Unassigned;
-#endif // HW_HELLEN
+  void set8chanDefaultETBPins();
+  set8chanDefaultETBPins();
+#endif // HW_HELLEN_8CHAN
 
 #ifdef HW_HELLEN_UAEFI
-  // TODO: all the copy-pasting here begs the question: "shall we rename etbIo to hBridgeIo and reuse for stepper"?
-	engineConfiguration->stepperDcIo[0].controlPin = Gpio::MM100_OUT_PWM3;
-	engineConfiguration->stepperDcIo[0].directionPin1 = Gpio::MM100_OUT_PWM4;
-	engineConfiguration->stepperDcIo[0].directionPin2 = Gpio::Unassigned;
-	engineConfiguration->stepperDcIo[0].disablePin = Gpio::MM100_SPI2_MISO;
-
-	engineConfiguration->stepperDcIo[1].controlPin = Gpio::MM100_OUT_PWM5;
-	engineConfiguration->stepperDcIo[1].directionPin1 = Gpio::MM100_SPI2_MOSI;
-	engineConfiguration->stepperDcIo[1].directionPin2 = Gpio::MM100_USB1ID;
+void setUaefiDefaultETBPins();
+  setUaefiDefaultETBPins();
 #endif // HW_HELLEN_UAEFI
 
 #ifdef HW_PROTEUS
+//Coil 1 - Pin 15 DC2 positive Pin A 	Toyota iac pin 4
+//Coil 1 - Pin 8  DC2 negative Pin B	Toyota iac pin 6
+//Coil 2 - Pin 7  DC1 positive Pin C	Toyota iac pin 1
+//Coil 2 - Pin 6  DC1 negative Pin D	Toyota iac pin 3
+
 	// coil #1 = proteus pin 15 (DC2 positive) to BL pin "A", pin B to pin 8 (DC2 negative)
 	// PWM pin
 	engineConfiguration->stepperDcIo[0].controlPin = Gpio::D13;
@@ -89,15 +82,13 @@ void setGmSbc() {
     engineConfiguration->crankingInjectionMode = IM_BATCH;
     engineConfiguration->injectionMode = IM_BATCH;
 
-	engineConfiguration->etbFunctions[0] = DC_None;
-	engineConfiguration->etbFunctions[1] = DC_None;
-
 	strcpy(engineConfiguration->engineMake, ENGINE_MAKE_GM);
 	strcpy(engineConfiguration->engineCode, "SBC");
 	// white wire "HEI E" plug pin D
 	engineConfiguration->ignitionMode = IM_ONE_COIL;
 	engineConfiguration->globalTriggerAngleOffset = 24;
 
+    // this is used to tell HEI that we are always in charge of timing advance
     gppwm_channel *ignOverride = &engineConfiguration->gppwm[0];
    	ignOverride->pwmFrequency = 0;
    	strcpy(engineConfiguration->gpPwmNote[0], "ign ovrrd B");
@@ -115,6 +106,11 @@ void setGmSbc() {
 	  engineConfiguration->ignitionPins[1] = Gpio::Unassigned;
 #endif // HW_HELLEN_UAEFI121
 
+#ifdef HW_HELLEN_SUPER_UAEFI
+	engineConfiguration->triggerInputPins[0] = Gpio::MM100_IN_D2; // HALL2
+	engineConfiguration->camInputs[1] = Gpio::Unassigned;
+#endif // HW_HELLEN_SUPER_UAEFI
+
 #if HW_PROTEUS
     // tan wire with a black trace - "HEI B", plug pin B
     ignOverride->pin = Gpio::PROTEUS_IGN_12;
@@ -131,6 +127,9 @@ void setGmSbc() {
     setGmCltSensor(&engineConfiguration->clt);
 #endif // HW_PROTEUS
 	engineConfiguration->mainRelayPin = Gpio::Unassigned; // vehicle controls main relay
+
+    // for instance IWP069
+	engineConfiguration->injector.flow = 482.5;
 
  	setStepperHw();
 

@@ -24,6 +24,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "fw_configuration.h"
 #include "board_overrides.h"
 
 #define CONSOLE_WA_SIZE     THD_WORKING_AREA_SIZE(4096)
@@ -148,11 +149,13 @@ void setup_custom_board_overrides(){
 	custom_board_boardSayHello = myCustomHello;
 }
 
+
 /*------------------------------------------------------------------------*
  * Simulator main.                                                        *
  *------------------------------------------------------------------------*/
 int main(int argc, char** argv) {
 	setbuf(stdout, NULL);
+	setup_custom_fw_overrides();
 	setup_custom_board_overrides();
 	/*
 	 * System initializations.

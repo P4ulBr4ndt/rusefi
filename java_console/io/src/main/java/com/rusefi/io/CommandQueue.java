@@ -3,7 +3,7 @@ package com.rusefi.io;
 import com.devexperts.logging.Logging;
 import com.rusefi.Listener;
 import com.rusefi.config.generated.Integration;
-import com.rusefi.util.IoUtils;
+import com.rusefi.util.ExitUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -94,11 +94,11 @@ public class CommandQueue {
         if (cl.getCount() == 0) {
             commandRequest.getListener().onCommandConfirmation();
         } else {
-			throw new IllegalStateException("No confirmation received after timeout of " + timeoutMs + " ms");
+            log.warn("No confirmation received for command '" + command + "' after timeout of " + timeoutMs + " ms");
         }
     }
 
-    public static Listener<Throwable> ERROR_HANDLER = parameter -> IoUtils.exit("CommandQueue error: " + parameter, -2);
+    public static Listener<Throwable> ERROR_HANDLER = parameter -> ExitUtil.exit("CommandQueue error: " + parameter, -2);
 
     public CommandQueue(LinkManager linkManager) {
         this.linkManager = linkManager;

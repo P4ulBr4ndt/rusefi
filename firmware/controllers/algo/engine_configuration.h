@@ -14,7 +14,6 @@
 #define DEFAULT_ENGINE_TYPE engine_type_e::MINIMAL_PINS
 #endif
 
-#define WARMUP_CLT_EXTRA_FUEL_CURVE config->cltFuelCorrBins, config->cltFuelCorr, CLT_CURVE_SIZE
 #define IAT_FUEL_CORRECTION_CURVE config->iatFuelCorrBins, config->iatFuelCorr, IAT_CURVE_SIZE
 
 #define MOCK_UNDEFINED -1
@@ -67,9 +66,10 @@ void rememberCurrentConfiguration();
 void setBoardDefaultConfiguration();
 void setBoardConfigOverrides();
 void onBoardStandBy();
-void boardOnConfigurationChange(engine_configuration_s *previousConfiguration);
 Gpio getCommsLedPin();
+// fun fact: the red LED for critical error is defined via LED_CRITICAL_ERROR_BRAIN_PIN
 Gpio getWarningLedPin();
+// technical debt: only used to blink from bootloader?
 Gpio getRunningLedPin();
 
 int hackHellenBoardId(int detectedId);

@@ -17,9 +17,15 @@
 #include "hal.h"
 #endif // EFI_UNIT_TEST
 
+#if EFI_SIMULATOR || EFI_UNIT_TEST
+// todo: smarter typedef declaration?
+#define TEST_CAN_BUFFER_SIZE 4096
+#endif // EFI_SIMULATOR
+
 #include "periodic_thread_controller.h"
 
-#define CAN_TIMEOUT MS2NT(100)
+// Try to recover CAN after following timeout
+#define CAN_RX_TIMEOUT	TIME_MS2I(100)
 
 //can tx periodic task cycle time in frequency, 200hz -> 5ms period
 #define CAN_CYCLE_FREQ		(200.0f)
@@ -53,7 +59,10 @@ void processCanRxMessage(const size_t busIndex, const CANRxFrame& msg, efitick_t
 #endif // EFI_CAN_SUPPORT
 
 void registerCanListener(CanListener& listener);
+void unregisterCanListener(CanListener& listener);
+
 void registerCanSensor(CanSensorBase& sensor);
+// TODO: unregisterCanSensor()?
 
 class CanWrite final : public PeriodicController</*TStackSize*/512> {
 public:

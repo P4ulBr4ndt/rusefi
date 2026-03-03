@@ -3,17 +3,18 @@
 # NOTE: Can be overridden externally.
 #
 
+MAKEFLAGS += -r
+# use -j4 unless some value was specified
+NUMJOBS=${NUMJOBS:-" -j4 "}
+MAKEFLAGS += ${NUMJOBS}
+
+# less disk, more RAM
+# MAKEFLAGS += -pipe
+
 PROJECT_DIR = ../firmware
 UNIT_TESTS_DIR=$(PROJECT_DIR)/../unit_tests
 
 US_TO_NT_MULTIPLIER = 100
-
-# todo: reduce copy/paste between all three Makefiles!
-ifneq ($(BOARD_DIR),)
-ifneq ("$(wildcard ../firmware/$(BOARD_DIR)/default_tune.cpp)","")
-  BOARDCPPSRC += ../firmware/$(BOARD_DIR)/default_tune.cpp
-endif
-endif
 
 BOARDS_DIR = $(PROJECT_DIR)/config/boards
 

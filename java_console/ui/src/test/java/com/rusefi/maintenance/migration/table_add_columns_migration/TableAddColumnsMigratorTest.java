@@ -3,16 +3,16 @@ package com.rusefi.maintenance.migration.table_add_columns_migration;
 import com.opensr5.ini.field.ArrayIniField;
 import com.rusefi.config.FieldType;
 import com.rusefi.maintenance.TestTuneMigrationContext;
-import com.rusefi.maintenance.migration.ComposedTuneMigrator;
+import com.rusefi.maintenance.migration.migrators.ComposedTuneMigrator;
 import com.rusefi.tune.xml.Constant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import java.util.Map;
 
-import static com.rusefi.maintenance.migration.TableAddColumnsMigrator.*;
+import static com.rusefi.maintenance.migration.migrators.TableAddColumnsMigrator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TableAddColumnsMigratorTest {
@@ -938,3 +938,4 @@ public class TableAddColumnsMigratorTest {
         );
     }
 }
+

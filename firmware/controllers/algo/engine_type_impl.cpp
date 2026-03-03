@@ -21,7 +21,7 @@
 #include "GY6_139QMB.h"
 
 #include "nissan_vq.h"
-#include "tc_4l6x.h"
+#include "tc_4.h"
 #include "../board_id/qc_stim_meta.h"
 
 #include "mazda_miata_1_6.h"
@@ -44,15 +44,19 @@
 #include "mitsubishi_3A92.h"
 #include "ford_festiva.h"
 
+#include "board_overrides.h"
+
 static_assert(libPROTEUS_STIM_QC == (int)engine_type_e::PROTEUS_STIM_QC);
 static_assert(libHELLEN_2CHAN_STIM_QC == (int)engine_type_e::HELLEN_2CHAN_STIM_QC);
 static_assert(libHELLEN_4CHAN_STIM_QC == (int)engine_type_e::HELLEN_4CHAN_STIM_QC);
 
-PUBLIC_API_WEAK_SOMETHING_WEIRD void applyUnknownEngineType(engine_type_e engineType) {
-		firmwareError(ObdCode::CUSTOM_UNEXPECTED_ENGINE_TYPE, "Unexpected engine type: %d", (int)engineType);
+void applyUnknownEngineType(engine_type_e engineType) {
+		// placeholder
 }
 
-PUBLIC_API_WEAK void boardAfterTuneDefaults(engine_type_e engineType) { UNUSED(engineType); }
+void boardAfterTuneDefaults(engine_type_e engineType) {
+  // placeholder
+}
 
 void applyEngineType(engine_type_e engineType) {
 	/**
@@ -212,10 +216,13 @@ void applyEngineType(engine_type_e engineType) {
 	  setGmSbcGen5();
 		break;
 
-#if defined(HW_HELLEN_8CHAN) || HW_PROTEUS || EFI_SIMULATOR
+#if defined(HW_HELLEN_UAEFI) || defined(HW_HELLEN_UAEFI121) || defined(HW_HELLEN_SUPER_UAEFI) || defined(HW_HELLEN_8CHAN) || HW_PROTEUS || EFI_SIMULATOR
 	case engine_type_e::GM_SBC_GEN4:
 		setGmLs4();
 		break;
+	case engine_type_e::GM_SBC:
+	  setGmSbc();
+    break;
 #endif
 
 #if HW_PROTEUS || EFI_SIMULATOR
@@ -244,9 +251,6 @@ void applyEngineType(engine_type_e engineType) {
 	case engine_type_e::PROTEUS_STIM_QC:
 	    proteusStimQc();
 		break;
-	case engine_type_e::GM_SBC:
-	    setGmSbc();
-        break;
 #if defined(HARDWARE_CI) || EFI_SIMULATOR
 	case engine_type_e::PROTEUS_ANALOG_PWM_TEST:
     #if defined(HARDWARE_CI)
@@ -284,12 +288,6 @@ void applyEngineType(engine_type_e engineType) {
 	case engine_type_e::HELLEN_154_HYUNDAI_COUPE_BK2:
 		setGenesisCoupeBK2();
 		break;
-#endif
-
-#if defined(HW_HELLEN_8CHAN) || defined(HW_HELLEN_UAEFI121) || defined(HW_HELLEN_UAEFI)
-	case engine_type_e::GM_SBC:
-	    setGmSbc();
-        break;
 #endif
 
 #if defined(HW_HELLEN_121_VAG) || defined(HW_HELLEN_UAEFI) || defined(HW_HELLEN_UAEFI121) || EFI_SIMULATOR
@@ -419,9 +417,14 @@ void applyEngineType(engine_type_e engineType) {
 		break;
 #endif //HW_SUBARU_EG33
 	default:
-	  applyUnknownEngineType(engineType);
+	  if (custom_board_applyUnknownType.has_value()) {
+	    call_board_override(custom_board_applyUnknownType, engineType);
+	  } else {
+		  firmwareError(ObdCode::CUSTOM_UNEXPECTED_ENGINE_TYPE, "Unexpected engine type: %d", (int)engineType);
+	  }
 	}
-	boardAfterTuneDefaults(engineType);
+
+  call_board_override(custom_board_AfterTuneDefaults, engineType);
 }
 
 PUBLIC_API_WEAK_SOMETHING_WEIRD engine_type_e getLastEngineType() {

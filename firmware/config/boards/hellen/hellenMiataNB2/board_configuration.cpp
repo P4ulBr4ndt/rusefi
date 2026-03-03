@@ -74,7 +74,7 @@ static void hellen_MiataNB2_boardConfigOverrides() {
 /**
  * @brief   Board-specific configuration defaults.
  *
- * See also setDefaultEngineConfiguration
+
  *
 
  */
@@ -119,5 +119,5 @@ static void hellen_MiataNB2_boardDefaultConfiguration() {
 
 void setup_custom_board_overrides() {
 	custom_board_DefaultConfiguration = hellen_MiataNB2_boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  hellen_MiataNB2_boardConfigOverrides;
+	custom_board_ConfigOverrides = hellen_MiataNB2_boardConfigOverrides;
 }

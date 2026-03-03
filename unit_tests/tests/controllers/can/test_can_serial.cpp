@@ -18,10 +18,11 @@
 
 using namespace std::string_literals;
 
-class TestCanStreamer : public ICanStreamer {
+// todo: split into TX and RX parts?
+class TestCanTransport : public ICanTransport {
 public:
-	virtual can_msg_t transmit(canmbx_t mailbox, const CanTxMessage *ctfp, can_sysinterval_t timeout) override {
-		const CANTxFrame * frame = ctfp->getFrame();
+	virtual can_msg_t transmit(CanTxMessage &ctfp, can_sysinterval_t timeout) override {
+		const CANTxFrame * frame = ctfp.getFrame();
 		// invoke copy constructor to clone frame
 		CANTxFrame localCopy = *frame;
 		localCopy.DLC = 8;
@@ -29,7 +30,11 @@ public:
 		return CAN_MSG_OK;
 	}
 
-	virtual can_msg_t receive(canmbx_t mailbox, CANRxFrame *crfp, can_sysinterval_t timeout) override {
+  virtual void onTpFirstFrame() override {
+    // todo: add coverage?
+  }
+
+	virtual can_msg_t receive(CANRxFrame *crfp, can_sysinterval_t timeout) override {
 		if (crfList.empty())
 			return CAN_MSG_TIMEOUT;
 		*crfp = *crfList.begin();
@@ -52,7 +57,7 @@ public:
 
 class TestCanStreamerState : public CanStreamerState {
 public:
-	TestCanStreamerState() : CanStreamerState(&streamer) {}
+	TestCanStreamerState() : CanStreamerState(&streamer, &streamer, 0, 10, 10) {}
 
 	void test(const std::vector<std::string> & dataList, const std::vector<std::string> & frames, int fifoLeftoverSize, const std::vector<size_t> & receiveChunks) {
 		EngineTestHelper eth(engine_type_e::TEST_ENGINE);
@@ -67,7 +72,7 @@ public:
 
 			streamAddToTxTimeout(&np, (uint8_t *)data.c_str(), 0);
 		}
-		
+
 		// check the FIFO buf size
 		EXPECT_EQ(fifoLeftoverSize, txFifoBuf.getCount());
 
@@ -76,14 +81,14 @@ public:
 
 		// check if correct the TX frames were sent
 		EXPECT_EQ(frames.size(), streamer.ctfList.size());
-		
+
 		auto it1 = streamer.ctfList.begin();
 		int frameIndex = 0;
 		auto it2 = frames.begin();
 		for (; it1 != streamer.ctfList.end() && it2 != frames.end(); it1++, it2++) {
 			streamer.checkFrame(*it1, *it2, frameIndex++);
 		}
-	
+
 		// copy transmitted data back into the receive buffer
 		for (auto f : streamer.ctfList) {
 			CANRxFrame rf;
@@ -120,7 +125,7 @@ public:
 	}
 
 protected:
-	TestCanStreamer streamer;
+	TestCanTransport streamer;
 };
 
 TEST(testCanSerial, test1Frame) {

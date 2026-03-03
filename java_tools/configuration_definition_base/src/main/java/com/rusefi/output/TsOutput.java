@@ -6,6 +6,7 @@ import com.rusefi.ConfigFieldImpl;
 import com.rusefi.ReaderState;
 import com.rusefi.parse.Type;
 import com.rusefi.parse.TypesHelper;
+import com.rusefi.PinType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -142,10 +143,29 @@ public class TsOutput {
                     return tsPosition;
                 }
 
-                if (configField.getComment() != null && configField.getComment().trim().length() > 0 && cs == null) {
-                    String commentContent = configField.getCommentTemplated();
-                    commentContent = ConfigFieldImpl.unquote(commentContent);
-                    settingContextHelp.append(temporaryLineComment + "\t" + nameWithPrefix + " = " + quote(commentContent) + EOL);
+                if (cs == null) {
+                    String comment = "";
+
+                    if (configField.getComment() != null && configField.getComment().trim().length() > 0) {
+                        String commentContent = configField.getCommentTemplated();
+                        comment = ConfigFieldImpl.unquote(commentContent);
+                    }
+
+
+                    PinType pinType = PinType.findByOutputEnum(configField.getTypeName());
+                    if (pinType != null) {
+                        try {
+                            String url = state.getVariableRegistry().applyVariables("@@PINOUT_URL@@");
+                            if (comment != "") {
+                                comment += "\\n";
+                            }
+                            comment += ConfigFieldImpl.unquote(url) + "?highlight=class~" + pinType.name().toLowerCase();
+                        } catch (IllegalStateException ignore) {}
+                    }
+
+                    if (comment != "") {
+                        settingContextHelp.append(temporaryLineComment + "\t" + nameWithPrefix + " = " + quote(comment) + EOL);
+                    }
                 }
 
                 if (cs != null) {
@@ -317,14 +337,19 @@ public class TsOutput {
                  * Evaluate static math on .ini layer to simplify rusEFI java and rusEFI PHP project consumers
                  * https://github.com/rusefi/web_backend/issues/97
                  */
-                double val = IniField.parseDouble(fields[multiplierIndex]);
+                String multiplierField = fields[multiplierIndex];
+                // Skip evaluation if this is a complex expression (e.g., ternary operator)
+                // These will be evaluated at runtime by TunerStudio
+                if (!multiplierField.contains("?")) {
+                    double val = IniField.parseDouble(multiplierField);
 
-                if (val == 0) {
-                    fields[multiplierIndex] = " 0";
-                } else if (val == 1) {
-                    fields[multiplierIndex] = " 1";
-                } else {
-                    fields[multiplierIndex] = " " + val;
+                    if (val == 0) {
+                        fields[multiplierIndex] = " 0";
+                    } else if (val == 1) {
+                        fields[multiplierIndex] = " 1";
+                    } else {
+                        fields[multiplierIndex] = " " + val;
+                    }
                 }
             }
 

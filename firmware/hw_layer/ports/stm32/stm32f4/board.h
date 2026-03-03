@@ -81,16 +81,16 @@
 #define PIN_MODE_OUTPUT(n)          (1U << ((n) * 2U))
 #define PIN_MODE_ALTERNATE(n)       (2U << ((n) * 2U))
 #define PIN_MODE_ANALOG(n)          (3U << ((n) * 2U))
-#define PIN_ODR_LOW(n)              (0U << (n))
-#define PIN_ODR_HIGH(n)             (1U << (n))
+//#define PIN_ODR_LOW(n)              (0U << (n))
+//#define PIN_ODR_HIGH(n)             (1U << (n))
 #define PIN_OTYPE_PUSHPULL(n)       (0U << (n))
-#define PIN_OTYPE_OPENDRAIN(n)      (1U << (n))
-#define PIN_OSPEED_VERYLOW(n)       (0U << ((n) * 2U))
-#define PIN_OSPEED_LOW(n)           (1U << ((n) * 2U))
-#define PIN_OSPEED_MEDIUM(n)        (2U << ((n) * 2U))
+//#define PIN_OTYPE_OPENDRAIN(n)      (1U << (n))
+//#define PIN_OSPEED_VERYLOW(n)       (0U << ((n) * 2U))
+//#define PIN_OSPEED_LOW(n)           (1U << ((n) * 2U))
+//#define PIN_OSPEED_MEDIUM(n)        (2U << ((n) * 2U))
 #define PIN_OSPEED_HIGH(n)          (3U << ((n) * 2U))
-#define PIN_PUPDR_FLOATING(n)       (0U << ((n) * 2U))
-#define PIN_PUPDR_PULLUP(n)         (1U << ((n) * 2U))
+//#define PIN_PUPDR_FLOATING(n)       (0U << ((n) * 2U))
+//#define PIN_PUPDR_PULLUP(n)         (1U << ((n) * 2U))
 #define PIN_PUPDR_PULLDOWN(n)       (2U << ((n) * 2U))
 #define PIN_AFIO_AF(n, v)           ((v) << (((n) % 8U) * 4U))
 
@@ -202,21 +202,21 @@
 #define VAL_GPIOA_OSPEEDR           VAL_GPIO_OSPEEDR_ALL_DEFAULT
 #define VAL_GPIOA_PUPDR             VAL_GPIO_PUPDR_ALL_DEFAULT
 #define VAL_GPIOA_ODR               VAL_GPIO_ODR_ALL_DEFAULT
-#define VAL_GPIOA_AFRL              (PIN_AFIO_AF(0, 0U) |        \
-                                     PIN_AFIO_AF(1, 0U) |          \
-                                     PIN_AFIO_AF(2, 0U) |          \
-                                     PIN_AFIO_AF(3, 0U) |          \
-                                     PIN_AFIO_AF(4, 6U) |          \
-                                     PIN_AFIO_AF(5, 5U) |           \
-                                     PIN_AFIO_AF(6, 5U) |           \
-                                     PIN_AFIO_AF(7, 5U))
-#define VAL_GPIOA_AFRH              VAL_GPIO_AF_ALL_DEFAULT
+#define VAL_GPIOA_AFRL              VAL_GPIO_AF_ALL_DEFAULT
+#define VAL_GPIOA_AFRH              (PIN_AFIO_AF(8, 0U) |        \
+                                     PIN_AFIO_AF(9, 0U) |          \
+                                     PIN_AFIO_AF(10, 0U) |          \
+                                     PIN_AFIO_AF(11, 10U) |          \
+                                     PIN_AFIO_AF(12, 10U) |          \
+                                     PIN_AFIO_AF(GPIOA_SWDIO, 0U) |           \
+                                     PIN_AFIO_AF(GPIOA_SWCLK, 0U) |           \
+                                     PIN_AFIO_AF(15, 0U))
 
 /*
  * GPIOB setup:
- * 
+ *
  * Default except SWO configured on PB3
- * 
+ *
  */
 #define VAL_GPIOB_MODER             (EFI_PIN_MODE_DEFAULT(0) |           \
                                      EFI_PIN_MODE_DEFAULT(1) |           \

@@ -17,29 +17,26 @@ static void setDefaultMultisparkParameters() {
 
 static void setDefaultIatTimingCorrection() {
 	setLinearCurve(config->ignitionIatCorrLoadBins, /*from=*/ 0, /*to*/ 140, 1);
-#if IAT_IGN_CORR_COUNT == 8
-	copyArray(config->ignitionIatCorrTempBins, { -40, 0, 10, 20, 30, 40, 50, 60});
 
-	// top 5 rows are the same
-	for (size_t i = 3; i < IAT_IGN_CORR_COUNT; i++) {
-		//                                                         40  50  60 deg C
-		copyArray(config->ignitionIatCorrTable[i], {0.0, 0.0, 0.0, 0.0, 0.0, -1.0, -2.0, -3.0});
+	copyArrayInterpolated(config->ignitionIatCorrTempBins, { -40, 0, 10, 20, 30, 40, 50, 60});
+
+	// top rows are the same
+	for (size_t i = 0; i < efi::size(config->ignitionIatCorrTable) - 1; i++) {
+		//																						40  50  60 deg C
+		copyArrayInterpolated(config->ignitionIatCorrTable[i], {0.0, 0.0, 0.0, 0.0, 0.0, -1.0, -2.0, -3.0});
 	}
 
-	// 6th row tapers out
-	//                                                        40  50  60 deg C
-	copyArray(config->ignitionIatCorrTable[2], {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, -2.0});
-#else
-  setLinearCurve(config->ignitionIatCorrTempBins, /*from=*/ -40, /*to*/ 60, 1);
-#endif
+	// last row tapers out
+	//																											40  50  60 deg C
+	copyArrayInterpolated(config->ignitionIatCorrTable[efi::size(config->ignitionIatCorrTable) - 1], {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, -2.0});
 }
 
 static void setDefaultCltTimingCorrection() {
 	setLinearCurve(config->ignitionCltCorrLoadBins, /*from=*/ 0, /*to*/ 140, 1);
   setLinearCurve(config->ignitionCltCorrTempBins, -20, 60, 1);
 
-#if CLT_TIMING_CURVE_SIZE == 5
-	for (size_t i = 0; i < CLT_TIMING_CURVE_SIZE; i++) {
+#if CLT_TIMING_TEMP_AXIS_SIZE == 5
+	for (size_t i = 0; i < CLT_TIMING_TEMP_AXIS_SIZE; i++) {
 	  // huh? use setArrayValues? and we probably get all zeros by default anyway?
 		copyArray(config->ignitionCltCorrTable[i], {0.0, 0.0, 0.0, 0.0, 0.0});
 	}

@@ -76,7 +76,10 @@
 std::optional<setup_custom_board_overrides_type> custom_board_InitHardwareEarly;
 std::optional<setup_custom_board_overrides_type> custom_board_InitHardware;
 std::optional<setup_custom_board_overrides_type> custom_board_InitHardwareExtra;
+std::optional<setup_custom_board_overrides_type> custom_board_BeforeTuneDefaults;
 
+std::optional<setup_custom_board_engine_type_type> custom_board_AfterTuneDefaults;
+std::optional<setup_custom_board_engine_type_type> custom_board_applyUnknownType;
 
 #if HAL_USE_SPI
 /* zero index is SPI_NONE */
@@ -434,7 +437,6 @@ void initHardwareNoConfig() {
 #endif
 
 #if EFI_PROD_CODE
-	boardInitHardwareEarly();
 	call_board_override(custom_board_InitHardwareEarly);
 #endif
 
@@ -546,13 +548,12 @@ void initHardware() {
 	}
 #endif // STM32_I2C_USE_I2C3
 
-	boardInitHardware();
 	call_board_override(custom_board_InitHardware);
 #if EFI_PROD_CODE
 	// this applies some board configurations
-	boardOnConfigurationChange(nullptr);
+	call_board_override(custom_board_OnConfigurationChange, nullptr);
 #endif // EFI_PROD_CODE
-	boardInitHardwareExtra();
+
 	call_board_override(custom_board_InitHardwareExtra);
 
 #if HAL_USE_ADC
@@ -587,6 +588,8 @@ void initHardware() {
 #if EFI_SIMULATOR
 	// Set CAN device name
 	CAND1.deviceName = "can0";
+	CAND2.deviceName = "can1";
+	CAND3.deviceName = "can2";
 #endif
 
 	initCan();

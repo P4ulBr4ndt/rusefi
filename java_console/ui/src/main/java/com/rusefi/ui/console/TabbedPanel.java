@@ -4,6 +4,7 @@ import com.rusefi.PaneSettings;
 import com.rusefi.config.generated.Integration;
 import com.rusefi.core.MessagesCentral;
 import com.rusefi.io.ConnectionStatusLogic;
+import com.rusefi.io.ConnectionStatusValue;
 import com.rusefi.ui.LogDownloader;
 import com.rusefi.ui.UIContext;
 
@@ -18,7 +19,6 @@ public class TabbedPanel {
 
 //    public final SettingsTab settingsTab;
     public final LogDownloader logsManager;
-    public final PaneSettings paneSettings = new PaneSettings(getConfig().getRoot().getChild("panes"));
 
     public final JTabbedPane tabbedPane = new JTabbedPane() {
         @Override
@@ -32,22 +32,35 @@ public class TabbedPanel {
             g.setFont(new Font(f.getName(), f.getStyle(), f.getSize() * 4));
             Dimension d = getSize();
             String text;
-            switch (ConnectionStatusLogic.INSTANCE.getValue()) {
-                case NOT_CONNECTED:
-                    text = "Not connected";
-                    break;
-                case LOADING:
-                    text = "Loading";
-                    break;
-                default:
-                    text = "";
-            }
             if (criticalError != null) {
                 text = criticalError;
                 g.setColor(Color.red);
+            } else {
+                switch (ConnectionStatusLogic.INSTANCE.getValue()) {
+                    case NOT_CONNECTED:
+                        text = "Not connected";
+                        g.setColor(Color.white);
+                        break;
+                    case LOADING:
+                        text = "Loading";
+                        g.setColor(Color.white);
+                        break;
+                    default:
+                        text = "";
+                }
             }
-            int labelWidth = g.getFontMetrics().stringWidth(text);
-            g.drawString(text, (d.width - labelWidth) / 2, d.height / 2);
+            if (text.isEmpty())
+                return;
+            FontMetrics fm = g.getFontMetrics();
+            int labelWidth = fm.stringWidth(text);
+            int x = (d.width - labelWidth) / 2;
+            int y = d.height / 2;
+            int padding = 12;
+            Color textColor = g.getColor();
+            g.setColor(new Color(0, 0, 0, 180));
+            g.fillRoundRect(x - padding, y - fm.getAscent() - padding, labelWidth + padding * 2, fm.getHeight() + padding * 2, 16, 16);
+            g.setColor(textColor);
+            g.drawString(text, x, y);
         }
     };
 
@@ -57,11 +70,27 @@ public class TabbedPanel {
                 criticalError = message;
         });
 
+        ConnectionStatusLogic.INSTANCE.addListener(isConnected -> SwingUtilities.invokeLater(() -> {
+            // clear the overlay so the UI becomes usable again
+            if (ConnectionStatusLogic.INSTANCE.getValue() == ConnectionStatusValue.CONNECTED) {
+                criticalError = null;
+            }
+            tabbedPane.repaint();
+        }));
+
 //        settingsTab = new SettingsTab(uiContext);
         logsManager = new LogDownloader(uiContext);
     }
 
     public void addTab(String title, Component component) {
         tabbedPane.addTab(title, component);
+    }
+
+    public JComponent getContent() {
+        return tabbedPane;
+    }
+
+    public void setCornerComponent(JComponent component) {
+        tabbedPane.putClientProperty("JTabbedPane.trailingComponent", component);
     }
 }

@@ -26,8 +26,12 @@
 #include "long_term_fuel_trim.h"
 #include "can_common.h"
 #include "can_rx.h"
+#include "torque_estimator.h"
 #include "value_lookup.h"
 #include "can_msg_tx.h"
+#include "gm_sbc.h" // setStepperHw
+
+#include "fw_configuration.h"
 #include "board_overrides.h"
 
 static bool isRunningBench = false;
@@ -148,6 +152,7 @@ static void runBench(OutputPin *output, float onTimeMs, float offTimeMs, int cou
 // todo: migrate to smarter getOutputOnTheBenchTest() approach?
 static volatile bool isBenchTestPending = false;
 static bool widebandUpdatePending = false;
+static bool widebandUpdateFromFile = false;
 static uint8_t widebandUpdateHwId = 0;
 static float globalOnTimeMs;
 static float globalOffTimeMs;
@@ -177,8 +182,6 @@ static void pinbench(float ontimeMs, float offtimeMs, int iterations,
 static void cancelBenchTest() {
 	isRunningBench = false;
 }
-
-/*==========================================================================*/
 
 static void doRunFuelInjBench(size_t humanIndex, float onTimeMs, float offTimeMs, int count) {
 	if (humanIndex < 1 || humanIndex > engineConfiguration->cylindersCount) {
@@ -303,14 +306,15 @@ static void vvtValveBench(int vvtIndex) {
 #endif // EFI_VVT_PID
 }
 
-static void requestWidebandUpdate(int hwIndex)
+static void requestWidebandUpdate(int hwIndex, bool fromFile)
 {
 	widebandUpdateHwId = hwIndex;
+	widebandUpdateFromFile = fromFile;
 	widebandUpdatePending = true;
 	benchSemaphore.signal();
 }
 
-class BenchController : public ThreadController<UTILITY_THREAD_STACK_SIZE> {
+class BenchController : public ThreadController<4 * UTILITY_THREAD_STACK_SIZE> {
 public:
 	BenchController() : ThreadController("BenchTest", PRIO_BENCH_TEST) { }
 private:
@@ -327,7 +331,13 @@ private:
 
 			if (widebandUpdatePending) {
 	#if EFI_WIDEBAND_FIRMWARE_UPDATE && EFI_CAN_SUPPORT
-				updateWidebandFirmware(widebandUpdateHwId);
+				if (widebandUpdateFromFile) {
+					#if EFI_PROD_CODE
+						updateWidebandFirmwareFromFile(widebandUpdateHwId);
+					#endif
+				} else {
+					updateWidebandFirmware(widebandUpdateHwId);
+				}
 	#endif
 				widebandUpdatePending = false;
 			}
@@ -472,8 +482,11 @@ int getSavedBenchTestPinStates(uint32_t durationsInStateMs[2]) {
 }
 
 static void handleCommandX14(uint16_t index) {
-// todo: define ts_14_command magic constants and use those in tunerstudio.template.ini file!
 	switch (index) {
+	case TS_SET_STEPPER_IDLE:
+	  setStepperHw();
+	  onApplyPreset();
+		return;
 	case TS_GRAB_PEDAL_UP:
 		grabPedalIsUp();
 		return;
@@ -490,6 +503,11 @@ static void handleCommandX14(uint16_t index) {
 		#if (BOARD_TLE8888_COUNT > 0)
 			tle8888_req_init();
 		#endif
+		return;
+	case TS_TCU_UPSHIFT_REQUEST:
+	case TS_TCU_DOWNSHIFT_REQUEST:
+	  // do nothing, we are catching with Lua
+	  // this is temporary uaDASH API
 		return;
 	case TS_RESET_MC33810:
 		#if EFI_PROD_CODE && (BOARD_MC33810_COUNT > 0)
@@ -543,7 +561,13 @@ static void handleCommandX14(uint16_t index) {
 			etbAutocal(DC_Throttle1, false);
 		return;
 	case TS_ETB_AUTOCAL_1_FAST:
-			etbAutocal(DC_Throttle2, false);
+		etbAutocal(DC_Throttle2, false);
+		return;
+	case TS_ETB_BENCH_TEST_0:
+		etbBenchTestStart(0);
+		return;
+	case TS_ETB_BENCH_TEST_1:
+		etbBenchTestStart(1);
 		return;
 	case TS_ETB_START_AUTOTUNE:
 			engine->etbAutoTune = true;
@@ -565,8 +589,13 @@ static void handleCommandX14(uint16_t index) {
 		return;
 #endif // EFI_ELECTRONIC_THROTTLE_BODY
 	case TS_WIDEBAND_UPDATE:
+	case TS_WIDEBAND_UPDATE_FILE:
 		// broadcast, for old WBO FWs
-		requestWidebandUpdate(0xff);
+		requestWidebandUpdate(0xff, index == TS_WIDEBAND_UPDATE_FILE);
+		return;
+	case TS_ESTIMATE_TORQUE_TABLE:
+	  estimateTorqueTable();
+	  onApplyPreset();
 		return;
 	case COMMAND_X14_UNUSED_15:
 		return;
@@ -752,15 +781,21 @@ void executeTSCommand(uint16_t subsystem, uint16_t index) {
 		break;
 
 	case TS_WIDEBAND_FLASH_BY_ID:
+	case TS_WIDEBAND_FLASH_BY_ID_FILE:
 		{
 			uint8_t hwIndex = index >> 8;
 
 			// Hack until we fix canReWidebandHwIndex and set "Broadcast" to 0xff
 			// TODO:
 			widebandUpdateHwId = hwIndex < 8 ? hwIndex : 0xff;
-			requestWidebandUpdate(widebandUpdateHwId);
+			requestWidebandUpdate(widebandUpdateHwId, subsystem == TS_WIDEBAND_FLASH_BY_ID_FILE);
 		}
 		break;
+
+	case TS_WIDEBAND_RESTART:
+		restartWideband();
+		break;
+
 #endif // EFI_CAN_SUPPORT
 	case TS_BENCH_CATEGORY:
 		handleBenchCategory(index);
@@ -846,7 +881,7 @@ void initBenchTest() {
 
 #if EFI_CAN_SUPPORT
 #if EFI_WIDEBAND_FIRMWARE_UPDATE
-	addConsoleActionI("update_wideband", requestWidebandUpdate);
+	addConsoleActionI("update_wideband", [](int hwIndex) { requestWidebandUpdate(hwIndex, false); });
 #endif // EFI_WIDEBAND_FIRMWARE_UPDATE
 	addConsoleActionII("set_wideband_index", [](int hwIndex, int index) { setWidebandOffset(hwIndex, index); });
 #endif // EFI_CAN_SUPPORT

@@ -176,11 +176,11 @@ static angle_t adjustCrankPhase(int camIndex) {
 	switch (vvtMode) {
 	case VVT_MAP_V_TWIN:
 	case VVT_MITSUBISHI_4G63:
-	case VVT_UNUSED_17:
 		return tc->syncEnginePhaseAndReport(crankDivider, 1);
 	case VVT_SINGLE_TOOTH:
 	case VVT_NISSAN_VQ:
 	case VVT_BOSCH_QUICK_START:
+	case VVT_BMW_N63TU:
 	case VVT_MIATA_NB:
 	case VVT_TOYOTA_3TOOTH_UZ:
 	case VVT_TOYOTA_3_TOOTH:
@@ -800,8 +800,11 @@ angle_t TriggerCentral::findNextTriggerToothAngle(int p_currentToothIndex) {
 			nextToothAngle = getTriggerCentral()->triggerFormDetails.eventAngles[currentToothIndex] - tdcPosition();
 			wrapAngle(nextToothAngle, "nextEnginePhase", ObdCode::CUSTOM_ERR_6555);
 		} while (nextToothAngle == currentEngineDecodedPhase && --loopAllowance > 0); // '==' for float works here since both values come from 'eventAngles' array
-		if (nextToothAngle != 0 && loopAllowance == 0) {
+		if (loopAllowance == 0 && nextToothAngle != currentEngineDecodedPhase) {
 		  // HW CI fails here, looks like we sometimes change trigger while still handling it?
+		  // Note: for single-tooth triggers, all eventAngles map to the same engine phase,
+		  // so nextToothAngle == currentEngineDecodedPhase is expected and not an error.
+			// see #9045 for report of this problem
 			firmwareError(ObdCode::CUSTOM_ERR_TRIGGER_ZERO, "handleShaftSignal unexpected loop end %d %d %f %f", p_currentToothIndex, engineCycleEventCount, nextToothAngle, currentEngineDecodedPhase);
 		}
 		return nextToothAngle;
@@ -963,13 +966,6 @@ void triggerInfo(void) {
 
 	TriggerCentral *tc = getTriggerCentral();
 	TriggerWaveform *ts = &tc->triggerShape;
-
-
-#if (HAL_TRIGGER_USE_PAL == TRUE) && (PAL_USE_CALLBACKS == TRUE)
-		efiPrintf("trigger PAL mode %d", tc->hwTriggerInputEnabled);
-#else
-
-#endif /* HAL_TRIGGER_USE_PAL */
 
 	efiPrintf("Template %s (%d) trigger %s (%d) syncEdge=%s tdcOffset=%.2f",
 			getEngine_type_e(engineConfiguration->engineType),

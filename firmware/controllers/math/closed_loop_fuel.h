@@ -14,9 +14,11 @@ struct ClosedLoopFuelResult {
 		for (size_t i = 0; i < FT_BANK_COUNT; i++) {
 			banks[i] = 1.0f;
 		}
+		region = ftRegionIdle;
 	}
 
 	float banks[FT_BANK_COUNT];
+	ft_region_e region;
 };
 
 struct FuelingBank {
@@ -42,7 +44,7 @@ private:
 	Deadband<2> loadDeadband;
 
 	SensorType getSensorForBankIndex(size_t index);
-	size_t computeStftBin(float rpm, float load, stft_s& cfg);
+	ft_region_e computeStftBin(float rpm, float load, stft_s& cfg);
 	stft_state_e getCorrectionState();
 	stft_state_e getLearningState(SensorType sensor);
 };

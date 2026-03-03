@@ -13,7 +13,7 @@
  * MRE_BOARD_NEW_TEST
  * set engine_type 31
  *
- * See https://github.com/rusefi/rusefi/wiki/Hardware-microRusEfi-wiring
+ * See https://wiki.rusefi.com/Hardware-microRusEfi-wiring
  *
  * @author Matthew Kennedy, (c) 2019
  */
@@ -146,7 +146,7 @@ static void microrusefi_boardConfigOverrides() {
 /**
  * @brief   Board-specific configuration defaults.
  *
- * See also setDefaultEngineConfiguration
+
  *
 
  */
@@ -231,5 +231,5 @@ int getBoardMetaDcOutputsCount() {
 
 void setup_custom_board_overrides() {
 	custom_board_DefaultConfiguration = microrusefi_boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  microrusefi_boardConfigOverrides;
+	custom_board_ConfigOverrides = microrusefi_boardConfigOverrides;
 }

@@ -14,14 +14,12 @@
  *
  * All the below packets are using 500kb/s
  *
- * for verbose use "set debug_mode 26" command in console
- *
  */
 #define CAN_BMW_E46_SPEED             0x153
 #define CAN_BMW_E46_RPM               0x316
 #define CAN_BMW_E46_DME2              0x329
-#define CAN_BMW_E46_CLUSTER_STATUS    0x613
-#define CAN_BMW_E46_CLUSTER_STATUS_2  0x615
+// unused #define CAN_BMW_E46_CLUSTER_STATUS    0x613
+// unused #define CAN_BMW_E46_CLUSTER_STATUS_2  0x615
 
 #define CAN_BMW_E90_TORQUE_BRAKE      0x0A8
 // 10ms period
@@ -50,11 +48,6 @@
 // MECH Getriebedaten 2
 #define CAN_BMW_E90_GEARBOX_DATA_2    0x1A2
 
-// Engine data
-// https://github.com/HeinrichG-V12/E65_ReverseEngineering/blob/main/docs/0x1D0.md
-#define CAN_BMW_E90_COOLANT           0x1D0
-// MECH Anzeige Getriebedaten
-#define CAN_BMW_E90_TRANSMISSION_DISP 0x1D2
 
 // SEAT_BELT 2FA
 // DOOR_STATUS 2FC

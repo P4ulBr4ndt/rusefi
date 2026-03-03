@@ -1,17 +1,16 @@
 package com.rusefi.maintenance;
 
 import com.opensr5.ConfigurationImage;
-import com.opensr5.ConfigurationImageMetaVersion0_0;
 import com.opensr5.ConfigurationImageWithMeta;
 import com.opensr5.ini.IniFileModel;
-import com.opensr5.ini.IniFileModelImpl;
+import com.rusefi.ini.reader.IniFileReaderUtil;
 import com.opensr5.ini.field.IniField;
 import com.rusefi.io.UpdateOperationCallbacks;
 import com.rusefi.maintenance.migration.TuneMigrationContext;
 import com.rusefi.tune.xml.Constant;
 import com.rusefi.tune.xml.Msq;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.Objects;
@@ -24,9 +23,9 @@ public class TestTuneMigrationContext extends TuneMigrationContext {
         try {
             result = new TestTuneMigrationContext(
                 Msq.readTune(String.format("%s/prev_calibrations.msq", testDataFolder)),
-                IniFileModelImpl.readIniFile(String.format("%s/prev_calibrations.ini", testDataFolder)),
+                IniFileReaderUtil.readIniFile(String.format("%s/prev_calibrations.ini", testDataFolder)),
                 Msq.readTune(String.format("%s/updated_calibrations.msq", testDataFolder)),
-                IniFileModelImpl.readIniFile(String.format("%s/updated_calibrations.ini", testDataFolder)),
+                IniFileReaderUtil.readIniFile(String.format("%s/updated_calibrations.ini", testDataFolder)),
                 new TestCallbacks()
             );
         } catch (FileNotFoundException e) {
@@ -58,6 +57,10 @@ public class TestTuneMigrationContext extends TuneMigrationContext {
         return getValue(getUpdatedTune(), fieldName);
     }
 
+    public Constant getMigratedValue(final String fieldName) {
+        return getMigratedConstants().get(fieldName);
+    }
+
     public void checkPrevAndUpdatedIniFields(
         final String iniFieldName,
         final IniField prevIniField,
@@ -81,11 +84,7 @@ public class TestTuneMigrationContext extends TuneMigrationContext {
     private static CalibrationsInfo getCalibrationsInfo(final Msq msq, final IniFileModel ini) {
         Objects.requireNonNull(ini);
         final ConfigurationImage image = msq.asImage(ini);
-        final ConfigurationImageMetaVersion0_0 meta = new ConfigurationImageMetaVersion0_0(
-            image.getSize(),
-            ini.getSignature()
-        );
-        final ConfigurationImageWithMeta imageWithMeta = new ConfigurationImageWithMeta(meta, image.getContent());
+        ConfigurationImageWithMeta imageWithMeta = ConfigurationImageWithMeta.valueOf(ini, image);
         return new CalibrationsInfo(ini, imageWithMeta);
     }
 
@@ -103,3 +102,4 @@ public class TestTuneMigrationContext extends TuneMigrationContext {
         super(prevIni, prevMsq, updatedIni, updatedMsq, callbacks, Collections.emptySet());
     }
 }
+

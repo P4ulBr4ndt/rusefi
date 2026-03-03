@@ -3,7 +3,7 @@ package com.rusefi.ts_plugin;
 import com.devexperts.logging.Logging;
 import com.efiAnalytics.plugin.ApplicationPlugin;
 import com.efiAnalytics.plugin.ecu.ControllerAccess;
-import com.rusefi.core.rusEFIVersion;
+import com.rusefi.UiVersion;
 import com.rusefi.ts_plugin.headless.TsHeadlessPlugin;
 import org.putgemin.VerticalFlowLayout;
 
@@ -24,14 +24,16 @@ public class TsPluginLauncher implements ApplicationPlugin {
     public static final int BUILD_VERSION = 7;
     static final String VERSION = "2025.alpha." + BUILD_VERSION;
     private static final Logging log = getLogging(TsPluginLauncher.class);
-    private static final String HELP_URL = "https://github.com/rusefi/rusefi/wiki/TS-Plugin";
+    private static final String HELP_URL = "https://wiki.rusefi.com/TS-Plugin";
 
     private final JPanel content = new JPanel(new VerticalFlowLayout());
 
     public TsPluginLauncher() {
         log.info("init " + this);
         Thread pluginFetchThread = new Thread(() -> {
+            // first download current version of actual plugin
             TsPluginBodyFetcher.downloadLatestIfNeeded();
+            // now run background logic
             TsHeadlessPlugin.start();
         }, "pluginFetchThread");
         pluginFetchThread.start();
@@ -65,6 +67,7 @@ public class TsPluginLauncher implements ApplicationPlugin {
     public boolean displayPlugin(String signature) {
         log.info("displayPlugin " + signature);
         // todo: smarter implementation one day
+        TsHeadlessPlugin.displayPlugin(signature);
         return true;
     }
 
@@ -84,7 +87,7 @@ public class TsPluginLauncher implements ApplicationPlugin {
             // lazy initialization since TunerStudio creates one instance only to get version information without any
             // intentions to display the UI
             if (content.getComponents().length == 0) {
-                log.info("Create Updater " + this + " " + rusEFIVersion.CONSOLE_VERSION);
+                log.info("Create Updater " + this + " " + UiVersion.CONSOLE_VERSION);
                 Updater updater = new Updater();
                 content.add(updater.getContent());
             }

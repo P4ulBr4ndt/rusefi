@@ -26,7 +26,7 @@
 /**
  * this build-in CAN sniffer is very basic but that's our CAN sniffer
  */
-static void printPacket(const size_t busIndex, const CANRxFrame &rx) {
+void printCANRxFrame(const size_t busIndex, const CANRxFrame &rx) {
 	// only print info if we're in can debug mode
 
 	int id = CAN_ID(rx);
@@ -81,12 +81,36 @@ void serviceCanSubscribers(const size_t busIndex, const CANRxFrame &frame, efiti
 	}
 }
 
+// TODO: rework to use utlist.h helpers
+
 void registerCanListener(CanListener& listener) {
+	// Do this under lock?
+
 	// If the listener already has a next, it's already registered
-	if (!listener.hasNext()) {
+	if (!listener.getNext()) {
 		listener.setNext(canListeners_head);
 		canListeners_head = &listener;
 	}
+}
+
+void unregisterCanListener(CanListener& listener) {
+	// Do this under lock?
+
+	// listener is at head of list...
+	if (canListeners_head == &listener) {
+		canListeners_head = listener.getNext();
+	} else {
+		CanListener *current = canListeners_head;
+
+		while (current->getNext() && (current->getNext() != &listener)) {
+			current = current->getNext();
+		}
+		if (current->getNext()) {
+			current->setNext(listener.getNext());
+		}
+	}
+
+	listener.setNext(nullptr);
 }
 
 void registerCanSensor(CanSensorBase& sensor) {
@@ -201,15 +225,20 @@ void boardProcessCanRxMessage(const size_t, const CANRxFrame &, efitick_t) {
 std::optional<board_can_rx_type> custom_board_can_rx;
 
 void processCanRxMessage(const size_t busIndex, const CANRxFrame &frame, efitick_t nowNt) {
-	if ((engineConfiguration->verboseCan && busIndex == 0) || verboseRxCan) {
-		printPacket(busIndex, frame);
-	} else if (engineConfiguration->verboseCan2 && busIndex == 1) {
-		printPacket(busIndex, frame);
+	if (verboseRxCan ||
+		(engineConfiguration->verboseCan && busIndex == 0) ||
+		(engineConfiguration->verboseCan2 && busIndex == 1) ||
+#if (EFI_CAN_BUS_COUNT >= 3)
+		(engineConfiguration->verboseCan3 && busIndex == 2) ||
+#endif
+		0) {
+		printCANRxFrame(busIndex, frame);
 	}
-// TODO use call_board_override
-  if (custom_board_can_rx.has_value()) {
-      custom_board_can_rx.value()(busIndex, frame, nowNt);
-  }
+
+	// TODO use call_board_override
+	if (custom_board_can_rx.has_value()) {
+		custom_board_can_rx.value()(busIndex, frame, nowNt);
+	}
 
     // see AemXSeriesWideband as an example of CanSensorBase/CanListener
 	serviceCanSubscribers(busIndex, frame, nowNt);

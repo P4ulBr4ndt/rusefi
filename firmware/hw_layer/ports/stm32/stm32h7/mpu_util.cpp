@@ -10,14 +10,19 @@
 #include "flash_int.h"
 
 bool mcuCanFlashWhileRunning() {
-	// We only support dual bank H7, so always allow flash while running.
+#ifdef STM32H723xx
+	return false;
+#else
 	return true;
+#endif
 }
 
 size_t flashSectorSize(flashsector_t /* sector */) {
 	// All sectors on H7 are 128k
 	return 128 * 1024;
 }
+
+static_assert(sizeof(persistent_config_container_s) <= 128 * 1024, "Settings does not fit into flash sector");
 
 uintptr_t getFlashAddrFirstCopy() {
 #ifdef STM32H723xx

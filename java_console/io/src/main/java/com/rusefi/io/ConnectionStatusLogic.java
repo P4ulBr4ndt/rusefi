@@ -4,6 +4,7 @@ import com.rusefi.config.generated.Integration;
 import com.rusefi.core.MessagesCentral;
 import com.rusefi.core.Sensor;
 import com.rusefi.core.SensorCentral;
+import com.rusefi.core.WellKnownGauges;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public class ConnectionStatusLogic {
     private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
     private ConnectionStatusLogic() {
-        SensorCentral.getInstance().addListener(Sensor.SECONDS, value -> markConnected());
+        SensorCentral.getInstance().addListener(WellKnownGauges.SECONDS.getOutputChannelName(), value -> markConnected());
 
         MessagesCentral.getInstance().addListener(new MessagesCentral.MessageListener() {
             @Override
@@ -65,13 +66,25 @@ public class ConnectionStatusLogic {
     }
 
     /**
+     * todo: note that we do not have removeListener! in general we are not great in terms of memory leaks in
+     * case of dynamic UI elements like detachable gauges
+     *
      * @see #setValue
      */
     public void addListener(Listener listener) {
         listeners.add(listener);
     }
 
+    public void addAndFireListener(Listener listener) {
+        listeners.add(listener);
+        listener.onConnectionStatus(isConnected());
+    }
+
     public interface Listener {
+        Listener VOID = isConnected -> {};
+
         void onConnectionStatus(boolean isConnected);
+        default void onConnectionEstablished() {}
+        default void onConnectionFailed(String s) {}
     }
 }

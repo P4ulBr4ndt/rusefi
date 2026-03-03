@@ -50,11 +50,12 @@ static void printUid() {
  * But it looks like our manner of __attribute__((weak)) declaration works at well, and I hope it will not cause
  * problems in the future.
  */
-PUBLIC_API_WEAK void boardSayHello() {
+void boardSayHello() {
+  // please use custom_board_boardSayHello
 }
 
 static void sayHello() {
-	efiPrintf(PROTOCOL_HELLO_PREFIX " rusEFI LLC (c) 2012-2024. All rights reserved.");
+	efiPrintf(PROTOCOL_HELLO_PREFIX " rusEFI LLC (c) 2012-2026. All rights reserved.");
 	efiPrintf(PROTOCOL_HELLO_PREFIX " rusEFI v%d@%u now=%d", getRusEfiVersion(), /*do we have a working way to print 64 bit values?!*/(int)SIGNATURE_HASH, (int)getTimeNowMs());
 	efiPrintf(PROTOCOL_HELLO_PREFIX " Chibios Kernel:       %s", CH_KERNEL_VERSION);
 	efiPrintf(PROTOCOL_HELLO_PREFIX " Compiled:     " __DATE__ " - " __TIME__ "");
@@ -63,7 +64,6 @@ static void sayHello() {
 	efiPrintf(PROTOCOL_HELLO_PREFIX " with OPENBLT");
 #endif
 
-  boardSayHello();
   call_board_override(custom_board_boardSayHello);
 
 #if EFI_PROD_CODE && ENABLE_AUTO_DETECT_HSE

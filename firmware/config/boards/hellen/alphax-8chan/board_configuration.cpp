@@ -87,7 +87,7 @@ static void alphax_8chan_boardInitHardware() {
 	tempPullUp.initPin("Temp PullUp", Gpio::MM176_OUT_IO12);
 }
 
-void boardOnConfigurationChange(engine_configuration_s * /*previousConfiguration*/) {
+static void customBoardOnConfigurationChange(engine_configuration_s * /*previousConfiguration*/) {
 	alphaCrankPPullUp.setValue(config->boardUseCrankPullUp);
 	alphaHall1PullDown.setValue(config->boardUseH1PullDown);
 	alphaHall2PullDown.setValue(config->boardUseH2PullDown);
@@ -104,17 +104,15 @@ static void alphax_8chan_boardConfigOverrides() {
 	setHellenCan2();
 }
 
-/**
- * @brief   Board-specific configuration defaults.
- *
- * See also setDefaultEngineConfiguration
- *
- */
+void set8chanDefaultETBPins() {
+	setupTLE9201IncludingStepper(/*controlPin*/Gpio::MM176_OUT_PWM9, Gpio::MM176_GP6, Gpio::MM176_GP7);
+	setupTLE9201IncludingStepper(/*controlPin*/Gpio::MM176_OUT_PWM18, Gpio::MM176_GP10, Gpio::MM176_GP11, 1);
+}
+
 static void alphax_8chan_defaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
-	setupTLE9201(/*controlPin*/Gpio::MM176_OUT_PWM9, Gpio::MM176_GP6, Gpio::MM176_GP7);
-	setupTLE9201(/*controlPin*/Gpio::MM176_OUT_PWM18, Gpio::MM176_GP10, Gpio::MM176_GP11, 1);
+	set8chanDefaultETBPins();
 //	engineConfiguration->vvtPins[0] = Gpio::H144_OUT_PWM7;
 //	engineConfiguration->vvtPins[1] = Gpio::H144_OUT_PWM8;
 
@@ -257,10 +255,12 @@ void setup_custom_board_overrides() {
 	custom_board_InitHardware = alphax_8chan_boardInitHardware;
 	custom_board_DefaultConfiguration = alphax_8chan_defaultConfiguration;
 	custom_board_ConfigOverrides = alphax_8chan_boardConfigOverrides;
+
+	custom_board_OnConfigurationChange = customBoardOnConfigurationChange;
 }
 
 int boardGetAnalogInputDiagnostic(adc_channel_e hwChannel, float voltage) {
-	/* we do not check voltage for valid ragne yet */
+	/* we do not check voltage for valid range yet */
 	(void)voltage;
 
 	switch (hwChannel) {

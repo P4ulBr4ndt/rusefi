@@ -7,7 +7,7 @@
  * PPS=pedal position sensor=AcceleratorPedal
  * TPS=throttle position sensor, this one is inside ETB=electronic throttle body
  *
- * Limited user documentation at https://github.com/rusefi/rusefi/wiki/HOWTO_electronic_throttle_body
+ * Limited user documentation at https://wiki.rusefi.com/HOWTO_electronic_throttle_body
  *
  *
  *  ETB is controlled according to pedal position input (pedal position sensor is a potentiometer)
@@ -319,9 +319,9 @@ expected<percent_t> EtbController::getSetpointEtb() {
 	}
 
 	float sanitizedPedal = getSanitizedPedal();
-
 	float rpm = Sensor::getOrZero(SensorType::Rpm);
-  percent_t preBoard = m_pedalProvider->getValue(rpm, sanitizedPedal);
+
+	percent_t preBoard = m_pedalProvider->getValue(rpm, sanitizedPedal);
 	etbCurrentTarget = boardAdjustEtbTarget(preBoard);
 	boardEtbAdjustment = etbCurrentTarget - preBoard;
 
@@ -703,7 +703,7 @@ void EtbController::checkJam(percent_t setpoint, percent_t observation) {
 				efiPrintf(" ************* ETB is jammed! ***************");
 				jamDetected = true;
 
-				getLimpManager()->reportEtbProblem();
+				getLimpManager()->reportEtbJammed();
 			}
 		} else {
 			m_jamDetectTimer.reset(nowNt);
@@ -785,6 +785,17 @@ void etbAutocal(dc_function_e function, bool reportToTs) {
 				// todo fix root cause! work-around: make sure not to write bad tune since that would brick requestBurn();
 			}
 		}
+	}
+}
+
+void etbBenchTestStart(size_t throttleIndex) {
+	if (throttleIndex >= ETB_COUNT) {
+		efiPrintf("ETB bench test: invalid index %d", (int)throttleIndex);
+		return;
+	}
+	if (auto controller = etbControllers[throttleIndex]) {
+		assertNotNullVoid(controller);
+		controller->startBenchTest();
 	}
 }
 
@@ -1093,4 +1104,16 @@ const electronic_throttle_s* getLiveData(size_t idx) {
 #else
 	return nullptr;
 #endif
+}
+
+// root cause: we have poor usability around DC function and h-bridge stepper
+void pickEtbOrStepper() {
+  if (!engineConfiguration->useHbridgesToDriveIdleStepper) {
+    return;
+  }
+  for (size_t i = 0;i<ETB_COUNT;i++) {
+	  if (engineConfiguration->etbFunctions[i] != DC_None) {
+      criticalError("Cannot use H-bridge for stepper while DC function is selected");
+	  }
+	}
 }

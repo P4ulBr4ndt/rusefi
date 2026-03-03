@@ -1,6 +1,6 @@
 #include "global.h"
 #include "engine_types.h"
-// was generated automatically by rusEFI tool  from engine_types.h // by enum_to_string.jar tool on Sun Sep 28 19:02:53 UTC 2025
+// was generated automatically by rusEFI tool  from engine_types.h // by enum_to_string.jar tool on Thu Feb 26 01:02:18 EST 2026
 // see also gen_config_and_enums.bat
 
 
@@ -311,6 +311,8 @@ case trigger_type_e::TT_NISSAN_HR:
   return "TT_NISSAN_HR";
 case trigger_type_e::TT_NISSAN_HR_CAM_IN:
   return "TT_NISSAN_HR_CAM_IN";
+case trigger_type_e::TT_NISSAN_K11:
+  return "TT_NISSAN_K11";
 case trigger_type_e::TT_NISSAN_MR18_CAM_VVT:
   return "TT_NISSAN_MR18_CAM_VVT";
 case trigger_type_e::TT_NISSAN_MR18_CRANK:
@@ -365,8 +367,10 @@ case trigger_type_e::TT_TRI_TACH:
   return "TT_TRI_TACH";
 case trigger_type_e::TT_UNUSED:
   return "TT_UNUSED";
-case trigger_type_e::TT_UNUSED29:
-  return "TT_UNUSED29";
+case trigger_type_e::TT_UNUSED_95:
+  return "TT_UNUSED_95";
+case trigger_type_e::TT_UNUSED_96:
+  return "TT_UNUSED_96";
 case trigger_type_e::TT_VVT_BARRA_3_PLUS_1:
   return "TT_VVT_BARRA_3_PLUS_1";
 case trigger_type_e::TT_VVT_BOSCH_QUICK_START:
@@ -406,12 +410,8 @@ case COMMAND_X14_UNUSED_15:
   return "COMMAND_X14_UNUSED_15";
 case COMMAND_X14_UNUSED_2:
   return "COMMAND_X14_UNUSED_2";
-case COMMAND_X14_UNUSED_3:
-  return "COMMAND_X14_UNUSED_3";
-case COMMAND_X14_UNUSED_4:
-  return "COMMAND_X14_UNUSED_4";
-case COMMAND_X14_UNUSED_5:
-  return "COMMAND_X14_UNUSED_5";
+case TS_ESTIMATE_TORQUE_TABLE:
+  return "TS_ESTIMATE_TORQUE_TABLE";
 case TS_ETB_AUTOCAL_0:
   return "TS_ETB_AUTOCAL_0";
 case TS_ETB_AUTOCAL_0_FAST:
@@ -420,6 +420,10 @@ case TS_ETB_AUTOCAL_1:
   return "TS_ETB_AUTOCAL_1";
 case TS_ETB_AUTOCAL_1_FAST:
   return "TS_ETB_AUTOCAL_1_FAST";
+case TS_ETB_BENCH_TEST_0:
+  return "TS_ETB_BENCH_TEST_0";
+case TS_ETB_BENCH_TEST_1:
+  return "TS_ETB_BENCH_TEST_1";
 case TS_ETB_DISABLE_JAM_DETECT:
   return "TS_ETB_DISABLE_JAM_DETECT";
 case TS_ETB_RESET:
@@ -456,14 +460,22 @@ case TS_SD_MOUNT_PC:
   return "TS_SD_MOUNT_PC";
 case TS_SD_UNMOUNT:
   return "TS_SD_UNMOUNT";
+case TS_SET_STEPPER_IDLE:
+  return "TS_SET_STEPPER_IDLE";
 case TS_START_STOP_ENGINE:
   return "TS_START_STOP_ENGINE";
+case TS_TCU_DOWNSHIFT_REQUEST:
+  return "TS_TCU_DOWNSHIFT_REQUEST";
+case TS_TCU_UPSHIFT_REQUEST:
+  return "TS_TCU_UPSHIFT_REQUEST";
 case TS_TRIGGER_STIMULATOR_DISABLE:
   return "TS_TRIGGER_STIMULATOR_DISABLE";
 case TS_TRIGGER_STIMULATOR_ENABLE:
   return "TS_TRIGGER_STIMULATOR_ENABLE";
 case TS_WIDEBAND_UPDATE:
   return "TS_WIDEBAND_UPDATE";
+case TS_WIDEBAND_UPDATE_FILE:
+  return "TS_WIDEBAND_UPDATE_FILE";
 case TS_WRITE_FLASH:
   return "TS_WRITE_FLASH";
   }
@@ -539,8 +551,12 @@ case TS_WIDEBAND:
   return "TS_WIDEBAND";
 case TS_WIDEBAND_FLASH_BY_ID:
   return "TS_WIDEBAND_FLASH_BY_ID";
+case TS_WIDEBAND_FLASH_BY_ID_FILE:
+  return "TS_WIDEBAND_FLASH_BY_ID_FILE";
 case TS_WIDEBAND_PING_BY_ID:
   return "TS_WIDEBAND_PING_BY_ID";
+case TS_WIDEBAND_RESTART:
+  return "TS_WIDEBAND_RESTART";
 case TS_WIDEBAND_SET_IDX_BY_ID:
   return "TS_WIDEBAND_SET_IDX_BY_ID";
 case TS_WIDEBAND_SET_SENS_BY_ID:

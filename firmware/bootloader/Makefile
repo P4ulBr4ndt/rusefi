@@ -3,7 +3,6 @@
 #
 
 # by default EXTRA_PARAMS is empty and we create 'debug' version of the firmware with additional assertions and statistics
-# for 'release' options see 'clean_compile_two_versions.bat' file
 
 ifeq ($(DEBUG_LEVEL_BLT_OPT),)
   # this value would be used by default. For 'debug' configuration override with '-O0 -ggdb -g' or something along these lines
@@ -13,8 +12,6 @@ endif
 
 # Disable ChibiOS memory core and heap
 DDEFS += -DCH_CFG_USE_MEMCORE=FALSE -DCH_CFG_USE_HEAP=FALSE
-
-DDEFS += -DENABLE_AUTO_DETECT_HSE=TRUE -DSTM32_HSECLK=25000000
 
 # disable some modules to shrink bootloader binary
 DDEFS += -DEFI_BOOTLOADER

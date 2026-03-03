@@ -129,8 +129,8 @@ enum class trigger_type_e : uint32_t {
 	// GM 24x with 5/10 degree gaps
 	TT_GM_24x_5 = 27,
 	TT_HONDA_CBR_600 = 28,
-	TT_UNUSED29 = 29,
-	// todo: we syspect that this one is broken while TT_JEEP_EVD_36_2_2 is potentially better?
+	TT_NISSAN_K11 = 29,
+	// todo: we suspect that this one is broken while TT_JEEP_EVD_36_2_2 is potentially better?
 	TT_CHRYSLER_NGC_36_2_2 = 30,
 	// skipped 3/1 with cam sensor for testing
 	TT_3_1_CAM = 31,
@@ -170,6 +170,7 @@ enum class trigger_type_e : uint32_t {
 	TT_VVT_SUBARU_7_WITHOUT_6 = 51,
 	TT_NISSAN_MR18_CAM_VVT = 52,
 	// https://rusefi.com/forum/viewtopic.php?f=5&t=1912
+	// also known as Audi 5 Cyl
 	TT_TRI_TACH = 53,
 	TT_GM_60_2_2_2 = 54,
 	// * https://rusefi.com/forum/viewtopic.php?f=5&t=1937
@@ -243,22 +244,26 @@ enum class trigger_type_e : uint32_t {
 
 	// symmetrical crank
 	TT_SUBARU_7_6_CRANK = 94,
+
+	TT_UNUSED_95 = 95,
+	TT_UNUSED_96 = 96,
+
 	// do not forget to edit "#define trigger_type_e_enum" line in integration/rusefi_config.txt file to propogate new value to rusefi.ini TS project
 	// do not forget to invoke "gen_config.bat" once you make changes to integration/rusefi_config.txt
 	// todo: one day a hero would integrate some of these things into Makefile in order to reduce manual magic
 	//
 	// Another point: once you add a new trigger, run get_trigger_images.bat which would run rusefi_test.exe from unit_tests
 	//
-	TT_UNUSED = 95, // this is used if we want to iterate over all trigger types
+	TT_UNUSED = 97, // this is used if we want to iterate over all trigger types
 };
 
 typedef enum {
 	COMMAND_X14_UNUSED_0 = 0x00,
 	COMMAND_X14_UNUSED_1 = 0x01,
 	COMMAND_X14_UNUSED_2 = 0x02,
-	COMMAND_X14_UNUSED_3 = 0x03,
-	COMMAND_X14_UNUSED_4 = 0x04,
-	COMMAND_X14_UNUSED_5 = 0x05,
+	TS_TCU_UPSHIFT_REQUEST = 0x03,
+	TS_TCU_DOWNSHIFT_REQUEST = 0x04,
+	TS_SET_STEPPER_IDLE = 0x05,
 	TS_GRAB_PEDAL_UP = 6,
 	TS_GRAB_PEDAL_WOT = 7,
 	TS_RESET_TLE8888 = 8,
@@ -287,6 +292,10 @@ typedef enum {
 	TS_EWG_AUTOCAL_0_FAST = 0x1F,
 	TS_GRAB_TPS_CLOSED = 0x20,
 	TS_GRAB_TPS_OPEN = 0x21,
+	TS_WIDEBAND_UPDATE_FILE = 0x22,
+	TS_ESTIMATE_TORQUE_TABLE = 0x23,
+	TS_ETB_BENCH_TEST_0 = 0x24,
+	TS_ETB_BENCH_TEST_1 = 0x25,
 } ts_14_command;
 
 typedef enum {
@@ -329,6 +338,8 @@ typedef enum {
 	TS_WIDEBAND_FLASH_BY_ID = 35,
 	TS_STOP_ENGINE = 36,
 	TS_WIDEBAND_SET_SENS_BY_ID = 37,
+	TS_WIDEBAND_FLASH_BY_ID_FILE = 38,
+	TS_WIDEBAND_RESTART = 39,
 } ts_command_e;
 
 typedef enum {

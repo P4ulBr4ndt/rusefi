@@ -4,20 +4,20 @@ import com.devexperts.logging.FileLogger;
 import com.devexperts.logging.Logging;
 import com.rusefi.autodetect.PortDetector;
 import com.rusefi.binaryprotocol.BinaryProtocolLogger;
+import com.rusefi.binaryprotocol.ShortcutsHelper;
 import com.rusefi.core.MessagesCentral;
 import com.rusefi.core.net.ConnectionAndMeta;
 import com.rusefi.io.CommandQueue;
 import com.rusefi.io.LinkManager;
 import com.rusefi.io.serial.BaudRateHolder;
 import com.rusefi.maintenance.StLinkFlasher;
-import com.rusefi.tools.TunerStudioHelper;
 import com.rusefi.ui.*;
 import com.rusefi.ui.console.MainFrame;
 import com.rusefi.ui.console.TabbedPanel;
 import com.rusefi.ui.engine.EngineSnifferPanel;
 import com.rusefi.ui.lua.LuaScriptPanel;
-import com.rusefi.ui.util.DefaultExceptionHandler;
 import com.rusefi.ui.util.JustOneInstance;
+import com.rusefi.ui.widgets.ConnectionStatusIcon;
 import com.rusefi.core.ui.AutoupdateUtil;
 import com.rusefi.util.LazyFile;
 import com.rusefi.util.LazyFileImpl;
@@ -36,7 +36,6 @@ import java.util.Map;
 import static com.devexperts.logging.Logging.getLogging;
 import static com.rusefi.StartupFrame.setFrameIcon;
 import static com.rusefi.core.preferences.storage.PersistentConfiguration.getConfig;
-import static com.rusefi.core.rusEFIVersion.CONSOLE_VERSION;
 import static com.rusefi.ui.basic.UiHelper.commonUiStartup;
 import static com.rusefi.ui.util.UiUtils.createOnTopParent;
 
@@ -46,15 +45,13 @@ import static com.rusefi.ui.util.UiUtils.createOnTopParent;
 public class ConsoleUI {
     private static final Logging log = getLogging(ConsoleUI.class);
     private static final int DEFAULT_TAB_INDEX = 0;
-    private static final String WIKI_URL = "https://github.com/rusefi/rusefi/wiki/rusEFI-logs-folder";
+    private static final String WIKI_URL = "https://wiki.rusefi.com/rusEFI-logs-folder";
 
     public static final String TAB_INDEX = "main_tab";
     protected static final String PORT_KEY = "port";
     protected static final String SPEED_KEY = "speed";
     public static final String TITLE = "rusEFI";
     public static EngineSnifferPanel engineSnifferPanel;
-
-    static Frame staticFrame;
 
     private final TabbedPanel tabbedPane;
     private final String port;
@@ -66,29 +63,29 @@ public class ConsoleUI {
      */
     private final Map<Component, ActionListener> tabSelectedListeners = new HashMap<>();
 
-    public static Frame getFrame() {
-        return staticFrame;
-    }
+    public ConsoleUI(String port, SerialPortType serialPortType) {
+        LinkManager linkManager = uiContext.getLinkManager();
 
-    public ConsoleUI(String port) {
-        CommandQueue.ERROR_HANDLER = e -> SwingUtilities.invokeLater(() -> {
-            throw new IllegalStateException("Connectivity error", e);
-        });
+        CommandQueue.ERROR_HANDLER = e -> {
+            log.error("Connectivity error", e);
+            linkManager.restart();
+        };
 
-        log.info("init...");
+        ConnectionStatusIcon connectionStatus = new ConnectionStatusIcon(linkManager);
+
         tabbedPane = new TabbedPanel(uiContext);
+        tabbedPane.setCornerComponent(connectionStatus);
         this.port = port;
         MainFrame mainFrame = new MainFrame(this, tabbedPane);
-        ConsoleUI.staticFrame = mainFrame.getFrame().getFrame();
-        setFrameIcon(ConsoleUI.staticFrame);
-        log.info("Console " + CONSOLE_VERSION);
+        JFrame frame = mainFrame.getFrame().getFrame();
+        setFrameIcon(frame);
+        log.info("Console " + UiVersion.CONSOLE_VERSION);
 
         log.info("Hardware: " + StLinkFlasher.getHardwareKind());
 
         getConfig().getRoot().setProperty(PORT_KEY, port);
         getConfig().getRoot().setProperty(SPEED_KEY, BaudRateHolder.INSTANCE.baudRate);
 
-        LinkManager linkManager = uiContext.getLinkManager();
         // todo: this blocking IO operation should NOT be happening on the UI thread
         linkManager.start(port, mainFrame.listener);
 
@@ -102,18 +99,12 @@ public class ConsoleUI {
 
         uiContext.DetachedRepositoryINSTANCE.init(getConfig().getRoot().getChild("detached"));
         uiContext.DetachedRepositoryINSTANCE.load();
-        if (!linkManager.isLogViewer())
+        if (!linkManager.isLogViewer()) {
             tabbedPane.addTab("Gauges", new GaugesPanel(uiContext, getConfig().getRoot().getChild("gauges")).getContent());
 
-        if (!linkManager.isLogViewer()) {
             MessagesPane messagesPane = new MessagesPane(uiContext, getConfig().getRoot().getChild("messages"));
             tabbedPaneAdd("Messages", messagesPane.getContent(), messagesPane.getTabSelectedListener());
-        }
-        if (!linkManager.isLogViewer()) {
-            tabbedPane.addTab("Bench Test", new BenchTestPane(uiContext, getConfig()).getContent());
-        }
 
-        if (!linkManager.isLogViewer()) {
             LuaScriptPanel luaScriptPanel = new LuaScriptPanel(uiContext, getConfig().getRoot().getChild("lua"));
             tabbedPaneAdd("Lua Scripting", luaScriptPanel.getPanel(), luaScriptPanel.getTabSelectedListener());
         }
@@ -141,7 +132,8 @@ console live data tab is broken #8402
 
             tabbedPane.addTab("Live Data", LiveDataPane.createLazy(uiContext).getContent());
  */
-            tabbedPane.addTab("Sensors Live Data", new SensorsLiveDataPane(uiContext).getContent());
+            tabbedPane.addTab("Tuning", new TuningPane(uiContext).getContent());
+            tabbedPane.addTab("Device", new DevicePane(uiContext, port, serialPortType).getContent());
         }
 
         if (!linkManager.isLogViewer() && false) // todo: fix it & better name?
@@ -154,7 +146,6 @@ console live data tab is broken #8402
         https://github.com/rusefi/rusefi/issues/5956
         tabbedPane.addTab("rusEFI Online", new OnlineTab(uiContext).getContent());
 */
-        tabbedPane.addTab("Connection", new ConnectionTab(uiContext).getContent());
 
         if (false) {
             // this feature is not totally happy safer to disable to reduce user confusion
@@ -182,9 +173,11 @@ console live data tab is broken #8402
             }
         });
 
+        ShortcutsHelper.installConnectAndDisconnect(uiContext, tabbedPane.tabbedPane);
         AutoupdateUtil.setAppIcon(mainFrame.getFrame().getFrame());
         log.info("showFrame");
-        mainFrame.getFrame().showFrame(tabbedPane.tabbedPane);
+
+        mainFrame.getFrame().showFrame(tabbedPane.getContent());
     }
 
     public String getPort() {
@@ -230,7 +223,6 @@ console live data tab is broken #8402
             }
         }
         JustOneInstance.onStart();
-        TunerStudioHelper.maybeCloseTs();
 
         try {
             boolean isPortDefined = args.length > 0;
@@ -250,7 +242,7 @@ console live data tab is broken #8402
             }
 
             if (isPortDefined) {
-                new ConsoleUI(port);
+                new ConsoleUI(port, SerialPortType.Unknown);
             } else {
                 for (String p : LinkManager.getCommPorts())
                     MessagesCentral.getInstance().postMessage(Launcher.class, "Available port: " + p);

@@ -9,7 +9,7 @@ import com.rusefi.tune.xml.Msq;
 import com.rusefi.ui.basic.SingleAsyncJobExecutor;
 
 import javax.swing.*;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import static com.devexperts.logging.Logging.getLogging;
 
@@ -18,7 +18,7 @@ public class ImportTuneJob extends AsyncJobWithContext<ImportTuneJobContext> {
     private final ConnectivityContext connectivityContext;
 
     public ImportTuneJob(final PortResult port, final Msq tuneToImport, final ConnectivityContext connectivityContext) {
-        super("Import tune", new ImportTuneJobContext(port, tuneToImport));
+        super("Load Tune", new ImportTuneJobContext(port, tuneToImport));
         this.connectivityContext = connectivityContext;
     }
 
@@ -57,3 +57,4 @@ public class ImportTuneJob extends AsyncJobWithContext<ImportTuneJobContext> {
         }, onJobFinished);
     }
 }
+

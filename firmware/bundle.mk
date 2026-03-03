@@ -130,7 +130,7 @@ ifeq ($(INCLUDE_ELF),yes)
 endif
 endif
 
-ST_DRIVERS = $(DRIVERS_FOLDER)/silent_st_drivers2.exe
+ST_DRIVERS_DOWNLOAD_UNUSED = $(DRIVERS_FOLDER)/silent_st_drivers2.exe
 
 # We're kinda doing things backwards from the normal Make way.
 # We're listing some files we want to get copied from the bundle,
@@ -153,7 +153,7 @@ FOLDER_TARGETS = $(addprefix $(FOLDER)/,$(notdir $(FOLDER_SOURCES)))
 CONSOLE_FOLDER_TARGETS = $(addprefix $(CONSOLE_FOLDER)/,$(notdir $(CONSOLE_FOLDER_SOURCES)))
 
 FULL_BUNDLE_CONTENT = \
-  $(ST_DRIVERS) \
+  ext/rusefi-gha/static-content/silent_st_drivers2.exe \
   $(FOLDER_TARGETS) \
   $(CONSOLE_FOLDER_TARGETS)
 
@@ -161,16 +161,16 @@ BUNDLE_FILES = \
   $(UPDATE_BUNDLE_FILES) \
   $(FULL_BUNDLE_CONTENT)
 
-$(SIMULATOR_EXE): $(CONFIG_FILES) .FORCE
+$(SIMULATOR_EXE): $(CONFIG_FILES) $(DOCS_ENUMS) .FORCE
 	$(MAKE) -C ../simulator -r OS="Windows_NT" SUBMAKE=yes
 
 # make sure not to invoke in parallel with SIMULATOR_EXE rule above
-../simulator/build/rusefi_simulator.linux: $(CONFIG_FILES) .FORCE
+../simulator/build/rusefi_simulator.linux: $(CONFIG_FILES) $(DOCS_ENUMS) .FORCE
 	$(MAKE) -C ../simulator -r OS="Linux" SUBMAKE=yes
 
 # make Windows simulator a prerequisite so that we don't try compiling them concurrently
 # that also means no incremental compilation making that rule less useful. See 'rusefi_simulator.linux' above
-../simulator/build/rusefi_simulator.both: $(CONFIG_FILES) .FORCE | $(SIMULATOR_EXE)
+../simulator/build/rusefi_simulator.both: $(CONFIG_FILES) $(DOCS_ENUMS) .FORCE | $(SIMULATOR_EXE)
 	$(MAKE) -C ../simulator -r OS="Linux" SUBMAKE=yes
 
 $(BOOTLOADER_HEX) $(BOOTLOADER_BIN): .bootloader-sentinel ;
@@ -195,20 +195,13 @@ $(BOOTLOADER_BIN_OUT): $(FOLDER)/openblt%: bootloader/blbuild/openblt_$(PROJECT_
 $(FIRMWARE_BIN_OUT) $(FOLDER)/$(PROJECT).dfu: $(FOLDER)/%: $(DELIVER)/% | $(FOLDER)
 	ln -rfs $< $@
 
-HEX_BASE_ADDRESS = "0x$(shell $(OD) -h -j .vectors $(BUILDDIR)/$(PROJECT).elf | awk '/.vectors/ {print $$5 }')"
-ifeq ($(USE_OPENBLT),yes)
-  # note how bootloader_size from .ld file is hard-coded here!
-	CHECKSUM_ADDRESS = 0x0800801C
-else
-  # by the way '1C' is the magic address of first reserved DWORD in vector table
-  # by the way hex2dfu lower-case '-c' would also write binary length in second DWORD
-	CHECKSUM_ADDRESS = 0x0800001C
-endif
+HEX_BASE_ADDRESS = $(shell $(OD) -h -j .vectors $(BUILDDIR)/$(PROJECT).elf | awk '/.vectors/ {print $$5 }')
+CHECKSUM_ADDRESS = 0x$(shell echo "ibase=16; obase=10; ${HEX_BASE_ADDRESS} + 1C" | bc)
 
 $(BUILDDIR)/rusefi.srec: $(BUILDDIR)/$(PROJECT).hex
 	# make sure we create the srec from a binary with crc
 	$(H2D) -i $< -c $(CHECKSUM_ADDRESS) -b $(DBIN_CRC)
-	$(CP) -I binary -O srec --change-addresses=$(HEX_BASE_ADDRESS) $(DBIN_CRC) $@
+	$(CP) -I binary -O srec --change-addresses=0x$(HEX_BASE_ADDRESS) $(DBIN_CRC) $@
 
 # The DFU is currently not included in the bundle, so these prerequisites are listed as order-only to avoid building it.
 # If you want it, you can build it with `make rusefi.snapshot.$BUNDLE_NAME/rusefi.dfu`
@@ -239,7 +232,7 @@ $(OBFUSCATED_OUT): .obfuscated-sentinel
 	[ -z "$(POST_BUILD_SCRIPT)" ] || bash $(POST_BUILD_SCRIPT) $(BUILDDIR)/$(PROJECT).bin $(OBFUSCATED_OUT)
 	@touch $@
 
-$(ST_DRIVERS): | $(DRIVERS_FOLDER)
+$(ST_DRIVERS_DOWNLOAD_UNUSED): | $(DRIVERS_FOLDER)
 	wget https://rusefi.com/build_server/st_files/silent_st_drivers2.exe -P $(dir $@)
 
 $(DELIVER) $(ARTIFACTS) $(STAGING_FOLDER) $(CONSOLE_FOLDER) $(DRIVERS_FOLDER):

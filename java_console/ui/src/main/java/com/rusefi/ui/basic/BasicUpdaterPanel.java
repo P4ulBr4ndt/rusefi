@@ -12,6 +12,7 @@ import com.rusefi.maintenance.jobs.*;
 import com.rusefi.ui.LogoHelper;
 import com.rusefi.ui.util.HorizontalLine;
 import com.rusefi.ui.widgets.ToolButtons;
+import com.rusefi.util.CompatibilityOptional;
 import org.jetbrains.annotations.NotNull;
 import org.putgemin.VerticalFlowLayout;
 
@@ -41,6 +42,7 @@ public class BasicUpdaterPanel implements BasicButtonCoordinator {
 
     private final JLabel statusMessage = new JLabel();
     private final JCheckBox migrateSettings = new JCheckBox("Migrate Settings");
+    private final JCheckBox verboseMessages = new JCheckBox("Verbose Status");
 
     private final JButton updateFirmwareButton = ProgramSelector.createUpdateFirmwareButton();
     // todo: this control lives on a different parent TODO fix this mess!
@@ -121,8 +123,13 @@ never used?
   */
         migrateSettings.setSelected(true);
         migrateSettings.addActionListener(e -> updateMigrateSettingState());
+
+        verboseMessages.setSelected(false);
+        verboseMessages.addActionListener(e -> updateMigrateSettingState());
+
         updateMigrateSettingState();
         content.add(migrateSettings);
+//        content.add(verboseMessages);
     }
 
     public ImportTuneControl getImportTuneButton() {
@@ -131,6 +138,7 @@ never used?
 
     private void updateMigrateSettingState() {
         MigrateSettingsCheckboxState.isMigrationNeeded = migrateSettings.isSelected();
+        MigrateSettingsCheckboxState.isVerboseMessages = verboseMessages.isSelected();
     }
 
     private void hideStatusMessage() {

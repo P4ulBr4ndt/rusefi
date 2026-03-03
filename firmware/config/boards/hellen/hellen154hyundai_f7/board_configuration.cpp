@@ -93,7 +93,7 @@ static void hellen154hyundai_f7_boardConfigOverrides() {
 /**
  * @brief   Board-specific configuration defaults.
  *
- * See also setDefaultEngineConfiguration
+
  *
 
  */
@@ -235,6 +235,6 @@ Gpio* getBoardMetaOutputs() {
 void setup_custom_board_overrides() {
 	custom_board_InitHardware = hellen154hyundai_f7_boardInitHardware;
 	custom_board_DefaultConfiguration = hellen154hyundai_f7_boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  hellen154hyundai_f7_boardConfigOverrides;
+	custom_board_ConfigOverrides = hellen154hyundai_f7_boardConfigOverrides;
 }
 

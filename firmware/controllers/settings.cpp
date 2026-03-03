@@ -378,6 +378,10 @@ static void enableOrDisable(const char *param, bool isEnabled) {
 		engineConfiguration->verboseCan = isEnabled;
 	} else if (strEqualCaseInsensitive(param, "verboseCan2")) {
 		engineConfiguration->verboseCan2 = isEnabled;
+#if (EFI_CAN_BUS_COUNT >= 3)
+	} else if (strEqualCaseInsensitive(param, "verboseCan3")) {
+		engineConfiguration->verboseCan3 = isEnabled;
+#endif
 	} else if (strEqualCaseInsensitive(param, "verboseIsoTp")) {
 		engineConfiguration->verboseIsoTp = isEnabled;
 	} else if (strEqualCaseInsensitive(param, "artificialMisfire")) {
@@ -752,4 +756,8 @@ void setEngineType(int value, bool isWriteToFlash) {
 #if EFI_ENGINE_CONTROL && ! EFI_UNIT_TEST
 	printConfiguration();
 #endif // ! EFI_UNIT_TEST
+}
+
+void setLuaScript(const char *luaScript) {
+	strncpy(config->luaScript, luaScript, efi::size(config->luaScript) - 1);
 }

@@ -69,6 +69,7 @@
 
 std::optional<setup_custom_board_overrides_type> custom_board_DefaultConfiguration;
 std::optional<setup_custom_board_overrides_type> custom_board_ConfigOverrides;
+std::optional<setup_custom_board_config_type> custom_board_OnConfigurationChange;
 
 /**
  * Current engine configuration. On firmware start we assign empty configuration, then
@@ -76,8 +77,9 @@ std::optional<setup_custom_board_overrides_type> custom_board_ConfigOverrides;
  * This is useful to compare old/current (activeConfiguration) and new/future (engineConfiguration) configurations in order to apply new settings.
  *
  * todo: place this field next to 'engineConfiguration'?
+ * todo: not great that it's a global variable which we have to clean, move to 'engine' somewhere?
  */
-static bool hasRememberedConfiguration = false;
+bool hasRememberedConfiguration = false;
 #if EFI_ACTIVE_CONFIGURATION_IN_FLASH
 #include "flash_int.h"
 engine_configuration_s & activeConfiguration = reinterpret_cast<persistent_config_container_s*>(getFlashAddrFirstCopy())->persistentConfiguration.engineConfiguration;
@@ -108,6 +110,7 @@ static void wipeStrings() {
 	fillAfterString(engineConfiguration->engineMake, sizeof(vehicle_info_t));
 	fillAfterString(engineConfiguration->engineCode, sizeof(vehicle_info_t));
 	fillAfterString(engineConfiguration->vehicleName, sizeof(vehicle_info_t));
+	fillAfterString(engineConfiguration->vinNumber, sizeof(vin_number_t));
 }
 
 void onBurnRequest() {
@@ -118,13 +121,16 @@ void onBurnRequest() {
 }
 
 /**
- * this hook is about https://github.com/rusefi/rusefi/wiki/Custom-Firmware and https://github.com/rusefi/rusefi/wiki/Canned-Tune-Process
+ * this hook is about https://wiki.rusefi.com/Custom-Firmware and https://wiki.rusefi.com/Canned-Tune-Process
  * todo: why two hooks? is one already dead?
  */
-PUBLIC_API_WEAK void boardBeforeTuneDefaults() { }
+void boardBeforeTuneDefaults() {
+  // placeholder
+}
 
-// Weak link a stub so that every board doesn't have to implement this function
-PUBLIC_API_WEAK void boardOnConfigurationChange(engine_configuration_s* /*previousConfiguration*/) { }
+void boardOnConfigurationChange(engine_configuration_s* /*previousConfiguration*/) {
+  // placeholder
+}
 
 /**
  * this is the top-level method which should be called in case of any changes to engine configuration
@@ -146,7 +152,7 @@ void incrementGlobalConfigurationVersion(const char * msg) {
 
 	applyNewHardwareSettings();
 
-	boardOnConfigurationChange(&activeConfiguration);
+	call_board_override(custom_board_OnConfigurationChange, &activeConfiguration);
 
 	engine->preCalculate();
 
@@ -328,9 +334,12 @@ static void setDefaultEngineNoiseTable() {
 #endif // EFI_ENGINE_CONTROL
 
 static void setDefaultCanSettings() {
-  // OBD-II default rate is 500kbps
-  engineConfiguration->canBaudRate = B500KBPS;
-  engineConfiguration->can2BaudRate = B500KBPS;
+	// OBD-II default rate is 500kbps
+	engineConfiguration->canBaudRate = B500KBPS;
+	engineConfiguration->can2BaudRate = B500KBPS;
+#if (EFI_CAN_BUS_COUNT >= 3)
+	engineConfiguration->can3BaudRate = B500KBPS;
+#endif
 
 	engineConfiguration->canSleepPeriodMs = 50;
 	engineConfiguration->canReadEnabled = true;
@@ -525,6 +534,7 @@ static void setDefaultEngineConfiguration() {
 	setLinearCurve(config->iacCoastingRpmBins, 0, 8000, 1);
 
 #if !EFI_UNIT_TEST
+  // todo: remove from *engine* defaults, move into boards?
 	engineConfiguration->analogInputDividerCoefficient = 2;
 #endif
 
@@ -561,6 +571,7 @@ static void setDefaultEngineConfiguration() {
 
 	setEgoSensor(ES_14Point7_Free);
 
+	// todo: remove from *engine* defaults, move into boards?
 	engineConfiguration->adcVcc = 3.0;
 
 	engineConfiguration->map.sensor.type = MT_MPX4250;
@@ -615,7 +626,9 @@ static void setDefaultEngineConfiguration() {
 
 	setLinearCurve(config->throttleEstimateEffectiveAreaBins, 0, 100);
 #endif // EFI_ENGINE_CONTROL
-    #include "default_script.lua"
+	// Allow custom default_script.lua to be provided by BOARDINC
+	// see https://gcc.gnu.org/onlinedocs/gcc-2.95.3/cpp_1.html#SEC6
+	#include <default_script.lua>
 }
 
 #if defined(STM32F7) && defined(HARDWARE_CI)
@@ -666,7 +679,7 @@ void resetConfigurationExt(configuration_callback_t boardCallback, engine_type_e
 	/**
 	 * custom board engine defaults. Yes, this overlaps with (older) engine_type_e approach.
 	 */
-	boardBeforeTuneDefaults();
+	call_board_override(custom_board_BeforeTuneDefaults);
 
 	// set initial pin groups
 	setDefaultBasePins();

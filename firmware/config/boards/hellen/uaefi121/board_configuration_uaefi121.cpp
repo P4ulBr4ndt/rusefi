@@ -10,6 +10,19 @@
 #include "mega-uaefi.h"
 #include "board_overrides.h"
 
+Gpio getCommsLedPin() {
+	return Gpio::MM100_LED3_BLUE;
+}
+
+Gpio getRunningLedPin() {
+	// this one is used to drive tach pin 43
+	return Gpio::Unassigned;
+}
+
+Gpio getWarningLedPin() {
+	return Gpio::MM100_LED4_YELLOW;
+}
+
 static void setupDefaultSensorInputs() {
 	engineConfiguration->tps1_1AdcChannel = MM100_IN_TPS_ANALOG;
 	engineConfiguration->tps1_2AdcChannel = MM100_IN_AUX1_ANALOG;
@@ -126,5 +139,5 @@ Gpio* getBoardMetaOutputs() {
 
 void setup_custom_board_overrides() {
 	custom_board_DefaultConfiguration = uaefi_121boardDefaultConfiguration;
-	custom_board_ConfigOverrides =  setMegaUaefiBoardConfigOverrides;
+	custom_board_ConfigOverrides = setMegaUaefiBoardConfigOverrides;
 }

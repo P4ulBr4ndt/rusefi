@@ -10,13 +10,13 @@ class ShiftTorqueReductionController : public shift_torque_reduction_state_s {
 public:
 	void update();
 
-	float getSparkSkipRatio() const;
+	float getSparkSkipRatio();
 
-	float getTorqueReductionIgnitionRetard() const;
+	float getTorqueReductionIgnitionRetard();
 
 private:
 	void updateTriggerPinState();
-	void updateTriggerPinState(switch_input_pin_e pin, pin_input_mode_e mode, bool invalidPinState);
+	void updateTriggerPinState(switch_input_pin_e pin, pin_input_mode_e mode, const bool invertPhysicalPin, bool invalidPinState);
 
 	void updateTimeConditionSatisfied();
 	void updateRpmConditionSatisfied();

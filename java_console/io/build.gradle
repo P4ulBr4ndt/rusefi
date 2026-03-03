@@ -1,5 +1,5 @@
 apply from: '../../android/dependencies.gradle'
-apply from: '../../java_tools/dependencies.gradle'
+apply from: dependenciesPath
 
 configurations {
     all*.exclude group: 'org.hamcrest', module: 'hamcrest-core'
@@ -14,13 +14,9 @@ dependencies {
 
     api global_libs.jcip
 
-    // attempt to fix xml binding drama (see #7878, #7430)
-    api global_libs.jaxb
-
     api project(':models')
+    api project(':msq-file')
     api project(':peak-can-basic')
-    api project(':core_io')
-    api project(':logging')
 
     api group: 'com.fazecast', name: 'jSerialComm', version: '2.11.2'
     implementation group: 'tel.schich', name: 'javacan-core', version: "$javaCanVersion"
@@ -30,6 +26,7 @@ dependencies {
     api ts_plugin_libs.httpcore
 
     testFixturesApi global_libs.mockito
+    testFixturesApi testFixtures(project(':inifile'))
     testFixturesApi global_libs.annotations
     testFixturesApi global_libs.junit5api
 }

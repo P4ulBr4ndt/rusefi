@@ -6,6 +6,7 @@ pins:
     class: [analog_inputs, switch_inputs, event_inputs]
     color: orange
     ts_name: ___ AUX1
+    type: av
     function: Auxiliary analog input 1 PullDown 500K
 
   - pin: D2
@@ -36,7 +37,7 @@ pins:
     meta: MM100_IN_PPS_ANALOG
     class: analog_inputs
     ts_name: ___ PPS1
-    function: PPS input 1
+    function: Universal analog input. Suggested PPS input 1
     type: av
     color: white
 
@@ -54,7 +55,7 @@ pins:
     meta: MM100_IN_MAP1_ANALOG
     class: analog_inputs
     ts_name: ___ MAP
-    function: MAP input
+    function: Universal analog input. Suggested MAP input
     type: av
     color: yellow
 
@@ -77,13 +78,13 @@ pins:
     meta: MM100_IN_TPS_ANALOG
     class: analog_inputs
     ts_name: ___ TPS1
-    function: TPS input 1
+    function: Universal analog input. Suggested TPS input 1
     type: av
     color: green
 
   - pin: D14
     color: yellow
-    function: Knock Input
+    function: Knock Input (other sensor pin goes to analog ground)
 
   - pin: D15
     meta: MM100_IN_IAT_ANALOG
@@ -105,7 +106,7 @@ info:
   cid: d
   title: uaefi
   directory: hellen/uaefi
-  board_url: https://github.com/rusefi/rusefi/wiki/uaefi
+  board_url: https://wiki.rusefi.com/uaefi
   image:
     file: uaefi-D.jpg
   pins:

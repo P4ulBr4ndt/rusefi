@@ -42,7 +42,7 @@
 #define EFI_MCP_3208 FALSE
 #define EFI_MCP_3208 FALSE
 #define EFI_CAN_SERIAL FALSE
-#define EFI_TS_SCATTER TRUE
+#define EFI_TS_SCATTER FALSE
 #define EFI_SOFTWARE_KNOCK FALSE
 #define _HAS_STATIC_RTTI FALSE
 #define __GXX_RTTI FALSE
@@ -127,7 +127,10 @@
 #define EFI_IDLE_CONTROL TRUE
 
 #define EFI_IDLE_PID_CIC TRUE
+
+#ifndef EFI_MAIN_RELAY_CONTROL
 #define EFI_MAIN_RELAY_CONTROL FALSE
+#endif
 
 #define EFI_CAN_SUPPORT TRUE
 
@@ -186,3 +189,5 @@
 #ifndef TRUE
  fail("Truth not found");
 #endif
+
+#define ROTATIONAL_IDLE_CONTROLLER TRUE

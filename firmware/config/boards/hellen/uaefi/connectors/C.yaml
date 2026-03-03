@@ -15,6 +15,7 @@ pins:
     id: [MM100_IN_O2S2_ANALOG, MM100_IN_O2S2]
     class: [analog_inputs, switch_inputs]
     color: yellow
+    type: av
     ts_name: ___ AUX2
     function: Auxiliary analog input 2
 
@@ -22,7 +23,7 @@ pins:
     meta: MM100_IN_AUX2_ANALOG
     class: analog_inputs
     ts_name: ___ PPS2
-    function: PPS input 2
+    function: Universal analog input. Suggested PPS input 2
     type: av
     color: orange/brown
 
@@ -34,15 +35,15 @@ pins:
     function: HALL input 1 (4.7K PU)
 
   - pin: C6
-    meta: MM100_IN_D2
-    class: event_inputs
+    id: [MM100_IN_D2, MM100_IN_D2]
+    class: [event_inputs, sent_inputs]
     color: blue
     ts_name: ___ CAM 2 / HALL2
     function: HALL input 2 (4.7K PU)
 
   - pin: C7
-    meta: MM100_IN_D3
-    class: event_inputs
+    id: [MM100_IN_D3, MM100_IN_D3]
+    class: [event_inputs, sent_inputs]
     color: white
     ts_name: ___ HALL3
     function: VSS or HALL input 3 (4.7K PU)
@@ -79,13 +80,14 @@ pins:
     meta: MM100_IN_AUX1_ANALOG
     class: analog_inputs
     ts_name: ___ TPS2
-    function: TPS input 2
+    function: Universal analog input. Suggested TPS input 2
     type: av
     color: blue
 
   - pin: C15
     id: [MM100_IN_AUX3_ANALOG, MM100_IN_AUX3, MM100_IN_AUX3]
     color: grey
+    type: av
     class: [analog_inputs, switch_inputs, event_inputs]
     ts_name: ___ Fuel Pressure / AUX3
     function: Fuel Pressure / Auxiliary analog input 3 PullDown 500K
@@ -128,7 +130,7 @@ info:
   cid: c
   title: uaefi
   directory: hellen/uaefi
-  board_url: https://github.com/rusefi/rusefi/wiki/uaefi
+  board_url: https://wiki.rusefi.com/uaefi
   image:
     file: uaefi-C.jpg
   pins:

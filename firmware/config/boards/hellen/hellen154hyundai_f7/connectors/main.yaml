@@ -149,7 +149,7 @@ pins:
     function: Analog Ground
 
   - pin: K40
-    meta: H144_IN_VSS
+    meta: H144_IN_D_4
     class: event_inputs
     ts_name: K40 VSS
     function: Vehicle Speed Sensor
@@ -373,7 +373,7 @@ pins:
     function: BK2 DC Wastegate Neg
 
 info:
-  board_url: https://github.com/rusefi/rusefi/wiki/Hellen-154-Hyundai
+  board_url: https://wiki.rusefi.com/Hellen-154-Hyundai
   directory: hellen/hellen154hyundai_revD
   title: Hellen 154 Hyundai
   order: 0

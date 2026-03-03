@@ -1,10 +1,11 @@
-apply from: '../../java_tools/dependencies.gradle'
+apply from: dependenciesPath
 
 defaultTasks 'shadowJar'
 
 dependencies {
     api project(':config_definition_base')
     api project(':trigger-image')
+    api project(':msq-file')
 
     testImplementation testFixtures(project(':config_definition_base'))
 }

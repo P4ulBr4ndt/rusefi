@@ -5,7 +5,8 @@ import com.efiAnalytics.plugin.ecu.ControllerException;
 import com.efiAnalytics.plugin.ecu.ControllerParameter;
 import com.efiAnalytics.plugin.ecu.servers.ControllerParameterServer;
 import com.efiAnalytics.plugin.ecu.servers.OutputChannelServer;
-import com.opensr5.ini.IniFileModelImpl;
+import com.opensr5.ini.IniFileModel;
+import com.rusefi.ini.reader.IniFileReaderUtil;
 import com.rusefi.TsTuneReader;
 import com.rusefi.core.ui.FrameHelper;
 import com.rusefi.ts_plugin.knock.KnockAnalyzerTab;
@@ -26,21 +27,22 @@ import static org.mockito.Mockito.*;
 public class PluginBodySandbox {
 
     private static final String PROJECT_NAME = "dev";
-    public static final ControllerParameter cylinderResult = new ControllerParameter() {
+    private static final ControllerParameter MOCK_CYLINDER_COUNT = new ControllerParameter() {
         @Override
         public double getScalarValue() {
             return 2;
         }
     };
-    public static final ControllerParameter result2 = new ControllerParameter() {
+    private static final ControllerParameter MOCK_ENABLE_KNOCK_SPECTROGRAM = new ControllerParameter() {
         @Override
         public String getStringValue() {
             return "true";
         }
     };
+
     public static void main(String[] args) throws ControllerException, FileNotFoundException {
         String iniFile = TsTuneReader.getProjectModeFileName(PROJECT_NAME);
-        IniFileModelImpl model = IniFileModelImpl.readIniFile(iniFile);
+        IniFileModel model = IniFileReaderUtil.readIniFile(iniFile);
         Objects.requireNonNull(model, "model");
         java.util.List<String> fieldNamesList = new ArrayList<>(model.getAllIniFields().keySet());
         String[] parameterNames = fieldNamesList.toArray(new String[0]);
@@ -48,8 +50,7 @@ public class PluginBodySandbox {
         ControllerAccess controllerAccess = getControllerAccess(parameterNames);
 
         SwingUtilities.invokeLater(() -> {
-            FrameHelper frameHelper = new FrameHelper();
-            frameHelper.getFrame().setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
+            FrameHelper frameHelper = new FrameHelper(JDialog.EXIT_ON_CLOSE);
             frameHelper.showFrame(new TsPluginUiImpl(() -> controllerAccess).getContent());
         });
     }
@@ -73,8 +74,8 @@ public class PluginBodySandbox {
     private static ControllerParameterServer getControllerParameterServer(String[] parameterNames) throws ControllerException {
         ControllerParameterServer controllerParameterServer = mock(ControllerParameterServer.class, NEGATIVE_ANSWER);
         doReturn(parameterNames).when(controllerParameterServer).getParameterNames(any());
-        doReturn(cylinderResult).when(controllerParameterServer).getControllerParameter(any(), eq(KnockAnalyzerTab.CYLINDERS_COUNT));
-        doReturn(result2).when(controllerParameterServer).getControllerParameter(any(), eq(KnockAnalyzerTab.ENABLE_KNOCK_SPECTROGRAM));
+        doReturn(MOCK_CYLINDER_COUNT).when(controllerParameterServer).getControllerParameter(any(), eq(KnockAnalyzerTab.CYLINDERS_COUNT));
+        doReturn(MOCK_ENABLE_KNOCK_SPECTROGRAM).when(controllerParameterServer).getControllerParameter(any(), eq(KnockAnalyzerTab.ENABLE_KNOCK_SPECTROGRAM));
         doNothing().when(controllerParameterServer).subscribe(any(), any(), any());
         return controllerParameterServer;
     }

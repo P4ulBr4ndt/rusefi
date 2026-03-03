@@ -174,7 +174,7 @@ uint32_t getLuaArray(lua_State* l, int paramIndex, uint8_t *data, uint32_t size)
 
 static int validateCanChannelAndConvertFromHumanIntoZeroIndex(lua_State* l) {
 	lua_Integer channel = luaL_checkinteger(l, 1);
-	luaL_argcheck(l, channel >= 1 && channel <= CANBUS_COUNT, 1, "Invalid bus index");
+	luaL_argcheck(l, channel >= 1 && channel <= EFI_CAN_BUS_COUNT, 1, "Invalid bus index");
 	return channel - HUMAN_OFFSET;
 }
 
@@ -640,6 +640,7 @@ static tinymt32_t tinymt;
 
 void configureRusefiLuaHooks(lua_State* lState) {
   boardConfigureLuaHooks(lState);
+  configureRusefiLuaHooksExt(lState);
 
   tinymt32_init(&tinymt, 1534525); // todo: share instance with launch_control? probably not?
 	lua_register(lState, "random", [](lua_State* l) {
@@ -881,6 +882,11 @@ extern int luaCommandCounters[LUA_BUTTON_COUNT];
 	  }
 		return 1;
 	});
+
+	lua_register(lState, "setEngineTorque", [](lua_State* l) {
+		engine->engineState.lua.engineTorque = luaL_checknumber(l, 1);
+		return 0;
+	});
 #endif // STM32F4
 
 #if !defined(STM32F4) || defined(WITH_LUA_GET_GPPWM_STATE)
@@ -1023,6 +1029,7 @@ extern int luaCommandCounters[LUA_BUTTON_COUNT];
 		auto rpm = Sensor::getOrZero(SensorType::Rpm);
 		auto tps = Sensor::getOrZero(SensorType::Tps1);
 
+ 	  // here we assume load is TPS
 		auto result = interpolate3d(
                   		config->torqueTable,
                   		config->torqueLoadBins, tps,

@@ -7,11 +7,11 @@ import com.rusefi.config.FieldType;
 import com.rusefi.maintenance.TestTuneMigrationContext;
 import com.rusefi.tune.xml.Constant;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import java.util.Map;
 
-import static com.rusefi.maintenance.migration.CltIdleCorrMigrator.*;
+import static com.rusefi.maintenance.migration.migrators.CltIdleCorrMigrator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CltIdleCorrMigrationTestTuneMigrationContext {
@@ -224,3 +224,4 @@ public class CltIdleCorrMigrationTestTuneMigrationContext {
         return result;
     }
 }
+

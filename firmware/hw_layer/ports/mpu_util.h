@@ -40,6 +40,7 @@ int getAdcChannelPin(adc_channel_e hwChannel);
 void portInitAdc();
 float getMcuTemperature();
 float getMcuVrefVoltage();
+float getMcuVbatVoltage();
 // Convert all slow ADC inputs.  Returns true if the conversion succeeded, false if a failure occured.
 bool readSlowAnalogInputs(adcsample_t* convertedSamples);
 #endif
@@ -50,6 +51,7 @@ bool isValidCanTxPin(brain_pin_e pin);
 bool isValidCanRxPin(brain_pin_e pin);
 CANDriver* detectCanDevice(brain_pin_e pinRx, brain_pin_e pinTx);
 void canHwInfo(CANDriver* cand);
+void canHwRecover(const size_t busIndex, CANDriver *cand);
 #endif // HAL_USE_CAN
 
 // Serial
@@ -122,6 +124,8 @@ int at32GetMcuType(uint32_t id, const char **pn, const char **package, uint32_t 
 int at32GetRamSizeKb(void);
 #endif
 
+void assertInterruptPriority(const char* func, uint8_t expectedPrio);
+
 extern "C"
 {
 #endif /* __cplusplus */
@@ -137,8 +141,8 @@ void HardFaultVector(void);
 #endif /* __cplusplus */
 
 // search:openblt_version
-// ascii 'BL03' in reverse LBS byte order
-#define BLT_CURRENT_VERSION 0x33304C42
+// ascii 'BL04' in reverse LBS byte order
+#define BLT_CURRENT_VERSION 0x34304C42
 #define BLT_BIN_VERSION_ADDR              ((uint32_t)0x08000024U)       /*! 3rd reserved DWORD in vector table search:openblt_version */
 
 #if EFI_USE_OPENBLT

@@ -84,7 +84,7 @@ static void alphax_8chan_reva_boardInitHardware() {
 	//alphaD5PullDown.initPin("a-d5", Gpio::H144_LS_8);
 }
 
-void boardOnConfigurationChange(engine_configuration_s * /*previousConfiguration*/) {
+static void customBoardOnConfigurationChange(engine_configuration_s * /*previousConfiguration*/) {
 	alphaTachPullUp.setValue(config->boardUseTachPullUp);
 	alphaTempPullUp.setValue(config->boardUseTempPullUp);
 	alphaCrankPPullUp.setValue(config->boardUseCrankPullUp);
@@ -107,20 +107,16 @@ static void alphax_8chan_reva_boardConfigOverrides() {
 	setHellenCan2();
 }
 
-/**
- * @brief   Board-specific configuration defaults.
- *
- * See also setDefaultEngineConfiguration
- *
+void set8chanDefaultETBPins() {
+	setupTLE9201IncludingStepper(/*controlPin*/Gpio::H144_OUT_PWM2, Gpio::H144_GP_IO1, Gpio::H144_GP_IO5);
+	setupTLE9201IncludingStepper(/*controlPin*/Gpio::H144_GP_IO4, Gpio::H144_GP_IO3, Gpio::Unassigned, 1);
+}
 
- */
 static void alphax_8chan_reva_boardDefaultConfiguration() {
 	setInjectorPins();
 	setIgnitionPins();
 
-	setupTLE9201(/*controlPin*/Gpio::H144_OUT_PWM2, Gpio::H144_GP_IO1, Gpio::H144_GP_IO5);
-	setupTLE9201(/*controlPin*/Gpio::H144_GP_IO4, Gpio::H144_GP_IO3, Gpio::Unassigned, 1);
-
+  set8chanDefaultETBPins();
 	engineConfiguration->vvtPins[0] = Gpio::H144_OUT_PWM7;
 	engineConfiguration->vvtPins[1] = Gpio::H144_OUT_PWM8;
 
@@ -172,4 +168,6 @@ void setup_custom_board_overrides() {
 	custom_board_InitHardware = alphax_8chan_reva_boardInitHardware;
 	custom_board_DefaultConfiguration = alphax_8chan_reva_boardDefaultConfiguration;
 	custom_board_ConfigOverrides = alphax_8chan_reva_boardConfigOverrides;
+
+	custom_board_OnConfigurationChange = customBoardOnConfigurationChange;
 }

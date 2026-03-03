@@ -16,15 +16,24 @@
 
 #if EFI_SIMULATOR || EFI_UNIT_TEST
 #include "fifo_buffer.h"
-fifo_buffer<CANTxFrame, 1024> txCanBuffer;
+fifo_buffer<CANTxFrame, TEST_CAN_BUFFER_SIZE> txCanBuffer;
 #endif // EFI_SIMULATOR
 
 #if EFI_CAN_SUPPORT
-/*static*/ CANDriver* CanTxMessage::s_devices[2] = {nullptr, nullptr};
+/*static*/ CANDriver* CanTxMessage::s_devices[EFI_CAN_BUS_COUNT] = {
+	nullptr,
+	nullptr,
+#if (EFI_CAN_BUS_COUNT >= 3)
+	nullptr
+#endif
+};
 
-/*static*/ void CanTxMessage::setDevice(CANDriver* device1, CANDriver* device2) {
-	s_devices[0] = device1;
-	s_devices[1] = device2;
+/*static*/ void CanTxMessage::setDevice(size_t idx, CANDriver* device) {
+	if (idx > efi::size(s_devices)) {
+		criticalError("Attemp to install CAN%d bus!", idx + 1);
+		return;
+	}
+	s_devices[idx] = device;
 }
 #endif // EFI_CAN_SUPPORT
 
@@ -83,6 +92,12 @@ CanTxMessage::~CanTxMessage() {
 		return;
 	}
 
+	if (busIndex >= EFI_CAN_BUS_COUNT) {
+		// Error already throuwn from CanTxMessage::setBus
+		// just do not access out of bounds
+		return;
+	}
+
 	auto device = s_devices[busIndex];
 	if (!device) {
 		criticalError("Send: CAN%d device not configured %s %x", busIndex + 1, getCanCategory(category),
@@ -90,10 +105,13 @@ CanTxMessage::~CanTxMessage() {
 		return;
 	}
 
-	bool verboseCan0 = engineConfiguration->verboseCan && busIndex == 0;
-	bool verboseCan1 = engineConfiguration->verboseCan2 && busIndex == 1;
+	bool verboseCan = engineConfiguration->verboseCan && busIndex == 0;
+	verboseCan |= engineConfiguration->verboseCan2 && busIndex == 1;
+#if (EFI_CAN_BUS_COUNT >= 3)
+	verboseCan |= engineConfiguration->verboseCan3 && busIndex == 2;
+#endif
 
-	if (verboseCan0 || verboseCan1) {
+	if (verboseCan) {
 		efiPrintf("%s Sending CAN%d message: ID=%x/l=%x %x %x %x %x %x %x %x %x",
 				getCanCategory(category),
 				busIndex + 1,
@@ -111,7 +129,9 @@ CanTxMessage::~CanTxMessage() {
 	if (msg == MSG_OK) {
 		engine->outputChannels.canWriteOk++;
 	} else {
+extern int txErrorCount[EFI_CAN_BUS_COUNT];
 		engine->outputChannels.canWriteNotOk++;
+		txErrorCount[busIndex]++;
 	}
 #endif // EFI_TUNER_STUDIO
 #endif /* EFI_CAN_SUPPORT */
@@ -119,10 +139,21 @@ CanTxMessage::~CanTxMessage() {
 
 #if HAS_CAN_FRAME
 void CanTxMessage::setDlc(uint8_t dlc) {
+	// TODO: CAN vs CANFD
+	if (dlc > sizeof(m_frame.data8)) {
+		criticalError("CAN: incorrect DLC %d", dlc);
+		return;
+	}
+
 	m_frame.DLC = dlc;
 }
 
 void CanTxMessage::setBus(size_t bus) {
+	if (bus >= EFI_CAN_BUS_COUNT) {
+		criticalError("CAN: CAN%d incorect bus", bus + 1);
+		return;
+	}
+
 	busIndex = bus;
 }
 

@@ -6,8 +6,8 @@ import com.rusefi.core.net.ConnectionAndMeta;
 import com.rusefi.core.preferences.storage.PersistentConfiguration;
 import com.rusefi.core.ui.AutoupdateUtil;
 import com.rusefi.core.ui.FrameHelper;
-import com.rusefi.io.serial.BaudRateHolder;
 import com.rusefi.maintenance.*;
+import com.rusefi.tools.TunerStudioHelper;
 import com.rusefi.ui.BasicLogoHelper;
 import com.rusefi.ui.LogoHelper;
 import com.rusefi.ui.duplicates.ConsoleBundleUtil;
@@ -27,6 +27,7 @@ import java.awt.event.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,8 @@ public class StartupFrame {
     private static final Logging log = getLogging(Launcher.class);
 
     public static final String ALWAYS_AUTO_PORT = "always_auto_port";
+    public static final String AUTO_CLOSE_TS = "auto_close_ts";
+    public static final String CHECK_TS_RUNNING = "check_ts_running";
     private static final String NO_PORTS_FOUND = "<html>No ports found!<br>Confirm blue LED is blinking</html>";
     public static final String SCANNING_PORTS = "Scanning ports";
 
@@ -77,8 +80,10 @@ public class StartupFrame {
     private boolean isProceeding;
     private final JLabel noPortsMessage = new JLabel();
     private final StatusAnimation status;
+    private final JButton connectButton = new JButton("Connect", new ImageIcon(getClass().getResource("/com/rusefi/connect48.png")));
     private ProgramSelector selector;
     private boolean firstTimeHasEcuWithOpenBlt = true;
+    private boolean firstTimeAutoConnect = true;
 
     public StartupFrame(ConnectivityContext connectivityContext) {
         this.connectivityContext = connectivityContext;
@@ -106,16 +111,15 @@ public class StartupFrame {
     }
 
     public void showUi() {
-        String panelTitle = UiProperties.useSimulator() ? "Real stm32" : "";
-        realHardwarePanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(Color.darkGray), panelTitle));
         miscPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(Color.darkGray), "Miscellaneous"));
 
         connectPanel.add(portsComboBox.getComboPorts());
+/*
+    make baud rate selection much less visible #9103
         final JComboBox<String> comboSpeeds = createSpeedCombo();
         comboSpeeds.setToolTipText("For 'STMicroelectronics Virtual COM Port' device any speed setting would work the same");
         connectPanel.add(comboSpeeds);
-
-        final JButton connectButton = new JButton("Connect", new ImageIcon(getClass().getResource("/com/rusefi/connect48.png")));
+*/
         setToolTip(connectButton, "Connect to real hardware");
 
         JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem("Always auto-connect port");
@@ -136,17 +140,19 @@ public class StartupFrame {
         connectPanel.add(connectButton);
         connectPanel.setVisible(false);
 
+        portsComboBox.getComboPorts().addActionListener(e -> updateConnectButtonState());
+
         frame.getRootPane().setDefaultButton(connectButton);
         connectButton.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    connectButtonAction(comboSpeeds);
+                    connectButtonAction();
                 }
             }
         });
 
-        connectButton.addActionListener(e -> connectButtonAction(comboSpeeds));
+        connectButton.addActionListener(e -> connectButtonAction());
 
         final Optional<JPanel> newReleaseNotification = newReleaseAnnounce(
             "rusefi_autoupdate.exe",
@@ -222,7 +228,7 @@ public class StartupFrame {
 
         if (ConsoleBundleUtil.readBundleFullNameNotNull().getTarget().contains("proteus_f7")) {
             String text = "WARNING: Proteus F7";
-            URLLabel urlLabel = new URLLabel(text, "https://github.com/rusefi/rusefi/wiki/F7-requires-full-erase");
+            URLLabel urlLabel = new URLLabel(text, "https://wiki.rusefi.com/F7-requires-full-erase");
             new Timer(500, new ActionListener() {
                 int counter;
                 @Override
@@ -244,6 +250,9 @@ public class StartupFrame {
         JPanel content = new JPanel(new BorderLayout());
         content.add(leftPanel, BorderLayout.WEST);
         content.add(rightPanel, BorderLayout.EAST);
+
+        TunerStudioHelper.checkTunerStudio(frame.getContentPane(), () -> restoreContent(content));
+
         frame.add(content);
         frame.pack();
         setFrameIcon(frame);
@@ -264,7 +273,7 @@ public class StartupFrame {
         final Supplier<Integer> minWidthSupplier
     ) {
         final String nextBranchName = ConsoleBundleUtil.readBundleFullNameNotNull().getNextBranchName();
-        if (nextBranchName != null && !nextBranchName.isBlank()) {
+        if (nextBranchName != null && nextBranchName.trim().length() > 0) {
             final JLabel newReleaseAmmomceMessage = new JLabel(
                 String.format(
                     "<html><p style=\"text-align: %s;font-weight: bold;color:red\">New release `%s` is available!<br/>To upgrade please restart `%s`.</p></html>",
@@ -324,8 +333,31 @@ public class StartupFrame {
         return jLabel;
     }
 
+    private void restoreContent(JPanel content) {
+        frame.getContentPane().removeAll();
+        frame.add(content);
+        AutoupdateUtil.pack(frame);
+    }
+
+    private void updateConnectButtonState() {
+        PortResult selectedItem = (PortResult) portsComboBox.getComboPorts().getSelectedItem();
+        connectButton.setEnabled(selectedItem != null && selectedItem.type != OpenBlt);
+    }
+
     private void applyKnownPorts(AvailableHardware currentHardware) {
         List<PortResult> ports = currentHardware.getKnownPorts();
+/*
+todo: enable auto-connect once we have 'Device' tab
+        List<PortResult> ecuPorts = ports.stream().filter(portResult -> portResult.type == EcuWithOpenblt || portResult.type == SerialPortType.Ecu).collect(Collectors.toList());
+        if (!ecuPorts.isEmpty() && firstTimeAutoConnect) {
+            firstTimeAutoConnect = false;
+            PortResult target = ecuPorts.get(0);
+            log.info("Ecu detected, connecting automatically: " + target);
+            // combo box selection is already updated by applyPortSelectionToUIcontrol
+            connect(target);
+            return;
+        }
+*/
         log.info("Rendering available ports: " + ports);
         connectPanel.setVisible(!ports.isEmpty());
 
@@ -337,9 +369,11 @@ public class StartupFrame {
             noPortsMessage.setText("Make sure you are disconnected from TunerStudio");
         }
 
+        updateConnectButtonState();
+
         noPortsMessage.setVisible(ports.isEmpty() || !hasEcuOrBootloader);
 
-        boolean hasEcuWithOpenBlt = !currentHardware.getKnownPorts().stream().filter(portResult -> portResult.type == EcuWithOpenblt).collect(Collectors.toList()).isEmpty();
+        boolean hasEcuWithOpenBlt = !ports.stream().filter(portResult -> portResult.type == EcuWithOpenblt).collect(Collectors.toList()).isEmpty();
         if (hasEcuWithOpenBlt && firstTimeHasEcuWithOpenBlt) {
             selector.setMode(UpdateMode.OPENBLT_AUTO);
             firstTimeHasEcuWithOpenBlt = false;
@@ -353,11 +387,18 @@ public class StartupFrame {
         BasicLogoHelper.setFrameIcon(frame, icon);
     }
 
-    private void connectButtonAction(JComboBox<String> comboSpeeds) {
+    private void connectButtonAction() {
+/*
+        make baud rate combo box much less visible #9103
         BaudRateHolder.INSTANCE.baudRate = Integer.parseInt((String) comboSpeeds.getSelectedItem());
+*/
         PortResult selectedPort = ((PortResult)portsComboBox.getComboPorts().getSelectedItem());
+        connect(selectedPort);
+    }
+
+    private void connect(PortResult selectedPort) {
         disposeFrameAndProceed();
-        new ConsoleUI(selectedPort.port);
+        new ConsoleUI(selectedPort.port, selectedPort.type);
     }
 
     /**

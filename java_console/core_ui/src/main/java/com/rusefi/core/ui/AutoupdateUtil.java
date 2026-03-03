@@ -33,18 +33,11 @@ public class AutoupdateUtil {
         return result;
     }
 
-    private static ProgressView doCreateProgressView(String title) {
+    public static ProgressView doCreateProgressView(String title) {
         if (runHeadless) {
-            return new ProgressView(null, null);
+            return new ProgressView(null, null, null);
         } else {
-            FrameHelper frameHelper = new FrameHelper();
-            setAppIcon(frameHelper.getFrame());
-            JProgressBar jProgressBar = new JProgressBar();
-
-            frameHelper.getFrame().setTitle(title);
-            jProgressBar.setMaximum(ConnectionAndMeta.CENTUM);
-            frameHelper.showFrame(jProgressBar, true);
-            return new ProgressView(frameHelper, jProgressBar);
+            return ProgressView.create(title);
         }
     }
 
@@ -52,26 +45,28 @@ public class AutoupdateUtil {
         ProgressView view = createProgressView(title);
 
         try {
-            ConnectionAndMeta.DownloadProgressListener listener = currentProgress -> {
-                if (!runHeadless) {
-                    SwingUtilities.invokeLater(() -> view.getProgressBar().setValue(currentProgress));
+            while (true) {
+                try {
+                    ConnectionAndMeta.DownloadProgressListener listener = currentProgress -> {
+                        if (!runHeadless) {
+                            SwingUtilities.invokeLater(() -> view.getProgressBar().setValue(currentProgress));
+                        }
+                    };
+                    ConnectionAndMeta.downloadFile(localZipFileName, connectionAndMeta, listener);
+                    return;
+                } catch (IOException e) {
+                    if (view.getProgressBar() == null) {
+                        throw e;
+                    }
+                    String message = (e instanceof UnknownHostException)
+                        ? "Please fix your internet connection"
+                        : "Error downloading: " + e;
+                    boolean retry = view.showErrorAndWaitForRetry(message);
+                    if (!retry) {
+                        throw new ReportedIOException(e);
+                    }
+                    view.resetForRetry();
                 }
-            };
-
-            ConnectionAndMeta.downloadFile(localZipFileName, connectionAndMeta, listener);
-        } catch (IOException e) {
-            if (view.getProgressBar() != null) {
-                String message;
-                if (e instanceof UnknownHostException) {
-                    message = "Please fix your internet connection";
-                } else {
-                    message = "Error downloading: " + e;
-                }
-
-                JOptionPane.showMessageDialog(view.getProgressBar(), message, "Error", JOptionPane.ERROR_MESSAGE);
-                throw new ReportedIOException(e);
-            } else {
-                throw e;
             }
         } finally {
             view.dispose();

@@ -19,12 +19,17 @@
 #include <string.h>
 
 #ifdef STM32H7XX
+	#undef FLASH_BASE
+
 	#ifdef STM32H743xx
 		// Use bank 2 on H743
 		#define FLASH_CR FLASH->CR2
 		#define FLASH_SR FLASH->SR2
 		#define FLASH_KEYR FLASH->KEYR2
 		#define FLASH_CCR FLASH->CCR2
+
+		// This is the start of the second bank, since H7 sector numbers are bank relative
+		#define FLASH_BASE 0x08100000
 	#endif
 
 	#ifdef STM32H723xx
@@ -33,14 +38,13 @@
 		#define FLASH_SR FLASH->SR1
 		#define FLASH_KEYR FLASH->KEYR1
 		#define FLASH_CCR FLASH->CCR1
+
+		// This is the start of the bank, since H7 sector numbers are bank relative
+		#define FLASH_BASE 0x08000000
 	#endif
 
 	// I have no idea why ST changed the register name from STRT -> START
 	#define FLASH_CR_STRT FLASH_CR_START
-
-	#undef FLASH_BASE
-	// This is the start of the second bank, since H7 sector numbers are bank relative
-	#define FLASH_BASE 0x08100000
 
 	// QW bit supercedes the older BSY bit
 	#define intFlashWaitWhileBusy() do { __DSB(); } while (FLASH_SR & FLASH_SR_QW);
@@ -79,6 +83,7 @@ static void intFlashClearErrors() {
 #else
 	FLASH_SR = 0x0000ffff;
 #endif
+	__DSB();
 }
 
 static int intFlashCheckErrors() {
@@ -105,6 +110,22 @@ static int intFlashCheckErrors() {
 #ifdef FLASH_SR_PGSERR
 	if (sr & FLASH_SR_PGSERR)
 		return FLASH_RETURN_PSEQERROR;
+#endif
+#ifdef FLASH_SR_RDSERR
+	if (sr & FLASH_SR_RDSERR)
+		return FLASH_RETURN_SECURITYERROR;
+#endif
+#ifdef FLASH_SR_RDPERR
+	if (sr & FLASH_SR_RDPERR)
+		return FLASH_RETURN_SECURITYERROR;
+#endif
+#ifdef FLASH_SR_WRPERR
+	if (sr & FLASH_SR_WRPERR)
+		return FLASH_RETURN_SECURITYERROR;
+#endif
+#ifdef FLASH_SR_CRCRDERR
+	if (sr & FLASH_SR_CRCRDERR)
+		return FLASH_RETURN_CRCERROR;
 #endif
 
 	return FLASH_RETURN_SUCCESS;
@@ -226,6 +247,35 @@ static int intFlashSectorErase(flashsector_t sector) {
 	return FLASH_RETURN_SUCCESS;
 }
 
+/* Programmable voltage detector helpers */
+static void intFlashSetPVD() {
+#if defined(STM32F4XX)
+	/* Set threshold */
+	PWR->CR = (PWR->CR & ~PWR_CR_PLS_Msk) | PWR_CR_PLS_VALUE;
+	/* Enable PVD */
+	PWR->CR |= PWR_CR_PVDE;
+#elif defined(STM32F7XX)
+	/* Set threshold */
+	PWR->CR1 = (PWR->CR1 & ~PWR_CR1_PLS_Msk) | PWR_CR1_PLS_VALUE;
+	/* Enable PVD */
+	PWR->CR1 |= PWR_CR1_PVDE;
+#elif defined(STM32H7XX)
+	/* Set threshold */
+	PWR->CR1 = (PWR->CR1 & ~PWR_CR1_PLS_Msk) | PWR_CR1_PLS_VALUE;
+	/* Enable PVD */
+	PWR->CR1 |= PWR_CR1_PVDEN;
+#endif
+}
+
+static bool intFlashGetPVDStatus() {
+	/* Return true if Vdd is higher then selected threshold */
+#if defined(STM32F4XX)
+	return !(PWR->CSR & PWR_CSR_PVDO);
+#else
+	return !(PWR->CSR1 & PWR_CSR1_PVDO);
+#endif
+}
+
 int intFlashErase(flashaddr_t address, size_t size) {
 	flashaddr_t endAddress = address + size - 1;
 	while (address <= endAddress) {
@@ -300,6 +350,11 @@ int intFlashRead(flashaddr_t source, char* destination, size_t size) {
 
 #ifdef STM32H7XX
 int intFlashWrite(flashaddr_t address, const char* buffer, size_t size) {
+	intFlashSetPVD();
+	if (!intFlashGetPVDStatus()) {
+		return FLASH_RETURN_LOWVOLTAGEERROR;
+	}
+
 	/* Unlock flash for write access */
 	if (intFlashUnlock() == HAL_FAILED)
 		return FLASH_RETURN_NO_PERMISSION;
@@ -319,6 +374,11 @@ int intFlashWrite(flashaddr_t address, const char* buffer, size_t size) {
 	flashdata_t* pWrite = (flashdata_t*)address;
 
 	for (size_t word = 0; word < flashWordCount; word++) {
+		if (!intFlashGetPVDStatus()) {
+			intFlashLock();
+			return FLASH_RETURN_LOWVOLTAGEERROR;
+		}
+
 		/* Enter flash programming mode */
 		FLASH_CR |= FLASH_CR_PG;
 
@@ -326,7 +386,9 @@ int intFlashWrite(flashaddr_t address, const char* buffer, size_t size) {
 		__ISB();
 		__DSB();
 
-		// Write 32 bytes
+		static_assert(sizeof(*pWrite) == 4, "Driver supports only 32bit PSIZE");
+
+		// Write 32 bytes/256bits
 		for (size_t i = 0; i < 8; i++) {
 			*pWrite++ = *pRead++;
 		}
@@ -379,6 +441,11 @@ static int intFlashWriteData(flashaddr_t address, const flashdata_t data) {
 }
 
 int intFlashWrite(flashaddr_t address, const char* buffer, size_t size) {
+	intFlashSetPVD();
+	if (!intFlashGetPVDStatus()) {
+		return FLASH_RETURN_LOWVOLTAGEERROR;
+	}
+
 	int ret = FLASH_RETURN_SUCCESS;
 
 	/* Unlock flash for write access */
@@ -392,61 +459,65 @@ int intFlashWrite(flashaddr_t address, const char* buffer, size_t size) {
 	FLASH->CR &= ~FLASH_CR_PSIZE_MASK;
 	FLASH->CR |= FLASH_CR_PSIZE_VALUE;
 
-	/* Check if the flash address is correctly aligned */
-	size_t alignOffset = address % sizeof(flashdata_t);
-//	print("flash alignOffset=%d\r\n", alignOffset);
-	if (alignOffset != 0) {
-		/* Not aligned, thus we have to read the data in flash already present
-		 * and update them with buffer's data */
+	while (size) {
+		if (!intFlashGetPVDStatus()) {
+			intFlashLock();
+			return FLASH_RETURN_LOWVOLTAGEERROR;
+		}
 
-		/* Align the flash address correctly */
-		flashaddr_t alignedFlashAddress = address - alignOffset;
+		/* Check if the flash address is correctly aligned */
+		size_t alignOffset = address % sizeof(flashdata_t);
+		//print("flash alignOffset=%d\r\n", alignOffset);
+		if (alignOffset != 0) {
+			/* Not aligned, thus we have to read the data in flash already present
+			 * and update them with buffer's data */
 
-		/* Read already present data */
-		flashdata_t tmp = *(volatile flashdata_t*) alignedFlashAddress;
+			/* Align the flash address correctly */
+			flashaddr_t alignedFlashAddress = address - alignOffset;
 
-		/* Compute how much bytes one must update in the data read */
-		size_t chunkSize = sizeof(flashdata_t) - alignOffset;
-		if (chunkSize > size)
-			chunkSize = size; // this happens when both address and address + size are not aligned
+			/* Read already present data */
+			flashdata_t tmp = *(volatile flashdata_t*) alignedFlashAddress;
 
-		/* Update the read data with buffer's data */
-		memcpy((char*) &tmp + alignOffset, buffer, chunkSize);
+			/* Compute how much bytes one must update in the data read */
+			size_t chunkSize = sizeof(flashdata_t) - alignOffset;
+			if (chunkSize > size)
+				chunkSize = size; // this happens when both address and address + size are not aligned
 
-		/* Write the new data in flash */
-		ret = intFlashWriteData(alignedFlashAddress, tmp);
-		if (ret != FLASH_RETURN_SUCCESS)
-			goto exit;
+			/* Update the read data with buffer's data */
+			memcpy((char*) &tmp + alignOffset, buffer, chunkSize);
 
-		/* Advance */
-		address += chunkSize;
-		buffer += chunkSize;
-		size -= chunkSize;
-	}
+			/* Write the new data in flash */
+			ret = intFlashWriteData(alignedFlashAddress, tmp);
+			if (ret != FLASH_RETURN_SUCCESS)
+				goto exit;
 
-	/* Now, address is correctly aligned. One can copy data directly from
-	 * buffer's data to flash memory until the size of the data remaining to be
-	 * copied requires special treatment. */
-	while (size >= sizeof(flashdata_t)) {
-//		print("flash write size=%d\r\n", size);
-		ret = intFlashWriteData(address, *(const flashdata_t*) buffer);
-		if (ret != FLASH_RETURN_SUCCESS)
-			goto exit;
-		address += sizeof(flashdata_t);
-		buffer += sizeof(flashdata_t);
-		size -= sizeof(flashdata_t);
-	}
-
-	/* Now, address is correctly aligned, but the remaining data are to
-	 * small to fill a entier flashdata_t. Thus, one must read data already
-	 * in flash and update them with buffer's data before writing an entire
-	 * flashdata_t to flash memory. */
-	if (size > 0) {
-		flashdata_t tmp = *(volatile flashdata_t*) address;
-		memcpy(&tmp, buffer, size);
-		ret = intFlashWriteData(address, tmp);
-		if (ret != FLASH_RETURN_SUCCESS)
-			goto exit;
+			/* Advance */
+			address += chunkSize;
+			buffer += chunkSize;
+			size -= chunkSize;
+		} else if (size >= sizeof(flashdata_t)) {
+			/* Now, address is correctly aligned. One can copy data directly from
+			 * buffer's data to flash memory until the size of the data remaining to be
+			 * copied requires special treatment. */
+			//print("flash write size=%d\r\n", size);
+			ret = intFlashWriteData(address, *(const flashdata_t*) buffer);
+			if (ret != FLASH_RETURN_SUCCESS)
+				goto exit;
+			address += sizeof(flashdata_t);
+			buffer += sizeof(flashdata_t);
+			size -= sizeof(flashdata_t);
+		} else /* if (size > 0) */ {
+			/* Now, address is correctly aligned, but the remaining data are to
+			 * small to fill a entier flashdata_t. Thus, one must read data already
+			 * in flash and update them with buffer's data before writing an entire
+			 * flashdata_t to flash memory. */
+			flashdata_t tmp = *(volatile flashdata_t*) address;
+			memcpy(&tmp, buffer, size);
+			ret = intFlashWriteData(address, tmp);
+			if (ret != FLASH_RETURN_SUCCESS)
+				goto exit;
+			size = 0;
+		}
 	}
 
 exit:

@@ -63,6 +63,10 @@
 #include "electronic_throttle_generated.h"
 #include "engine_cylinder.hpp"
 
+#if ROTATIONAL_IDLE_CONTROLLER
+#include "rotational_idle.h"
+#endif
+
 #include <functional>
 
 #ifndef EFI_BOOTLOADER
@@ -245,6 +249,10 @@ public:
     LambdaMonitor lambdaMonitor{};
 #endif // EFI_ENGINE_CONTROL
 
+#if ROTATIONAL_IDLE_CONTROLLER
+    RotationalIdle rotationalIdleController{};
+#endif // ROTATIONAL_IDLE_CONTROLLER
+
     IgnitionState ignitionState{};
     void resetLua();
 
@@ -378,12 +386,6 @@ public:
        Returns true if some operations are in progress on background.
      */
     bool isInShutdownMode() const;
-
-    /**
-     * The stepper does not work if the main relay is turned off (it requires +12V).
-     * Needed by the stepper motor code to detect if it works.
-     */
-    bool isMainRelayEnabled() const;
 
     void onSparkFireKnockSense(uint8_t cylinderIndex, efitick_t nowNt);
 

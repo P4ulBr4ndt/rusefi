@@ -1,9 +1,10 @@
 package com.rusefi.updater;
 
+import com.devexperts.logging.Logging;
 import com.opensr5.ini.IniFileModel;
 import com.rusefi.ScannerHelper;
 import com.rusefi.binaryprotocol.BinaryProtocol;
-import com.rusefi.io.ConnectionStateListener;
+import com.rusefi.io.ConnectionStatusLogic;
 import com.rusefi.io.IoStream;
 import com.rusefi.io.LinkManager;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +15,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.devexperts.logging.Logging.getLogging;
+
 public class PlainSerialPortScanner {
+    private static final Logging log = getLogging(PlainSerialPortScanner.class);
+
     public static void findEcu(final PlainSerialEcuConsumer consumer, int delayMillis) {
 
         Set<String> serialPorts = LinkManager.getCommPorts();
@@ -27,10 +32,12 @@ public class PlainSerialPortScanner {
                     .setNeedPullText(false)
                     .setNeedPullLiveData(false)
                 ) {
-                    linkManager.start(port, s -> {
-                    });
+                    linkManager.start(port, ConnectionStatusLogic.Listener.VOID);
                     linkManager.getConnector().connectAndReadConfiguration(new BinaryProtocol.Arguments(false, false),
-                        new ConnectionStateListener() {
+                        new ConnectionStatusLogic.Listener() {
+                            @Override
+                            public void onConnectionStatus(boolean isConnected) {}
+
                             @Override
                             public void onConnectionEstablished() {
                                 System.out.println("onConnectionEstablished " + port);
@@ -39,7 +46,7 @@ public class PlainSerialPortScanner {
 
                             @Override
                             public void onConnectionFailed(String s) {
-                                System.out.println("onConnectionFailed " + port);
+                                log.info("onConnectionFailed " + port);
                             }
                         });
                 }

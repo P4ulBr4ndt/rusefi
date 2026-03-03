@@ -16,6 +16,10 @@
 
 /* If any setting storage is exist or we are in unit test */
 #if EFI_CONFIGURATION_STORAGE || defined(EFI_UNIT_TEST)
+
+/* TODO: no weak please */
+__attribute__((weak)) bool boardAllowFlashNow() { return true; }
+
 bool storageAllowWriteID(StorageItemId id)
 {
 #if (EFI_STORAGE_INT_FLASH == TRUE) || defined(EFI_UNIT_TEST)
@@ -29,6 +33,10 @@ bool storageAllowWriteID(StorageItemId id)
 		// check if HW support flash writing while executing
 		if (mcuCanFlashWhileRunning()) {
 			return true;
+		}
+
+		if (!boardAllowFlashNow()) {
+			return false;
 		}
 
 #if EFI_SHAFT_POSITION_INPUT
@@ -262,6 +270,7 @@ bool storagRequestUnregisterStorage(StorageType id)
 	return storageManagerSendCmd(MSG_CMD_UNREG, (uint32_t)id);
 }
 
+// bitmap of flags per pageId. Reminder that page numbers start from 1, see StorageItemId
 static uint32_t pendingWrites = 0;
 static uint32_t pendingReads = 0;
 
@@ -344,9 +353,10 @@ static void storageManagerThread(void*) {
 			}
 		}
 
-		// check if we can write some of pendind IDs...
+		// check if we can write some of pending IDs...
 		for (size_t i = 0; (i < EFI_STORAGE_TOTAL_ITEMS) && pendingWrites; i++) {
 			if ((pendingWrites & BIT(i)) == 0) {
+			  // not for this page
 				continue;
 			}
 

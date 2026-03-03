@@ -1,5 +1,6 @@
 TESTS_SRC_CPP = \
 	tests/ltft_sandbox.cpp \
+	tests/log_replay_sandbox.cpp \
 	tests/trigger/test_all_triggers.cpp \
 	tests/trigger/test_trigger_sequence_finder.cpp \
 	tests/trigger/test_2_stroke.cpp \
@@ -12,16 +13,18 @@ TESTS_SRC_CPP = \
 	tests/trigger/test_miata_na_tdc.cpp \
 	tests/trigger/test_cam_vvt_input.cpp \
 	tests/trigger/test_2jz_vvt.cpp \
+	tests/trigger/test_toyota_3_tooth_cam.cpp \
+	tests/trigger/test_trigger_skipped_wheel.cpp \
 	tests/trigger/test_real_arctic_cat.cpp \
 	tests/trigger/test_real_bosch_quick_start.cpp \
 	tests/trigger/test_real_cranking_miata_NA.cpp \
 	tests/trigger/test_real_cranking_miata_na6.cpp \
 	tests/trigger/test_real_cranking_nissan_vq40.cpp \
-	tests/trigger/test_real_6g72_3000gt.cpp \
 	tests/trigger/test_real_cas_24_plus_1.cpp \
-	tests/trigger/test_trigger_skipped_wheel.cpp \
 	tests/trigger/test_real_4b11.cpp \
 	tests/trigger/test_real_4g93.cpp \
+	tests/trigger/test_real_6g72_3000gt.cpp \
+	tests/trigger/test_real_6g75.cpp \
 	tests/trigger/test_real_ford_coyote.cpp \
 	tests/trigger/test_real_volkswagen.cpp \
 	tests/trigger/test_real_nb2_cranking.cpp \
@@ -32,7 +35,6 @@ TESTS_SRC_CPP = \
 	tests/trigger/test_real_k20.cpp \
 	tests/trigger/test_real_jeep_evd.cpp \
 	tests/trigger/test_real_subaru_ej20g.cpp \
-	tests/trigger/test_toyota_3_tooth_cam.cpp \
 	tests/trigger/test_real_noisy_trigger.cpp \
 	tests/trigger/test_map_cam.cpp \
 	tests/trigger/test_rpm_multiplier.cpp \
@@ -41,6 +43,7 @@ TESTS_SRC_CPP = \
 	tests/trigger/test_nissan_vq_vvt.cpp \
 	tests/trigger/test_override_gaps.cpp \
 	tests/trigger/test_injection_scheduling.cpp \
+	tests/trigger/test_instant_rpm.cpp \
 	tests/sent/test_sent.cpp \
 	tests/ignition_injection/injection_mode_transition.cpp \
 	tests/ignition_injection/test_startOfCrankingPrimingPulse.cpp \
@@ -93,6 +96,7 @@ TESTS_SRC_CPP = \
 	tests/test_fft.cpp \
 	tests/lua/test_lua_basic.cpp \
 	tests/lua/test_bit_range_msb.cpp \
+	tests/lua/test_bit_range.cpp \
 	tests/lua/test_lua_dbc.cpp \
 	tests/lua/test_motorola_dbc.cpp \
 	tests/lua/test_lua_bit_range_msb.cpp \
@@ -166,6 +170,7 @@ TESTS_SRC_CPP = \
 	tests/test_dynoview.cpp \
 	tests/test_gpio.cpp \
 	tests/test_limp.cpp \
+	tests/test_tcu.cpp \
 	tests/test_hellen_board_id.cpp \
 	tests/sensor/test_frequency_sensor.cpp \
 	tests/sensor/test_turbocharger_speed_converter.cpp \
@@ -206,4 +211,7 @@ TESTS_SRC_CPP = \
 	tests/controllers/modules/vvl_controller/vvl_controller_clt_condition.cpp \
 	tests/controllers/modules/vvl_controller/vvl_controller_tps_condition.cpp \
 	tests/controllers/modules/vvl_controller/vvl_controller_map_condition.cpp \
-	tests/controllers/modules/vvl_controller/vvl_controller_afr_condition.cpp
+	tests/controllers/modules/vvl_controller/vvl_controller_afr_condition.cpp \
+	tests/controllers/modules/test_configuration_wizard.cpp \
+	tests/controllers/can/dash/test_can_bmw_e46.cpp \
+	tests/controllers/algo/rotational_idle/test_rotational_idle.cpp

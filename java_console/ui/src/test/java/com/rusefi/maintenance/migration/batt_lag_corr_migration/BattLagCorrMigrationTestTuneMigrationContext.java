@@ -6,11 +6,11 @@ import com.rusefi.config.FieldType;
 import com.rusefi.maintenance.TestTuneMigrationContext;
 import com.rusefi.tune.xml.Constant;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import java.util.Map;
 
-import static com.rusefi.maintenance.migration.BattLagCorrExtensionMigrator.*;
+import static com.rusefi.maintenance.migration.migrators.BattLagCorrExtensionMigrator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BattLagCorrMigrationTestTuneMigrationContext {
@@ -219,3 +219,4 @@ public class BattLagCorrMigrationTestTuneMigrationContext {
         return result;
     }
 }
+

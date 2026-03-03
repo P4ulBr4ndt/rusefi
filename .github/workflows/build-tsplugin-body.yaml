@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Checkout Submodules
         run: |
@@ -31,8 +31,14 @@ jobs:
           sudo apt-get install sshpass
 
       - name: Build TS plugin body
-        working-directory: ./java_tools/
+        working-directory: .
         run: ./gradlew :ts_plugin:shadowJar
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: rusefi_plugin_body.jar
+          path: java_tools/ts_plugin/build/libs/rusefi_plugin_body.jar
 
       - name: Upload plugin body
         working-directory: .
