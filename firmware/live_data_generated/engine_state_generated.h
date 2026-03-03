@@ -50,73 +50,73 @@ struct LuaAdjustments {
 	bool torqueReductionState : 1 {};
 	/**
 	offset 12 bit 9 */
-	bool unusedBit_12_9 : 1 {};
+	bool jssState : 1 {};
 	/**
 	offset 12 bit 10 */
-	bool unusedBit_12_10 : 1 {};
+	bool opsState : 1 {};
 	/**
 	offset 12 bit 11 */
-	bool unusedBit_12_11 : 1 {};
+	bool unusedBit_14_11 : 1 {};
 	/**
 	offset 12 bit 12 */
-	bool unusedBit_12_12 : 1 {};
+	bool unusedBit_14_12 : 1 {};
 	/**
 	offset 12 bit 13 */
-	bool unusedBit_12_13 : 1 {};
+	bool unusedBit_14_13 : 1 {};
 	/**
 	offset 12 bit 14 */
-	bool unusedBit_12_14 : 1 {};
+	bool unusedBit_14_14 : 1 {};
 	/**
 	offset 12 bit 15 */
-	bool unusedBit_12_15 : 1 {};
+	bool unusedBit_14_15 : 1 {};
 	/**
 	offset 12 bit 16 */
-	bool unusedBit_12_16 : 1 {};
+	bool unusedBit_14_16 : 1 {};
 	/**
 	offset 12 bit 17 */
-	bool unusedBit_12_17 : 1 {};
+	bool unusedBit_14_17 : 1 {};
 	/**
 	offset 12 bit 18 */
-	bool unusedBit_12_18 : 1 {};
+	bool unusedBit_14_18 : 1 {};
 	/**
 	offset 12 bit 19 */
-	bool unusedBit_12_19 : 1 {};
+	bool unusedBit_14_19 : 1 {};
 	/**
 	offset 12 bit 20 */
-	bool unusedBit_12_20 : 1 {};
+	bool unusedBit_14_20 : 1 {};
 	/**
 	offset 12 bit 21 */
-	bool unusedBit_12_21 : 1 {};
+	bool unusedBit_14_21 : 1 {};
 	/**
 	offset 12 bit 22 */
-	bool unusedBit_12_22 : 1 {};
+	bool unusedBit_14_22 : 1 {};
 	/**
 	offset 12 bit 23 */
-	bool unusedBit_12_23 : 1 {};
+	bool unusedBit_14_23 : 1 {};
 	/**
 	offset 12 bit 24 */
-	bool unusedBit_12_24 : 1 {};
+	bool unusedBit_14_24 : 1 {};
 	/**
 	offset 12 bit 25 */
-	bool unusedBit_12_25 : 1 {};
+	bool unusedBit_14_25 : 1 {};
 	/**
 	offset 12 bit 26 */
-	bool unusedBit_12_26 : 1 {};
+	bool unusedBit_14_26 : 1 {};
 	/**
 	offset 12 bit 27 */
-	bool unusedBit_12_27 : 1 {};
+	bool unusedBit_14_27 : 1 {};
 	/**
 	offset 12 bit 28 */
-	bool unusedBit_12_28 : 1 {};
+	bool unusedBit_14_28 : 1 {};
 	/**
 	offset 12 bit 29 */
-	bool unusedBit_12_29 : 1 {};
+	bool unusedBit_14_29 : 1 {};
 	/**
 	offset 12 bit 30 */
-	bool unusedBit_12_30 : 1 {};
+	bool unusedBit_14_30 : 1 {};
 	/**
 	offset 12 bit 31 */
-	bool unusedBit_12_31 : 1 {};
+	bool unusedBit_14_31 : 1 {};
 };
 static_assert(sizeof(LuaAdjustments) == 16);
 
@@ -209,10 +209,12 @@ struct engine_state_s {
 	 */
 	int8_t brakePedalState = (int8_t)0;
 	/**
+	 * JSS State
 	 * offset 92
 	 */
 	int8_t jssState = (int8_t)0;
 	/**
+	 * OPS State
 	 * offset 93
 	 */
 	int8_t opsState = (int8_t)0;
@@ -225,205 +227,211 @@ struct engine_state_s {
 	 */
 	int8_t smartChipState = (int8_t)0;
 	/**
-	 * offset 92
+	 * offset 96
 	 */
 	int8_t smartChipRestartCounter = (int8_t)0;
 	/**
-	 * offset 93
+	 * offset 97
 	 */
 	int8_t smartChipAliveCounter = (int8_t)0;
 	/**
-	offset 96 bit 0 */
+	 * need 4 byte alignment
+	 * units: units
+	 * offset 98
+	 */
+	uint8_t alignmentFill_at_98[2] = {};
+	/**
+	offset 100 bit 0 */
 	bool startStopPhysicalState : 1 {};
 	/**
 	 * Harley ACR Active
-	offset 96 bit 1 */
+	offset 100 bit 1 */
 	bool acrActive : 1 {};
 	/**
-	offset 96 bit 2 */
+	offset 100 bit 2 */
 	bool acrEngineMovedRecently : 1 {};
 	/**
-	offset 96 bit 3 */
+	offset 100 bit 3 */
 	bool heaterControlEnabled : 1 {};
 	/**
-	offset 96 bit 4 */
+	offset 100 bit 4 */
 	bool luaDigitalState0 : 1 {};
 	/**
-	offset 96 bit 5 */
+	offset 100 bit 5 */
 	bool luaDigitalState1 : 1 {};
 	/**
-	offset 96 bit 6 */
+	offset 100 bit 6 */
 	bool luaDigitalState2 : 1 {};
 	/**
-	offset 96 bit 7 */
+	offset 100 bit 7 */
 	bool luaDigitalState3 : 1 {};
 	/**
 	 * @@INDICATOR_NAME_CLUTCH_DOWN@@
-	offset 96 bit 8 */
+	offset 100 bit 8 */
 	bool clutchDownState : 1 {};
 	/**
-	offset 96 bit 9 */
-	bool unusedBit_21_9 : 1 {};
+	offset 100 bit 9 */
+	bool unusedBit_24_9 : 1 {};
 	/**
-	offset 96 bit 10 */
-	bool unusedBit_21_10 : 1 {};
+	offset 100 bit 10 */
+	bool unusedBit_24_10 : 1 {};
 	/**
-	offset 96 bit 11 */
-	bool unusedBit_21_11 : 1 {};
+	offset 100 bit 11 */
+	bool unusedBit_24_11 : 1 {};
 	/**
-	offset 96 bit 12 */
-	bool unusedBit_21_12 : 1 {};
+	offset 100 bit 12 */
+	bool unusedBit_24_12 : 1 {};
 	/**
-	offset 96 bit 13 */
-	bool unusedBit_21_13 : 1 {};
+	offset 100 bit 13 */
+	bool unusedBit_24_13 : 1 {};
 	/**
-	offset 96 bit 14 */
-	bool unusedBit_21_14 : 1 {};
+	offset 100 bit 14 */
+	bool unusedBit_24_14 : 1 {};
 	/**
-	offset 96 bit 15 */
-	bool unusedBit_21_15 : 1 {};
+	offset 100 bit 15 */
+	bool unusedBit_24_15 : 1 {};
 	/**
-	offset 96 bit 16 */
-	bool unusedBit_21_16 : 1 {};
+	offset 100 bit 16 */
+	bool unusedBit_24_16 : 1 {};
 	/**
-	offset 96 bit 17 */
-	bool unusedBit_21_17 : 1 {};
+	offset 100 bit 17 */
+	bool unusedBit_24_17 : 1 {};
 	/**
-	offset 96 bit 18 */
-	bool unusedBit_21_18 : 1 {};
+	offset 100 bit 18 */
+	bool unusedBit_24_18 : 1 {};
 	/**
-	offset 96 bit 19 */
-	bool unusedBit_21_19 : 1 {};
+	offset 100 bit 19 */
+	bool unusedBit_24_19 : 1 {};
 	/**
-	offset 96 bit 20 */
-	bool unusedBit_21_20 : 1 {};
+	offset 100 bit 20 */
+	bool unusedBit_24_20 : 1 {};
 	/**
-	offset 96 bit 21 */
-	bool unusedBit_21_21 : 1 {};
+	offset 100 bit 21 */
+	bool unusedBit_24_21 : 1 {};
 	/**
-	offset 96 bit 22 */
-	bool unusedBit_21_22 : 1 {};
+	offset 100 bit 22 */
+	bool unusedBit_24_22 : 1 {};
 	/**
-	offset 96 bit 23 */
-	bool unusedBit_21_23 : 1 {};
+	offset 100 bit 23 */
+	bool unusedBit_24_23 : 1 {};
 	/**
-	offset 96 bit 24 */
-	bool unusedBit_21_24 : 1 {};
+	offset 100 bit 24 */
+	bool unusedBit_24_24 : 1 {};
 	/**
-	offset 96 bit 25 */
-	bool unusedBit_21_25 : 1 {};
+	offset 100 bit 25 */
+	bool unusedBit_24_25 : 1 {};
 	/**
-	offset 96 bit 26 */
-	bool unusedBit_21_26 : 1 {};
+	offset 100 bit 26 */
+	bool unusedBit_24_26 : 1 {};
 	/**
-	offset 96 bit 27 */
-	bool unusedBit_21_27 : 1 {};
+	offset 100 bit 27 */
+	bool unusedBit_24_27 : 1 {};
 	/**
-	offset 96 bit 28 */
-	bool unusedBit_21_28 : 1 {};
+	offset 100 bit 28 */
+	bool unusedBit_24_28 : 1 {};
 	/**
-	offset 96 bit 29 */
-	bool unusedBit_21_29 : 1 {};
+	offset 100 bit 29 */
+	bool unusedBit_24_29 : 1 {};
 	/**
-	offset 96 bit 30 */
-	bool unusedBit_21_30 : 1 {};
+	offset 100 bit 30 */
+	bool unusedBit_24_30 : 1 {};
 	/**
-	offset 96 bit 31 */
-	bool unusedBit_21_31 : 1 {};
-	/**
-	 * offset 100
-	 */
-	uint32_t startStopStateToggleCounter = (uint32_t)0;
+	offset 100 bit 31 */
+	bool unusedBit_24_31 : 1 {};
 	/**
 	 * offset 104
 	 */
-	float currentVe = (float)0;
+	uint32_t startStopStateToggleCounter = (uint32_t)0;
 	/**
 	 * offset 108
 	 */
-	float luaSoftSparkSkip = (float)0;
+	float currentVe = (float)0;
 	/**
 	 * offset 112
 	 */
-	float luaHardSparkSkip = (float)0;
+	float luaSoftSparkSkip = (float)0;
 	/**
 	 * offset 116
+	 */
+	float luaHardSparkSkip = (float)0;
+	/**
+	 * offset 120
 	 */
 	float tractionControlSparkSkip = (float)0;
 	/**
 	 * Fuel: Injection counter
-	 * offset 120
+	 * offset 124
 	 */
 	uint32_t fuelInjectionCounter = (uint32_t)0;
 	/**
 	 * Ign: Spark counter
-	 * offset 124
+	 * offset 128
 	 */
 	uint32_t globalSparkCounter = (uint32_t)0;
 	/**
 	 * @@GAUGE_NAME_FUEL_LOAD@@
-	 * offset 128
+	 * offset 132
 	 */
 	float fuelingLoad = (float)0;
 	/**
 	 * @@GAUGE_NAME_IGNITION_LOAD@@
-	 * offset 132
+	 * offset 136
 	 */
 	float ignitionLoad = (float)0;
 	/**
 	 * units: %
-	 * offset 136
+	 * offset 140
 	 */
 	scaled_channel<uint16_t, 100, 1> veTableYAxis = (uint16_t)0;
 	/**
-	 * offset 138
+	 * offset 142
 	 */
 	scaled_channel<int16_t, 10, 1> veTableIdleYAxis = (int16_t)0;
 	/**
 	 * "Ignition: overcharge canceled"
-	 * offset 140
+	 * offset 144
 	 */
 	uint8_t overDwellCanceledCounter = (uint8_t)0;
 	/**
 	 * "Ignition: overDwellNotScheduled"
-	 * offset 141
+	 * offset 145
 	 */
 	uint8_t overDwellNotScheduledCounter = (uint8_t)0;
 	/**
 	 * "Ignition: sparkOutOfOrder"
-	 * offset 142
+	 * offset 146
 	 */
 	uint8_t sparkOutOfOrderCounter = (uint8_t)0;
 	/**
 	 * "Ignition: undecharge warnings"
-	 * offset 143
+	 * offset 147
 	 */
 	uint8_t dwellUnderChargeCounter = (uint8_t)0;
 	/**
 	 * "Ignition: overcharge warnings"
-	 * offset 144
+	 * offset 148
 	 */
 	uint8_t dwellOverChargeCounter = (uint8_t)0;
 	/**
 	 * need 4 byte alignment
 	 * units: units
-	 * offset 145
+	 * offset 149
 	 */
-	uint8_t alignmentFill_at_145[3] = {};
+	uint8_t alignmentFill_at_149[3] = {};
 	/**
 	 * "Ignition: Dwell deviation"
 	 * units: %
-	 * offset 148
+	 * offset 152
 	 */
 	float dwellActualRatio = (float)0;
 	/**
 	 * STFT: Bank
 	 * units: %
-	 * offset 152
+	 * offset 156
 	 */
 	float stftCorrection[FT_BANK_COUNT] = {};
 };
-static_assert(sizeof(engine_state_s) == 160);
+static_assert(sizeof(engine_state_s) == 164);
 
 // end
 // this section was generated automatically by rusEFI tool config_definition_base-all.jar based on (unknown script) controllers/algo/engine_state.txt
