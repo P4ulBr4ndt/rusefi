@@ -2,12 +2,8 @@
 
 class TripOdometer : public EngineModule {
 public:
-	void initNoConfiguration() override;
 	void onSlowCallback() override;
-	void onEngineStop() override;
 	void reset();
-	void store();
-	void load();
 
 	void consumeFuel(float grams, efitick_t nowNt);
 
@@ -35,11 +31,6 @@ private:
 	uint32_t m_slowCallbackCounter = 0;
 	uint32_t m_ignitionOnSeconds = 0;
 	uint32_t m_engineRunningSeconds = 0;
-
-	// Persistence state
-	bool m_dirty = false;
-	bool m_stopWriteQueued = false;
-	bool m_seenRunningSinceBoot = false;
 
 	Timer m_timer;
 };

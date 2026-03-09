@@ -41,8 +41,6 @@ flashaddr_t SettingStorageFlash::getIdAddress(size_t id) {
 #ifdef EFI_HD_DP
 	} else if (id == EFI_LTFT_RECORD_ID) {
 		return getFlashAddrLtft();
-	} else if (id == EFI_TRIP_ODOMETER_RECORD_ID) {
-		return getFlashAddrTripOdometer();
 #endif
 	}
 
