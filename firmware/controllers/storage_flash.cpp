@@ -18,7 +18,6 @@
 #ifdef EFI_HD_DP
 // LTFT lives in a dedicated internal flash sector on STM32F7
 extern uintptr_t getFlashAddrLtft(void);
-extern uintptr_t getFlashAddrTripOdometer(void);
 #endif
 
 class SettingStorageFlash : public SettingStorageBase {

@@ -159,29 +159,6 @@ uintptr_t getFlashAddrLtft() {
 	}
 }
 
-uintptr_t getFlashAddrTripOdometer() {
-	switch (determineDevice()) {
-		case DeviceType::DualBank2MB:
-#ifdef EFI_FLASH_USE_1500_OF_2MB
-			// No free sector reserved for odometer when settings use the top 512K
-			return 0;
-#else
-			// One dedicated 128K sector (sector 21)
-			return 0x081A0000;
-#endif // EFI_FLASH_USE_1500_OF_2MB
-		case DeviceType::SingleBank2MB:
-#ifdef EFI_FLASH_USE_1500_OF_2MB
-			// No free sector reserved for odometer when settings use the top 512K
-			return 0;
-#else
-			// One dedicated 256K sector (sector 10)
-			return 0x08180000;
-#endif // EFI_FLASH_USE_1500_OF_2MB
-		default:
-			return 0;
-	}
-}
-
 /*
 Standby for both F4 & F7 works perfectly, with very little current consumption. Downside is that theres a limited amount of pins that can wakeup F7, and only PA0 for F4XX.
 Cannot be used for CAN wakeup without hardware modifications.
