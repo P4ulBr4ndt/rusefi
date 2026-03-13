@@ -103,8 +103,22 @@ float processBMW_e90(const CANRxFrame& frame) {
 	return 0.1f * getTwoBytesLsb(frame, 0);
 }
 
-float processHarley_124(const CANRxFrame& frame) {
-	return 0.1f * getTwoBytesMsb(frame, 0);
+static inline float slipRatio(uint16_t front, uint16_t rear) {
+	if (front == 0) {
+		return (rear == 0) ? 1.0f : INFINITY;
+	}
+
+	return static_cast<float>(rear) / static_cast<float>(front);
+}
+
+float processHarley_124(const CANRxFrame& frame, efitick_t nowNt) {
+	const int vehicle = ((frame.data8[0] & 0x0F) << 8) | frame.data8[1];
+	const int front   = (frame.data8[2] << 4) | ((frame.data8[3] >> 4) & 0x0F);
+	const int rear    = ((frame.data8[3] & 0x0F) << 8) | frame.data8[4];
+
+	wheelSlipRatio.setValidValue(slipRatio(front, rear), nowNt);
+
+	return vehicle;
 }
 
 float processW202(const CANRxFrame& frame) {
