@@ -114,8 +114,8 @@ float processHarley_124(const CANRxFrame& frame, efitick_t nowNt) {
 		wheelSlipRatio.setValidValue(static_cast<float>(rear) / static_cast<float>(front), nowNt);
 	}
 
-	// Vehicle for some reason reads 2 aka 0.2 when standing still therefor only use it when > 1
-	return 0.1f * std::max(vehicle > 1 ? vehicle : 0, rear);
+	// Vehicle for some reason reads 2 aka 0.2 when standing still therefor only use it when > 10 aka > 1
+	return 0.1f * std::max(vehicle > 10 ? vehicle : 0, rear);
 }
 
 float processW202(const CANRxFrame& frame) {
