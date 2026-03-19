@@ -12,6 +12,7 @@
 #if EFI_CAN_SUPPORT
 #include "can_rx.h"
 #include "dynoview.h"
+#include "exp_average.h"
 #include "stored_value_sensor.h"
 
 static bool isInit = false;
@@ -20,6 +21,10 @@ static uint16_t filterSecondVssCanID = 0;
 static uint16_t filterRpmCanID = 0;
 
 static StoredValueSensor wheelSlipRatio(SensorType::WheelSlipRatio, MS2NT(1000));
+static ExpAverage harleyWheelSlipFilter;
+
+// HARLEY_124 wheel speed data arrives every 10ms. alpha=0.2 gives about a 90ms EMA window.
+static constexpr float HARLEY_WHEEL_SLIP_FILTER_ALPHA = 0.2f;
 
 static expected<uint16_t> look_up_rpm_can_id(can_vss_nbc_e type) {
 	switch (type) {
@@ -109,9 +114,12 @@ float processHarley_124(const CANRxFrame& frame, efitick_t nowNt) {
 	const int rear    = ((frame.data8[3] & 0x0F) << 8) | frame.data8[4];
 
 	if (front == 0 || rear == 0) {
+		harleyWheelSlipFilter.reset();
 		wheelSlipRatio.invalidate();
 	} else {
-		wheelSlipRatio.setValidValue(static_cast<float>(rear) / static_cast<float>(front), nowNt);
+		harleyWheelSlipFilter.setSmoothingFactor(HARLEY_WHEEL_SLIP_FILTER_ALPHA);
+		const float wheelSlip = static_cast<float>(rear) / static_cast<float>(front);
+		wheelSlipRatio.setValidValue(harleyWheelSlipFilter.initOrAverage(wheelSlip), nowNt);
 	}
 
 	// Vehicle for some reason reads 2 aka 0.2 when standing still therefor only use it when > 10 aka > 1
