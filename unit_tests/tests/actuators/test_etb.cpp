@@ -902,7 +902,6 @@ TEST(etb, tractionControlEtbDrop) {
 	Sensor::setMockValue(SensorType::WheelSlipRatio, 0.9);
 
 	engineConfiguration->tractionControlEtbDrop[0][0] = -15;
-	engineConfiguration->tractionControlEtbDrop[0][1] = -15;
 
 	size_t lastYIndex = TRACTION_CONTROL_ETB_DROP_SLIP_SIZE - 1;
 	size_t lastXIndex = TRACTION_CONTROL_ETB_DROP_SPEED_SIZE - 1;
@@ -918,4 +917,23 @@ TEST(etb, tractionControlEtbDrop) {
 	Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
 
 	EXPECT_EQ(62, etb.getSetpoint().value_or(-1));
+
+	// Regression coverage for swapped-axis traction table bug:
+	// a full slip row in TS should apply equally at any speed when slip is constant.
+	setTable(engineConfiguration->tractionControlEtbDrop, 0);
+	for (size_t speedIndex = 0; speedIndex <= lastXIndex; speedIndex++) {
+		engineConfiguration->tractionControlEtbDrop[lastYIndex][speedIndex] = -5;
+	}
+
+	Sensor::setMockValue(SensorType::VehicleSpeed, 100.0);
+	Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+	EXPECT_EQ(42, etb.getSetpoint().value_or(-1));
+
+	Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+	Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+	EXPECT_EQ(42, etb.getSetpoint().value_or(-1));
+
+	Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+	Sensor::setMockValue(SensorType::WheelSlipRatio, 1.0);
+	EXPECT_EQ(47, etb.getSetpoint().value_or(-1));
 }

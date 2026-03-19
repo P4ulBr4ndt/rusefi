@@ -116,6 +116,25 @@ TEST(ignition_state, getRunningAdvanceTractionDrop) {
   Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
   Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
   EXPECT_NEAR(25, getRunningAdvance(rpm, load), EPS2D);
+
+  // Regression coverage for swapped-axis traction table bug:
+  // a full slip row in TS should apply equally at any speed when slip is constant.
+  setTable(engineConfiguration->tractionControlTimingDrop, 0);
+  for (size_t speedIndex = 0; speedIndex <= lastXIndex; speedIndex++) {
+    engineConfiguration->tractionControlTimingDrop[lastYIndex][speedIndex] = -5;
+  }
+
+  Sensor::setMockValue(SensorType::VehicleSpeed, 100.0);
+  Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+  EXPECT_NEAR(5, getRunningAdvance(rpm, load), EPS2D);
+
+  Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+  Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+  EXPECT_NEAR(5, getRunningAdvance(rpm, load), EPS2D);
+
+  Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+  Sensor::setMockValue(SensorType::WheelSlipRatio, 1.0);
+  EXPECT_NEAR(10, getRunningAdvance(rpm, load), EPS2D);
 }
 
 TEST(ignition_state, getRunningAdvanceTractionSparkSkip) {
@@ -154,6 +173,28 @@ TEST(ignition_state, getRunningAdvanceTractionSparkSkip) {
   Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
   getRunningAdvance(rpm, load);
   EXPECT_NEAR(50, engine->engineState.tractionControlSparkSkip, EPS2D);
+
+  // Regression coverage for swapped-axis traction table bug:
+  // a full slip row in TS should apply equally at any speed when slip is constant.
+  setTable(engineConfiguration->tractionControlIgnitionSkip, 0);
+  for (size_t speedIndex = 0; speedIndex <= lastXIndex; speedIndex++) {
+    engineConfiguration->tractionControlIgnitionSkip[lastYIndex][speedIndex] = 50;
+  }
+
+  Sensor::setMockValue(SensorType::VehicleSpeed, 100.0);
+  Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+  getRunningAdvance(rpm, load);
+  EXPECT_NEAR(50, engine->engineState.tractionControlSparkSkip, EPS2D);
+
+  Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+  Sensor::setMockValue(SensorType::WheelSlipRatio, 1.2);
+  getRunningAdvance(rpm, load);
+  EXPECT_NEAR(50, engine->engineState.tractionControlSparkSkip, EPS2D);
+
+  Sensor::setMockValue(SensorType::VehicleSpeed, 120.0);
+  Sensor::setMockValue(SensorType::WheelSlipRatio, 1.0);
+  getRunningAdvance(rpm, load);
+  EXPECT_NEAR(0, engine->engineState.tractionControlSparkSkip, EPS2D);
 }
 
 TEST(ignition_state, tsAdvanceIndicators) {

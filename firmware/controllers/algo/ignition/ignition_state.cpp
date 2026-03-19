@@ -26,8 +26,8 @@
 
 #if EFI_ENGINE_CONTROL
 
-static Map3D<TRACTION_CONTROL_ETB_DROP_SLIP_SIZE, TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, int8_t, uint16_t, uint8_t> tcTimingDropTable{"tct"};
-static Map3D<TRACTION_CONTROL_ETB_DROP_SLIP_SIZE, TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, int8_t, uint16_t, uint8_t> tcSparkSkipTable{"tcs"};
+static Map3D<TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, TRACTION_CONTROL_ETB_DROP_SLIP_SIZE, int8_t, uint8_t, uint16_t> tcTimingDropTable{"tct"};
+static Map3D<TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, TRACTION_CONTROL_ETB_DROP_SLIP_SIZE, int8_t, uint8_t, uint16_t> tcSparkSkipTable{"tcs"};
 
 #if EFI_ENGINE_CONTROL && EFI_SHAFT_POSITION_INPUT
 
@@ -47,8 +47,8 @@ angle_t getRunningAdvance(float rpm, float engineLoad) {
 
   float vehicleSpeed = Sensor::getOrZero(SensorType::VehicleSpeed);
   float wheelSlip = Sensor::getOrZero(SensorType::WheelSlipRatio);
-  engine->ignitionState.tractionAdvanceDrop = tcTimingDropTable.getValue(wheelSlip, vehicleSpeed);
-  engine->engineState.tractionControlSparkSkip = tcSparkSkipTable.getValue(wheelSlip, vehicleSpeed);
+  engine->ignitionState.tractionAdvanceDrop = tcTimingDropTable.getValue(vehicleSpeed, wheelSlip);
+  engine->engineState.tractionControlSparkSkip = tcSparkSkipTable.getValue(vehicleSpeed, wheelSlip);
   engine->engineState.updateSparkSkip();
 
   advanceAngle += engine->ignitionState.tractionAdvanceDrop;
@@ -297,8 +297,8 @@ size_t getMultiSparkCount(float rpm) {
 }
 
 void initIgnitionAdvanceControl() {
-	tcTimingDropTable.initTable(engineConfiguration->tractionControlTimingDrop, engineConfiguration->tractionControlSlipBins, engineConfiguration->tractionControlSpeedBins);
-	tcSparkSkipTable.initTable(engineConfiguration->tractionControlIgnitionSkip, engineConfiguration->tractionControlSlipBins, engineConfiguration->tractionControlSpeedBins);
+	tcTimingDropTable.initTable(engineConfiguration->tractionControlTimingDrop, engineConfiguration->tractionControlSpeedBins, engineConfiguration->tractionControlSlipBins);
+	tcSparkSkipTable.initTable(engineConfiguration->tractionControlIgnitionSkip, engineConfiguration->tractionControlSpeedBins, engineConfiguration->tractionControlSlipBins);
 }
 
 /**
