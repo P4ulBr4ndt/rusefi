@@ -85,3 +85,7 @@ uint32_t TripOdometer::getIgnitionOnTime() const {
 uint32_t TripOdometer::getEngineRunTime() const {
 	return m_engineRunningSeconds;
 }
+
+void TripOdometer::setDistanceMeters(uint32_t distance) {
+	m_distanceMeters = distance;
+}

@@ -16,6 +16,7 @@ public:
 	uint32_t getDistanceMeters() const;
 	uint32_t getIgnitionOnTime() const;
 	uint32_t getEngineRunTime() const;
+	void setDistanceMeters(uint32_t distance);
 
 private:
 	// Fuel consumed
