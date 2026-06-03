@@ -9,6 +9,10 @@
 
 #if HAL_USE_CAN || EFI_UNIT_TEST
 
+#ifndef TSCAN_ALWAYS_DLC_8
+#define TSCAN_ALWAYS_DLC_8 0
+#endif
+
 static const size_t maxDlc = 8;
 
 int IsoTpBase::sendFrame(const IsoTpFrameHeader &header, const uint8_t *data, int num, can_sysinterval_t timeout) {
@@ -37,6 +41,9 @@ int IsoTpBase::sendFrame(const IsoTpFrameHeader &header, const uint8_t *data, in
 	}
 
 	int dlc = offset + numBytes;
+#if TSCAN_ALWAYS_DLC_8
+	dlc = static_cast<int>(maxDlc);
+#endif
 	CanTxMessage txmsg(CanCategory::SERIAL, txFrameId, dlc, busIndex, IS_EXT_RANGE_ID(txFrameId));
 
 	// fill the frame data according to the CAN-TP protocol (ISO 15765-2)
