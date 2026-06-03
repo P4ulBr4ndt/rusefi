@@ -15,6 +15,20 @@
 
 static const size_t maxDlc = 8;
 
+#if !EFI_UNIT_TEST
+static int decodeSeparationTimeUs(uint8_t minSeparationTime) {
+	if (minSeparationTime <= 0x7f) {
+		return minSeparationTime * 1000;
+	}
+
+	if ((minSeparationTime >= 0xf1) && (minSeparationTime <= 0xf9)) {
+		return (minSeparationTime - 0xf0) * 100;
+	}
+
+	return 0;
+}
+#endif // EFI_UNIT_TEST
+
 int IsoTpBase::sendFrame(const IsoTpFrameHeader &header, const uint8_t *data, int num, can_sysinterval_t timeout) {
 	// Calculate needed DLC and maximum payload
 	int offset, numBytes;
@@ -222,6 +236,7 @@ int CanStreamerState::sendDataTimeout(const uint8_t *txbuf, int numBytes, can_sy
 
 	// get a flow control (FC) frame
 #if !EFI_UNIT_TEST // todo: add FC to unit-tests?
+	int separationTimeUs = 0;
 	CANRxFrame rxmsg;
 	for (size_t numFcReceived = 0; ; numFcReceived++) {
 		if (rxTransport->receive(&rxmsg, timeout) != CAN_MSG_OK) {
@@ -247,8 +262,8 @@ int CanStreamerState::sendDataTimeout(const uint8_t *txbuf, int numBytes, can_sy
 			return 0;
 		}
 		uint8_t blockSize = rxmsg.data8[isoHeaderByteIndex + 1];
-		uint8_t minSeparationTime = rxmsg.data8[isoHeaderByteIndex + 2];
-		if (blockSize != 0 || minSeparationTime != 0) {
+		separationTimeUs = decodeSeparationTimeUs(rxmsg.data8[isoHeaderByteIndex + 2]);
+		if (blockSize != 0) {
 			// todo: process other Flow Control fields (see ISO 15765-2)
 #ifdef SERIAL_CAN_DEBUG
 			efiPrintf("*** ERROR: CAN Flow Control fields not supported");
@@ -272,6 +287,12 @@ int CanStreamerState::sendDataTimeout(const uint8_t *txbuf, int numBytes, can_sy
 			break;
 		offset += numSent;
 		numBytes -= numSent;
+
+#if ! EFI_UNIT_TEST
+		if (separationTimeUs) {
+			chThdSleepMicroseconds(separationTimeUs);
+		}
+#endif // EFI_UNIT_TEST
 	}
 	return offset;
 }
@@ -578,13 +599,7 @@ int IsoTpRxTx::writeTimeout(const uint8_t *txbuf, size_t size, sysinterval_t tim
 			return -7;
 		}
 
-		if (minSeparationTime <= 0x7f) {
-			// mS units
-			separationTimeUs = minSeparationTime * 1000;
-		} else if ((minSeparationTime >= 0xf1) && (minSeparationTime <= 0xf9)) {
-			// 100 uS units
-			separationTimeUs = (minSeparationTime - 0xf0) * 100;
-		}
+		separationTimeUs = decodeSeparationTimeUs(minSeparationTime);
 
 		break;
 	}
