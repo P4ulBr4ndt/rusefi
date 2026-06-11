@@ -17,6 +17,7 @@
 #include "idle_hardware.h"
 
 #include "dc_motors.h"
+#include "cruise_control.h"
 
 #if EFI_TUNER_STUDIO
 #include "stepper.h"
@@ -247,11 +248,27 @@ static void finishIdleTestIfNeeded() {
 		engine->timeToStopIdleTest = 0;
 }
 
+void IdleController::suspendClosedLoop() {
+	getIdlePid()->reset();
+	shouldResetPid = false;
+	wasResetPid = true;
+	mightResetPid = false;
+	isIdleClosedLoop = false;
+	idleClosedLoop = 0;
+	idleState = TPS_THRESHOLD;
+	m_lastAutomaticPosition = 0;
+}
+
 /**
  * @return idle valve position percentage for automatic closed loop mode
  */
 float IdleController::getClosedLoop(IIdleController::Phase phase, float tpsPos, float rpm, float targetRpm) {
 	auto idlePid = getIdlePid();
+
+	if (getCCStatus() == CruiseControlStatus::Enabled) {
+		suspendClosedLoop();
+		return 0;
+	}
 
 	if (shouldResetPid && !wasResetPid) {
 		needReset = idlePid->getIntegration() <= 0 || shouldResetPid;
@@ -390,9 +407,10 @@ float IdleController::getIdlePosition(float rpm) {
 			baseIdlePosition = iacPosition;
 			// Force closed loop operation for modeled flow
 			auto idleMode = useModeledFlow ? IM_AUTO : engineConfiguration->idleMode;
+			const bool isCruiseControlEnabled = getCCStatus() == CruiseControlStatus::Enabled;
 
 			// If TPS is working and automatic mode enabled, add any closed loop correction
-			if (tps.Valid && idleMode == IM_AUTO) {
+			if (tps.Valid && idleMode == IM_AUTO && !isCruiseControlEnabled) {
 				if (useModeledFlow && phase != Phase::Idling) {
 					auto idlePid = getIdlePid();
 					idlePid->reset();
@@ -401,7 +419,10 @@ float IdleController::getIdlePosition(float rpm) {
 				idleClosedLoop = closedLoop;
 				iacPosition += closedLoop;
 			} else {
-			  isIdleClosedLoop = false;
+				if (isCruiseControlEnabled) {
+					suspendClosedLoop();
+				}
+				isIdleClosedLoop = false;
 			}
 
 			iacPosition = clampPercentValue(iacPosition);

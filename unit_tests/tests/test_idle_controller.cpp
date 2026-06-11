@@ -10,6 +10,7 @@
 #include "efi_pid.h"
 #include "idle_thread.h"
 #include "electronic_throttle.h"
+#include "cruise_control.h"
 
 using ::testing::StrictMock;
 using ::testing::_;
@@ -412,6 +413,37 @@ TEST(idle_v2, closedLoopDeadzone) {
 	EXPECT_FLOAT_EQ(-25, dut.getClosedLoop(ICP::Idling, 0, /*rpm*/ 900, /*tgt*/ 900));
 }
 
+TEST(idle_v2, closedLoopSuspendedWhileCruiseEnabled) {
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	IdleController dut;
+	dut.init();
+
+	engineConfiguration->idleRpmPid.pFactor = 0.5;
+	engineConfiguration->idleRpmPid.iFactor = 0;
+	engineConfiguration->idleRpmPid.dFactor = 0;
+	engineConfiguration->idleRpmPid.periodMs = 0;
+	engineConfiguration->idleRpmPid.minValue = -50;
+	engineConfiguration->idleRpmPid.maxValue = 50;
+
+	engineConfiguration->idlePidRpmDeadZone = 0;
+
+	dut.getClosedLoop(ICP::Idling, 0, 900, 900);
+	advanceTimeUs(5'000'000);
+
+	EXPECT_FLOAT_EQ(-25, dut.getClosedLoop(ICP::Idling, 0, /*rpm*/ 950, /*tgt*/ 900));
+
+	setCCStatus(CruiseControlStatus::Enabled);
+
+	EXPECT_FLOAT_EQ(0, dut.getClosedLoop(ICP::Idling, 0, /*rpm*/ 950, /*tgt*/ 900));
+	EXPECT_FALSE(dut.isIdleClosedLoop);
+	EXPECT_FLOAT_EQ(0, dut.idleClosedLoop);
+
+	dut.getIdlePid()->postState(engine->outputChannels.idleStatus);
+	EXPECT_FLOAT_EQ(0, engine->outputChannels.idleStatus.pTerm);
+	EXPECT_FLOAT_EQ(0, engine->outputChannels.idleStatus.iTerm);
+	EXPECT_FLOAT_EQ(0, engine->outputChannels.idleStatus.dTerm);
+}
+
 TEST(idle_v2, RunningToIdleTransition) {
   EngineTestHelper eth(engine_type_e::TEST_ENGINE);
   IdleController dut;
@@ -547,6 +579,38 @@ TEST(idle_v2, IntegrationAutomatic) {
 
 	// Result should be open + closed
 	EXPECT_EQ(13 + 7, dut.getIdlePosition(950));
+}
+
+TEST(idle_v2, IntegrationAutomaticSkipsClosedLoopWhileCruiseEnabled) {
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	StrictMock<IntegrationIdleMock> dut;
+
+	engineConfiguration->idleMode = idle_mode_e::IM_AUTO;
+	setCCStatus(CruiseControlStatus::Enabled);
+
+	SensorResult expectedTps = 1;
+	float expectedClt = 37;
+	Sensor::setMockValue(SensorType::DriverThrottleIntent, expectedTps.Value);
+	Sensor::setMockValue(SensorType::Clt, expectedClt);
+	Sensor::setMockValue(SensorType::VehicleSpeed, 15.0);
+
+	TgtInfo target{1000, 1100, 1100};
+
+	EXPECT_CALL(dut, getTargetRpm(expectedClt))
+		.WillOnce(Return(target));
+
+	EXPECT_CALL(dut, getCrankingTaperFraction(expectedClt))
+		.WillOnce(Return(0.4f));
+
+	EXPECT_CALL(dut, determinePhase(950, target, expectedTps, 15, 0.4f))
+		.WillOnce(Return(ICP::Idling));
+
+	EXPECT_CALL(dut, getOpenLoop(ICP::Idling, 950, expectedClt, expectedTps, 0.4f))
+		.WillOnce(Return(13));
+
+	EXPECT_EQ(13, dut.getIdlePosition(950));
+	EXPECT_FALSE(dut.isIdleClosedLoop);
+	EXPECT_FLOAT_EQ(0, dut.idleClosedLoop);
 }
 
 TEST(idle_v2, IntegrationClamping) {
