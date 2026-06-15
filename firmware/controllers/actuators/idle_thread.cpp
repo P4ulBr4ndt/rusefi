@@ -408,9 +408,11 @@ float IdleController::getIdlePosition(float rpm) {
 			// Force closed loop operation for modeled flow
 			auto idleMode = useModeledFlow ? IM_AUTO : engineConfiguration->idleMode;
 			const bool isCruiseControlEnabled = getCCStatus() == CruiseControlStatus::Enabled;
+			const bool canRunClosedLoop = tps.Valid && idleMode == IM_AUTO && !isCruiseControlEnabled;
+			const bool isClosedLoopIdleActive = canRunClosedLoop && phase == Phase::Idling;
 
 			// If TPS is working and automatic mode enabled, add any closed loop correction
-			if (tps.Valid && idleMode == IM_AUTO && !isCruiseControlEnabled) {
+			if (canRunClosedLoop) {
 				if (useModeledFlow && phase != Phase::Idling) {
 					auto idlePid = getIdlePid();
 					idlePid->reset();
@@ -464,7 +466,7 @@ float IdleController::getIdlePosition(float rpm) {
 			iacPosition = idlePos;
 		}
 
-		if (isIdleClosedLoop) {
+		if (isClosedLoopIdleActive) {
 			const auto lowerLimit = clampPercentValue(engineConfiguration->idlePositionLowerLimit);
 			iacPosition = clampF(lowerLimit, iacPosition, 100);
 		}
