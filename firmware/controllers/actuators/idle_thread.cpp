@@ -464,6 +464,11 @@ float IdleController::getIdlePosition(float rpm) {
 			iacPosition = idlePos;
 		}
 
+		if (isIdleClosedLoop) {
+			const auto lowerLimit = clampPercentValue(engineConfiguration->idlePositionLowerLimit);
+			iacPosition = clampF(lowerLimit, iacPosition, 100);
+		}
+
 		currentIdlePosition = iacPosition;
 
 	bool acActive = engine->module<AcController>().unmock().acButtonState;

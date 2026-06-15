@@ -581,6 +581,39 @@ TEST(idle_v2, IntegrationAutomatic) {
 	EXPECT_EQ(13 + 7, dut.getIdlePosition(950));
 }
 
+TEST(idle_v2, IntegrationAutomaticLowerLimit) {
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	StrictMock<IntegrationIdleMock> dut;
+
+	engineConfiguration->idleMode = idle_mode_e::IM_AUTO;
+	engineConfiguration->idlePositionLowerLimit = 25;
+
+	SensorResult expectedTps = 1;
+	float expectedClt = 37;
+	Sensor::setMockValue(SensorType::DriverThrottleIntent, expectedTps.Value);
+	Sensor::setMockValue(SensorType::Clt, expectedClt);
+	Sensor::setMockValue(SensorType::VehicleSpeed, 15.0);
+
+	TgtInfo target{1000, 1100, 1100};
+
+	EXPECT_CALL(dut, getTargetRpm(expectedClt))
+		.WillOnce(Return(target));
+
+	EXPECT_CALL(dut, getCrankingTaperFraction(expectedClt))
+		.WillOnce(Return(0.4f));
+
+	EXPECT_CALL(dut, determinePhase(950, target, expectedTps, 15, 0.4f))
+		.WillOnce(Return(ICP::Idling));
+
+	EXPECT_CALL(dut, getOpenLoop(ICP::Idling, 950, expectedClt, expectedTps, 0.4f))
+		.WillOnce(Return(13));
+
+	EXPECT_CALL(dut, getClosedLoop(ICP::Idling, expectedTps.Value, 950, 1000))
+		.WillOnce(Return(-7));
+
+	EXPECT_EQ(25, dut.getIdlePosition(950));
+}
+
 TEST(idle_v2, IntegrationAutomaticSkipsClosedLoopWhileCruiseEnabled) {
 	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
 	StrictMock<IntegrationIdleMock> dut;

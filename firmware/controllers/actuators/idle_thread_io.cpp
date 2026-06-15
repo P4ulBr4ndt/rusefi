@@ -127,6 +127,7 @@ void setDefaultIdleParameters() {
 
 	engineConfiguration->idlePidRpmDeadZone = 50;
 	engineConfiguration->idleReturnTargetRampDuration = 3;
+	engineConfiguration->idlePositionLowerLimit = 0;
 }
 
 void startIdleThread() {
