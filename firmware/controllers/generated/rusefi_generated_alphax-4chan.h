@@ -1301,8 +1301,8 @@
 #define IGN_TRIM_1_NAME "Ignition trim cyl 1"
 #define IGN_TRIM_2_NAME "Ignition trim cyl 2"
 #define IGN_TRIM_SIZE 4
-#define IGNITION_ADVANCE_MENU_NAME "Ignition advance"
-#define IGNITION_ADVANCE_TABLE_NAME "Ignition Table"
+#define IGNITION_ADVANCE_MENU_NAME "Ignition Advance Rear"
+#define IGNITION_ADVANCE_TABLE_NAME "Ignition Advance Rear"
 #define ignition_mode_e_auto_enum 0="IM_ONE_COIL",1="IM_INDIVIDUAL_COILS",3="IM_TWO_COILS",2="IM_WASTED_SPARK"
 #define ignition_mode_e_IM_INDIVIDUAL_COILS 1
 #define ignition_mode_e_IM_ONE_COIL 0
@@ -1557,7 +1557,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 3887189832
+#define SIGNATURE_HASH 2969112537
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -2157,7 +2157,7 @@
 #define ts_show_wbo_can_menu true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI master.2026.06.15.alphax-4chan.3887189832"
+#define TS_SIGNATURE "rusEFI master.2026.06.24.alphax-4chan.2969112537"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_TEST_COMMAND 't'
