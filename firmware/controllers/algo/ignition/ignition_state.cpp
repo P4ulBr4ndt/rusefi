@@ -34,7 +34,7 @@ static Map3D<TRACTION_CONTROL_ETB_DROP_SPEED_SIZE, TRACTION_CONTROL_ETB_DROP_SLI
 /**
  * @return ignition timing angle advance before TDC
  */
-angle_t getRunningAdvance(float rpm, float engineLoad) {
+angle_t getRunningAdvance(float rpm, float engineLoad, size_t cylinderIndex) {
 	if (std::isnan(engineLoad)) {
 		warning(ObdCode::CUSTOM_NAN_ENGINE_LOAD, "NaN engine load");
 		return NAN;
@@ -42,8 +42,8 @@ angle_t getRunningAdvance(float rpm, float engineLoad) {
 
 	efiAssert(ObdCode::CUSTOM_ERR_ASSERT, !std::isnan(engineLoad), "invalid el", NAN);
 
-	// compute base ignition angle from main table
-	float advanceAngle = IgnitionState::getInterpolatedIgnitionAngle(rpm, engineLoad);
+	// compute base ignition angle from the per-cylinder table
+	float advanceAngle = IgnitionState::getInterpolatedIgnitionAngle(rpm, engineLoad, cylinderIndex);
 
   float vehicleSpeed = Sensor::getOrZero(SensorType::VehicleSpeed);
   float wheelSlip = Sensor::getOrZero(SensorType::WheelSlipRatio);
@@ -195,20 +195,20 @@ angle_t getAdvanceCorrections(float engineLoad) {
 /**
  * @return ignition timing angle advance before TDC for Cranking
  */
-angle_t getCrankingAdvance(float rpm, float engineLoad) {
+angle_t getCrankingAdvance(float rpm, float engineLoad, size_t cylinderIndex) {
 	// get advance from the separate table for Cranking
 	if (engineConfiguration->useSeparateAdvanceForCranking) {
 		return interpolate2d(rpm, config->crankingAdvanceBins, config->crankingAdvance);
 	}
 
 	// Interpolate the cranking timing angle to the earlier running angle for faster engine start
-	angle_t crankingToRunningTransitionAngle = getRunningAdvance(engineConfiguration->cranking.rpm, engineLoad);
+	angle_t crankingToRunningTransitionAngle = getRunningAdvance(engineConfiguration->cranking.rpm, engineLoad, cylinderIndex);
 	// interpolate not from zero, but starting from min. possible rpm detected
 	return interpolateClamped(engine->rpmCalculator.getMinCrankingRpm(), engineConfiguration->crankingTimingAngle, engineConfiguration->cranking.rpm, crankingToRunningTransitionAngle, rpm);
 }
 #endif // EFI_ENGINE_CONTROL && EFI_SHAFT_POSITION_INPUT
 
-angle_t IgnitionState::getAdvance(float rpm, float engineLoad) {
+angle_t IgnitionState::getAdvance(float rpm, float engineLoad, size_t cylinderIndex) {
 	if (std::isnan(engineLoad)) {
 		return 0; // any error should already be reported
 	}
@@ -221,11 +221,11 @@ angle_t IgnitionState::getAdvance(float rpm, float engineLoad) {
 
 	bool isCranking = engine->rpmCalculator.isCranking();
 	if (isCranking) {
-		angle = getCrankingAdvance(rpm, engineLoad);
+		angle = getCrankingAdvance(rpm, engineLoad, cylinderIndex);
 		assertAngleRange(angle, "crAngle", ObdCode::CUSTOM_ERR_ANGLE_CR);
 		efiAssert(ObdCode::CUSTOM_ERR_ASSERT, !std::isnan(angle), "cr_AngleN", 0);
 	} else {
-		angle = getRunningAdvance(rpm, engineLoad);
+		angle = getRunningAdvance(rpm, engineLoad, cylinderIndex);
 
 		if (std::isnan(angle)) {
 			warning(ObdCode::CUSTOM_ERR_6610, "NaN angle from table");
@@ -247,8 +247,8 @@ angle_t IgnitionState::getAdvance(float rpm, float engineLoad) {
 	return angle;
 }
 
-angle_t IgnitionState::getWrappedAdvance(const float rpm, const float engineLoad) {
-    angle_t angle = getAdvance(rpm, engineLoad) * luaTimingMult + luaTimingAdd;
+angle_t IgnitionState::getWrappedAdvance(const float rpm, const float engineLoad, size_t cylinderIndex) {
+    angle_t angle = getAdvance(rpm, engineLoad, cylinderIndex) * luaTimingMult + luaTimingAdd;
     wrapAngle(angle, "getWrappedAdvance", ObdCode::CUSTOM_ERR_ADCANCE_CALC_ANGLE);
     return angle;
 }
@@ -365,7 +365,17 @@ angle_t IgnitionState::getSparkHardwareLatencyCorrection(){
 	return 0;
 }
 
-angle_t IgnitionState::getInterpolatedIgnitionAngle(const float rpm, const float ignitionLoad) {
+angle_t IgnitionState::getInterpolatedIgnitionAngle(const float rpm, const float ignitionLoad, size_t cylinderIndex) {
+#ifdef EFI_HD_DP
+	if (cylinderIndex == 1) {
+		return interpolate3d(
+			config->ignitionFrontTable,
+			config->ignitionLoadBins, ignitionLoad,
+			config->ignitionRpmBins, rpm
+		);
+	}
+#endif
+
 	return interpolate3d(
 		config->ignitionTable,
 		config->ignitionLoadBins, ignitionLoad,

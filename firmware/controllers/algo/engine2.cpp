@@ -221,17 +221,12 @@ void EngineState::periodicFastCallback() {
 
 	float l_ignitionLoad = getIgnitionLoad();
 	engine->ignitionState.updateAdvanceCorrections(l_ignitionLoad);
-	float baseAdvance = engine->ignitionState.getWrappedAdvance(rpm, l_ignitionLoad);
 	float corrections = engineConfiguration->timingMode == TM_DYNAMIC ?
 			// Pull any extra timing for knock retard
 			- engine->module<KnockController>()->getKnockRetard()
 			// Degrees of timing REMOVED from actual timing during soft RPM limit window
 			- getLimpManager()->getLimitingTimingRetard() :
 			0;
-	float correctedIgnitionAdvance = baseAdvance + corrections;
-	// these fields are scaled_channel so let's only use for observability, with a local variables holding value while it matters locally
-	engine->ignitionState.baseIgnitionAdvance = MAKE_HUMAN_READABLE_ADVANCE(baseAdvance);
-	engine->ignitionState.correctedIgnitionAdvance = MAKE_HUMAN_READABLE_ADVANCE(correctedIgnitionAdvance);
 
 	// compute per-bank fueling
 	for (size_t bankIndex = 0; bankIndex < FT_BANK_COUNT; bankIndex++) {
@@ -249,6 +244,15 @@ void EngineState::periodicFastCallback() {
 
 		// Apply both per-bank and per-cylinder trims
 		engine->engineState.injectionMass[cylinderIndex] = untrimmedInjectionMass * bankTrim * cylinderTrim * knockTrim;
+
+		float baseAdvance = engine->ignitionState.getWrappedAdvance(rpm, l_ignitionLoad, cylinderIndex);
+		float correctedIgnitionAdvance = baseAdvance + corrections;
+
+		if (cylinderIndex == 0) {
+			// these fields are scaled_channel so let's only use for observability, with local variables holding value while it matters locally
+			engine->ignitionState.baseIgnitionAdvance = MAKE_HUMAN_READABLE_ADVANCE(baseAdvance);
+			engine->ignitionState.correctedIgnitionAdvance = MAKE_HUMAN_READABLE_ADVANCE(correctedIgnitionAdvance);
+		}
 
 		angle_t cylinderIgnitionAdvance = correctedIgnitionAdvance
 									+ getCylinderIgnitionTrim(cylinderIndex, rpm, l_ignitionLoad)

@@ -8,14 +8,14 @@ public:
 	void updateAdvanceCorrections(float engineLoad);
 
   floatms_t getDwell() const;
-  angle_t getWrappedAdvance(const float rpm, const float engineLoad);
+  angle_t getWrappedAdvance(const float rpm, const float engineLoad, size_t cylinderIndex = 0);
   angle_t getTrailingSparkAngle(const float rpm, const float engineLoad);
 	angle_t getSparkHardwareLatencyCorrection();
 
-	static angle_t getInterpolatedIgnitionAngle(float rpm, float ignitionLoad);
+	static angle_t getInterpolatedIgnitionAngle(float rpm, float ignitionLoad, size_t cylinderIndex = 0);
 	static angle_t getInterpolatedIgnitionTrim(size_t cylinderNumber, float rpm, float ignitionLoad);
 
 private:
-  angle_t getAdvance(float rpm, float engineLoad);
+  angle_t getAdvance(float rpm, float engineLoad, size_t cylinderIndex);
 	floatms_t getSparkDwell(float rpm, bool isCranking);
 };

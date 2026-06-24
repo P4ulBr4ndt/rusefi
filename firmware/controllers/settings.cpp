@@ -161,6 +161,9 @@ static void setDebugMode(int value) {
 
 static void setWholeTimingMap(float value) {
 	setTable(config->ignitionTable, value);
+#ifdef EFI_HD_DP
+	setTable(config->ignitionFrontTable, value);
+#endif
 }
 
 static void setWholeTimingMapCmd(float value) {

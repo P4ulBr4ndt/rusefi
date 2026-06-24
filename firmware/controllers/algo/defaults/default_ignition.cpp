@@ -93,7 +93,11 @@ static void buildTimingMap(float advanceMax) {
 		float load = config->ignitionLoadBins[loadIndex];
 		for (int rpmIndex = 0;rpmIndex<IGN_RPM_COUNT;rpmIndex++) {
 			float rpm = config->ignitionRpmBins[rpmIndex];
-			config->ignitionTable[loadIndex][rpmIndex] = getInitialAdvance(rpm, load, advanceMax);
+			auto initialAdvance = getInitialAdvance(rpm, load, advanceMax);
+			config->ignitionTable[loadIndex][rpmIndex] = initialAdvance;
+#ifdef EFI_HD_DP
+			config->ignitionFrontTable[loadIndex][rpmIndex] = initialAdvance;
+#endif
 		}
 	}
 }

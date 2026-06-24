@@ -13,8 +13,8 @@ angle_t getCylinderIgnitionTrim(size_t cylinderNumber, float rpm, float ignition
  */
 float getInitialAdvance(float rpm, float map, float advanceMax);
 // public only for unit tests
-angle_t getCrankingAdvance(float rpm, float engineLoad);
-angle_t getRunningAdvance(float rpm, float engineLoad);
+angle_t getCrankingAdvance(float rpm, float engineLoad, size_t cylinderIndex = 0);
+angle_t getRunningAdvance(float rpm, float engineLoad, size_t cylinderIndex = 0);
 angle_t getAdvanceCorrections(float engineLoad);
 
 size_t getMultiSparkCount(float rpm);

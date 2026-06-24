@@ -203,6 +203,9 @@ void setWholeIatCorrTimingTable(float value) {
  */
 void setWholeTimingTable(angle_t value) {
 	setTable(config->ignitionTable, value);
+#ifdef EFI_HD_DP
+	setTable(config->ignitionFrontTable, value);
+#endif
 }
 
 #if EFI_ENGINE_CONTROL
