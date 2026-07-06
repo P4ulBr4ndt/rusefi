@@ -157,6 +157,7 @@ struct_no_prefix engine_configuration_s
 #define CLT_CRANKING_TAPER_CURVE_SIZE 6
 #define CRANKING_CYCLE_CLT_SIZE 4
 #define IDLE_ADVANCE_CURVE_SIZE 8
+#define IDLE_ADVANCE_CLT_SIZE 8
 #define CRANKING_ADVANCE_CURVE_SIZE 4
 #define TRAILING_SPARK_SIZE 4
 #define TRAILING_SPARK_RPM_SIZE 4
@@ -2024,7 +2025,8 @@ float[CLT_CRANKING_TAPER_CURVE_SIZE] afterCrankingIACtaperDurationBins;;{bitStri
 uint16_t[CLT_CRANKING_TAPER_CURVE_SIZE] afterCrankingIACtaperDuration;This is the duration in cycles that the IAC will take to reach its normal idle position, it can be used to hold the idle higher for a few seconds after cranking to improve startup.\nShould be 100 once tune is better;"cycles", 1, 0, 0, 500, 1
 
 uint8_t[IDLE_ADVANCE_CURVE_SIZE] autoscale idleAdvanceBins;Optional timing advance table for Idle (see useSeparateAdvanceForIdle);"RPM", 50, 0, 0, 12000, 0
-float[IDLE_ADVANCE_CURVE_SIZE] idleAdvance    ;Optional timing advance table for Idle (see useSeparateAdvanceForIdle);"deg", 1, 0, -20, 90, 1
+float[IDLE_ADVANCE_CLT_SIZE] idleAdvanceCltBins;Optional timing advance table for Idle (see useSeparateAdvanceForIdle);{bitStringValue(unitsLabels, useMetricOnInterface)}, {useMetricOnInterface ? 1 : 1.8}, {useMetricOnInterface ? 0 : 17.77777}, {useMetricOnInterface ? -40 : -40}, {useMetricOnInterface ? @@CLT_UPPER_LIMIT@@ : @@CLT_UPPER_LIMIT@@ * 1.8 + 32}, 0
+float[IDLE_ADVANCE_CLT_SIZE x IDLE_ADVANCE_CURVE_SIZE] idleAdvance;Optional timing advance table for Idle (see useSeparateAdvanceForIdle);"deg", 1, 0, -20, 90, 1
 uint8_t[IDLE_VE_SIZE_RPM] autoscale idleVeRpmBins;;"RPM", 10, 0, 0, 2500, 0
 uint8_t[IDLE_VE_SIZE] idleVeLoadBins;;"load", 1, 0, 0, 100, 0
 uint16_t[IDLE_VE_SIZE x IDLE_VE_SIZE_RPM] autoscale idleVeTable;;"%", 0.1, 0, 0, 999, 1

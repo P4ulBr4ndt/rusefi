@@ -645,6 +645,7 @@ bool validateConfigOnStartUpOrBurn() {
 	ensureArrayIsAscendingOrDefault("Idle VE RPM", config->idleVeRpmBins);
 	ensureArrayIsAscendingOrDefault("Idle VE Load", config->idleVeLoadBins);
 	ensureArrayIsAscendingOrDefault("Idle timing", config->idleAdvanceBins);
+	ensureArrayIsAscendingOrDefault("Idle timing CLT", config->idleAdvanceCltBins);
 
 	for (size_t index = 0; index < efi::size(engineConfiguration->vrThreshold); index++) {
 		auto& cfg = engineConfiguration->vrThreshold[index];
