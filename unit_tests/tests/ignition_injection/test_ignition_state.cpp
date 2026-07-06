@@ -52,7 +52,7 @@ TEST(ignition_state, getRunningAdvanceIdleTable) {
   const float rpm = 900;
   const float load = 30;
   setWholeTimingTable(10);
-  setArrayValues(config->idleAdvance, 5);
+  setTable(config->idleAdvance, 5);
 
   MockIdle idler;
   engine->engineModules.get<IdleController>().set(&idler);
@@ -202,7 +202,7 @@ TEST(ignition_state, tsAdvanceIndicators) {
   const float rpm = 900;
   const float load = 30;
   setWholeTimingTable(10);
-  setArrayValues(config->idleAdvance, 5);
+  setTable(config->idleAdvance, 5);
 
   MockIdle idler;
   engine->engineModules.get<IdleController>().set(&idler);
