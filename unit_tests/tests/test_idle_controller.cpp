@@ -119,6 +119,10 @@ TEST(idle_v2, testDeterminePhase) {
 	// Below TPS but above RPM should be outside the zone
 	EXPECT_EQ(ICP::Coasting, dut.determinePhase(1101, targetInfo, 0, 0, 10));
 	EXPECT_EQ(ICP::Coasting, dut.determinePhase(5000, targetInfo, 0, 0, 10));
+
+	setCCStatus(CruiseControlStatus::Enabled);
+	EXPECT_EQ(ICP::Running, dut.determinePhase(5000, targetInfo, 0, 0, 10));
+	EXPECT_FALSE(dut.looksLikeCoasting);
 }
 
 TEST(idle_v2, crankingOpenLoop) {

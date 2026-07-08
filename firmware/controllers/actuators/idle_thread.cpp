@@ -76,9 +76,13 @@ IIdleController::Phase IdleController::determinePhase(float rpm, IIdleController
 		return Phase::Running;
 	}
 
+	const bool isCruiseControlEnabled = getCCStatus() == CruiseControlStatus::Enabled;
+
 	// If rpm too high (but throttle not pressed), we're coasting
 	// ALSO, if still in the cranking taper, disable coasting
-  if (rpm > targetRpm.IdleExitRpm) {
+  if (isCruiseControlEnabled) {
+ 		looksLikeCoasting = false;
+ 	} else if (rpm > targetRpm.IdleExitRpm) {
  		looksLikeCoasting = true;
  	} else if (rpm < targetRpm.IdleEntryRpm) {
  		looksLikeCoasting = false;
@@ -87,6 +91,10 @@ IIdleController::Phase IdleController::determinePhase(float rpm, IIdleController
  	looksLikeCrankToIdle = crankingTaperFraction < 1;
 	if (looksLikeCoasting && !looksLikeCrankToIdle) {
 		return Phase::Coasting;
+	}
+
+	if (isCruiseControlEnabled) {
+		return Phase::Running;
 	}
 
 	// If the vehicle is moving too quickly, disable CL idle
