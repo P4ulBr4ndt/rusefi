@@ -109,21 +109,31 @@ float processBMW_e90(const CANRxFrame& frame) {
 }
 
 float processHarley_124(const CANRxFrame& frame, efitick_t nowNt) {
-	const int vehicle = ((frame.data8[0] & 0x0F) << 8) | frame.data8[1];
-	const int front   = (frame.data8[2] << 4) | ((frame.data8[3] >> 4) & 0x0F);
-	const int rear    = ((frame.data8[3] & 0x0F) << 8) | frame.data8[4];
+	//TODO This is a first approach for the upper-nibble of 0x124:msg[0], will be further investigated
+	const bool canVssError = (frame.data8[0] & 0xF0) == 0xF0;
 
-	if (front == 0 || rear == 0) {
+	if (canVssError) {
 		harleyWheelSlipFilter.reset();
 		wheelSlipRatio.invalidate();
-	} else {
-		harleyWheelSlipFilter.setSmoothingFactor(HARLEY_WHEEL_SLIP_FILTER_ALPHA);
-		const float wheelSlip = static_cast<float>(rear) / static_cast<float>(front);
-		wheelSlipRatio.setValidValue(harleyWheelSlipFilter.initOrAverage(wheelSlip), nowNt);
-	}
 
-	// Vehicle for some reason reads 2 aka 0.2 when standing still therefor only use it when > 10 aka > 1
-	return 0.1f * std::max(vehicle > 10 ? vehicle : 0, rear);
+		return 0.0f;
+	} else {
+		const int vehicle = ((frame.data8[0] & 0x0F) << 8) | frame.data8[1];
+		const int front   = (frame.data8[2] << 4) | ((frame.data8[3] >> 4) & 0x0F);
+		const int rear    = ((frame.data8[3] & 0x0F) << 8) | frame.data8[4];
+
+		if (front == 0 || rear == 0) {
+			harleyWheelSlipFilter.reset();
+			wheelSlipRatio.invalidate();
+		} else {
+			harleyWheelSlipFilter.setSmoothingFactor(HARLEY_WHEEL_SLIP_FILTER_ALPHA);
+			const float wheelSlip = static_cast<float>(rear) / static_cast<float>(front);
+			wheelSlipRatio.setValidValue(harleyWheelSlipFilter.initOrAverage(wheelSlip), nowNt);
+		}
+
+		// Vehicle for some reason reads 2 aka 0.2 when standing still therefor only use it when > 10 aka > 1
+		return 0.1f * std::max(vehicle > 10 ? vehicle : 0, rear);
+	}
 }
 
 float processW202(const CANRxFrame& frame) {
