@@ -2119,33 +2119,3 @@ Rotational Idle Auto engage CLT.
 ### wizardInjectorFlow
 
 
-### boardUseTachPullUp
-
-
-### boardUseCrankPullUp
-
-
-### boardUseTempPullUp
-
-
-### boardUse2stepPullDown
-
-
-### boardUseCamPullDown
-
-
-### boardUseD4PullDown
-
-
-### boardUseD5PullDown
-
-
-### boardUseCamVrPullUp
-
-
-### boardUseD2PullDown
-
-
-### boardUseD3PullDown
-
-
