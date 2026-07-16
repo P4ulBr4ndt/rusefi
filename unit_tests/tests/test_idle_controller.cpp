@@ -353,13 +353,20 @@ TEST(idle_v2, openLoopCoastingTable) {
 
 	// enable & configure feature
 	engineConfiguration->useIacTableForCoasting = true;
-	for (size_t i = 0; i < CLT_CURVE_SIZE; i++) {
-		config->iacCoastingRpmBins[i] = 100 * i;
-		config->iacCoasting[i] = 5 * i;
+	setLinearCurve(config->iacCoastingRpmBins, 500, 6000, 1);
+	for (size_t i = 0; i < efi::size(config->iacCoastingRpmBins); i++) {
+		for (size_t j = 0; j < efi::size(config->cltIdleCorrBins); j++) {
+			config->iacCoasting[i][j] = 10 * i + j;
+		}
 	}
 
-	EXPECT_FLOAT_EQ(40, dut.getOpenLoop(ICP::Coasting, 800, 0, 0, 2));
-	EXPECT_FLOAT_EQ(75, dut.getOpenLoop(ICP::Coasting, 1500, 0, 0, 2));
+	for (size_t i = 0; i < efi::size(config->cltIdleCorrBins); i++) {
+		config->cltIdleCorrBins[i] = 10 * i;
+	}
+
+	EXPECT_FLOAT_EQ(0, dut.getOpenLoop(ICP::Coasting, 500, 0, 0, 2));
+	EXPECT_FLOAT_EQ(1, dut.getOpenLoop(ICP::Coasting, 500, 10, 0, 2));
+	EXPECT_FLOAT_EQ(71, dut.getOpenLoop(ICP::Coasting, 6000, 10, 0, 2));
 }
 
 TEST(idle_v2, closedLoopBasic) {

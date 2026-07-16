@@ -534,7 +534,7 @@ static void setDefaultEngineConfiguration() {
 
 	engineConfiguration->useStepperIdle = false;
 
-	setLinearCurve(config->iacCoastingRpmBins, 0, 8000, 1);
+	setLinearCurve(config->iacCoastingRpmBins, 500, 6000, 1);
 
 #if !EFI_UNIT_TEST
   // todo: remove from *engine* defaults, move into boards?

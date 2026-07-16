@@ -203,7 +203,11 @@ percent_t IdleController::getOpenLoop(Phase phase, float rpm, float clt, SensorR
 	// If coasting (and enabled), use the coasting position table instead of normal open loop
 	isIacTableForCoasting = engineConfiguration->useIacTableForCoasting && isIdleCoasting;
 	if (isIacTableForCoasting) {
-		percent_t coastingPosition = interpolate2d(rpm, config->iacCoastingRpmBins, config->iacCoasting);
+		percent_t coastingPosition = interpolate3d(
+			config->iacCoasting,
+			config->iacCoastingRpmBins, rpm,
+			config->cltIdleCorrBins, clt
+		);
 
 		// Add A/C offset if the A/C is on during coasting
 		if (engine->module<AcController>().unmock().acButtonState) {
