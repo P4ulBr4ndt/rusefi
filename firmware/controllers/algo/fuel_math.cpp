@@ -503,8 +503,9 @@ float getCylinderFuelTrim(size_t cylinderNumber, float rpm, float fuelLoad) {
   // So firing order is 1-2 aka Rear Front
   // And with RUSEFI "cylinderNumber 0" is 1 = REAR and "cylinderNumber 1" is 2 = FRONT
   if (cylinderNumber == 1) {
-    auto veRear = veMap.getValue(rpm, fuelLoad);
-    auto veFront = veFrontMap.getValue(rpm, fuelLoad);
+    auto veLoad = getVeLoadAxis(engineConfiguration->veOverrideMode, fuelLoad);
+    auto veRear = veMap.getValue(rpm, veLoad);
+    auto veFront = veFrontMap.getValue(rpm, veLoad);
     return veFront / veRear;
   }
 
