@@ -277,7 +277,8 @@ void onApplyPreset() {
 }
 
 PUBLIC_API_WEAK bool isTouchingVe(uint16_t offset, uint16_t count) {
-  return isTouchingArea(offset, count, offsetof(persistent_config_s, veTable), sizeof(config->veTable));
+  return isTouchingArea(offset, count, offsetof(persistent_config_s, veTable), sizeof(config->veTable))
+  	  || isTouchingArea(offset, count, offsetof(persistent_config_s, veFrontTable), sizeof(config->veFrontTable));
 }
 
 static void onCalibrationWrite(uint16_t page, uint16_t offset, uint16_t count) {
@@ -1055,7 +1056,7 @@ static char tsErrorBuff[80];
 #endif // EFI_PROD_CODE || EFI_SIMULATOR
 
 bool isTuningVeNow() {
-  int tuningDetector = engineConfiguration->isTuningDetectorEnabled ? 0 : 20;
+  int tuningDetector = engineConfiguration->isTuningDetectorEnabled ? 20 : 0;
 	return !calibrationsVeWriteTimer.hasElapsedSec(tuningDetector);
 }
 
