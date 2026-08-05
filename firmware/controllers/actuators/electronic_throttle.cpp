@@ -301,6 +301,10 @@ PUBLIC_API_WEAK float boardAdjustEtbTarget(float currentEtbTarget) {
   return currentEtbTarget;
 }
 
+PUBLIC_API_WEAK float boardAdjustEtbTargetFinal(float currentEtbTarget) {
+  return currentEtbTarget;
+}
+
 expected<percent_t> EtbController::getSetpointEtb() {
 	// Autotune runs with 50% target position
 	if (m_isAutotune) {
@@ -356,6 +360,7 @@ expected<percent_t> EtbController::getSetpointEtb() {
 
 	// Clamp before rev limiter to avoid ineffective rev limit due to crazy out of range position target
 	targetPosition = clampPercentValue(targetPosition);
+	targetPosition = boardAdjustEtbTargetFinal(targetPosition);
 
 	// Lastly, apply ETB rev limiter
 	auto etbRpmLimit = engineConfiguration->etbRevLimitStart;
