@@ -277,8 +277,7 @@ void onApplyPreset() {
 }
 
 PUBLIC_API_WEAK bool isTouchingVe(uint16_t offset, uint16_t count) {
-  return isTouchingArea(offset, count, offsetof(persistent_config_s, veTable), sizeof(config->veTable))
-  	  || isTouchingArea(offset, count, offsetof(persistent_config_s, veFrontTable), sizeof(config->veFrontTable));
+  return isTouchingArea(offset, count, offsetof(persistent_config_s, veTable), sizeof(config->veTable));
 }
 
 static void onCalibrationWrite(uint16_t page, uint16_t offset, uint16_t count) {
