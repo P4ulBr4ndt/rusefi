@@ -9,6 +9,14 @@ extern "C" {
 	#include "boot.h"
 }
 
+static constexpr iomode_t getCanTxPinMode(uint32_t alternateFunction) {
+#if defined(PAL_STM32_PUPDR_PULLUP) && defined(EFI_CAN_TX_RECESSIVE_PULLUP) && EFI_CAN_TX_RECESSIVE_PULLUP
+	return PAL_MODE_ALTERNATE(alternateFunction) | PAL_STM32_PUPDR_PULLUP;
+#else
+	return PAL_MODE_ALTERNATE(alternateFunction);
+#endif
+}
+
 // CAN1 PB8+PB9 and CAN2 PB5+PB6 pins are commonly used by Hellen.
 // CAN2 PB5+PB13 pins can be used for ST-bootloader compatibility.
 //
@@ -67,7 +75,7 @@ extern const CANConfig *findCanConfig(can_baudrate_e rate);
 ****************************************************************************************/
 extern "C" void CanInit(void) {
 	// init pins
-	palSetPadMode(OPENBLT_CAN_TX_PORT, OPENBLT_CAN_TX_PIN, PAL_MODE_ALTERNATE(EFI_CAN_TX_AF));
+	palSetPadMode(OPENBLT_CAN_TX_PORT, OPENBLT_CAN_TX_PIN, getCanTxPinMode(EFI_CAN_TX_AF));
 	palSetPadMode(OPENBLT_CAN_RX_PORT, OPENBLT_CAN_RX_PIN, PAL_MODE_ALTERNATE(EFI_CAN_RX_AF));
 
 	auto cfg = findCanConfig(B500KBPS);

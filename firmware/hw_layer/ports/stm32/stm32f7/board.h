@@ -113,7 +113,7 @@
 //#define PIN_OSPEED_MEDIUM(n)        (2U << ((n) * 2U))
 #define PIN_OSPEED_HIGH(n)          (3U << ((n) * 2U))
 //#define PIN_PUPDR_FLOATING(n)       (0U << ((n) * 2U))
-//#define PIN_PUPDR_PULLUP(n)         (1U << ((n) * 2U))
+#define PIN_PUPDR_PULLUP(n)         (1U << ((n) * 2U))
 #define PIN_PUPDR_PULLDOWN(n)       (2U << ((n) * 2U))
 #define PIN_AFIO_AF(n, v)           ((v) << (((n) % 8U) * 4U))
 
@@ -287,7 +287,27 @@
 #define VAL_GPIOD_MODER             VAL_GPIO_MODER_ALL_DEFAULT
 #define VAL_GPIOD_OTYPER            VAL_GPIO_OTYPER_ALL_DEFAULT
 #define VAL_GPIOD_OSPEEDR           VAL_GPIO_OSPEEDR_ALL_DEFAULT
-#define VAL_GPIOD_PUPDR             VAL_GPIO_PUPDR_ALL_DEFAULT
+#if defined(EFI_GPIOD1_DEFAULT_PULLUP) && EFI_GPIOD1_DEFAULT_PULLUP
+#define EFI_GPIOD1_PUPDR            PIN_PUPDR_PULLUP(1)
+#else
+#define EFI_GPIOD1_PUPDR            EFI_DR_DEFAULT(1)
+#endif
+#define VAL_GPIOD_PUPDR             (EFI_DR_DEFAULT(0) |         \
+                                     EFI_GPIOD1_PUPDR |         \
+                                     EFI_DR_DEFAULT(2) |         \
+                                     EFI_DR_DEFAULT(3) |         \
+                                     EFI_DR_DEFAULT(4) |         \
+                                     EFI_DR_DEFAULT(5) |         \
+                                     EFI_DR_DEFAULT(6) |         \
+                                     EFI_DR_DEFAULT(7) |         \
+                                     EFI_DR_DEFAULT(8) |         \
+                                     EFI_DR_DEFAULT(9) |         \
+                                     EFI_DR_DEFAULT(10) |        \
+                                     EFI_DR_DEFAULT(11) |        \
+                                     EFI_DR_DEFAULT(12) |        \
+                                     EFI_DR_DEFAULT(13) |        \
+                                     EFI_DR_DEFAULT(14) |        \
+                                     EFI_DR_DEFAULT(15))
 #define VAL_GPIOD_ODR               VAL_GPIO_ODR_ALL_DEFAULT
 #define VAL_GPIOD_AFRL              VAL_GPIO_AF_ALL_DEFAULT
 #define VAL_GPIOD_AFRH              VAL_GPIO_AF_ALL_DEFAULT

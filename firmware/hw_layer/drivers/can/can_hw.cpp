@@ -24,6 +24,14 @@
 
 static bool isCanEnabled = false;
 
+static constexpr iomode_t getCanTxPinMode(uint32_t alternateFunction) {
+#if defined(PAL_STM32_PUPDR_PULLUP) && defined(EFI_CAN_TX_RECESSIVE_PULLUP) && EFI_CAN_TX_RECESSIVE_PULLUP
+	return PAL_MODE_ALTERNATE(alternateFunction) | PAL_STM32_PUPDR_PULLUP;
+#else
+	return PAL_MODE_ALTERNATE(alternateFunction);
+#endif
+}
+
 #if EFI_PROD_CODE
 
 extern const CANConfig *findCanConfig(can_baudrate_e rate);
@@ -179,14 +187,14 @@ void startCanPins() {
 	}
 
 #if EFI_PROD_CODE
-	efiSetPadModeIfConfigurationChanged("CAN TX", canTxPin, PAL_MODE_ALTERNATE(EFI_CAN_TX_AF));
+	efiSetPadModeIfConfigurationChanged("CAN TX", canTxPin, getCanTxPinMode(EFI_CAN_TX_AF));
 	efiSetPadModeIfConfigurationChanged("CAN RX", canRxPin, PAL_MODE_ALTERNATE(EFI_CAN_RX_AF));
 
-	efiSetPadModeIfConfigurationChanged("CAN2 TX", can2TxPin, PAL_MODE_ALTERNATE(EFI_CAN_TX_AF));
+	efiSetPadModeIfConfigurationChanged("CAN2 TX", can2TxPin, getCanTxPinMode(EFI_CAN_TX_AF));
 	efiSetPadModeIfConfigurationChanged("CAN2 RX", can2RxPin, PAL_MODE_ALTERNATE(EFI_CAN_RX_AF));
 
 #if (EFI_CAN_BUS_COUNT >= 3)
-	efiSetPadModeIfConfigurationChanged("CAN3 TX", can3TxPin, PAL_MODE_ALTERNATE(EFI_CAN3_TX_AF));
+	efiSetPadModeIfConfigurationChanged("CAN3 TX", can3TxPin, getCanTxPinMode(EFI_CAN3_TX_AF));
 	efiSetPadModeIfConfigurationChanged("CAN3 RX", can3RxPin, PAL_MODE_ALTERNATE(EFI_CAN3_RX_AF));
 #endif // EFI_CAN_BUS_COUNT >= 3
 #endif // EFI_PROD_CODE
