@@ -24,6 +24,10 @@
 
 static bool isCanEnabled = false;
 
+#if EFI_PROD_CODE
+
+extern const CANConfig *findCanConfig(can_baudrate_e rate);
+
 static constexpr iomode_t getCanTxPinMode(uint32_t alternateFunction) {
 #if defined(PAL_STM32_PUPDR_PULLUP) && defined(EFI_CAN_TX_RECESSIVE_PULLUP) && EFI_CAN_TX_RECESSIVE_PULLUP
 	return PAL_MODE_ALTERNATE(alternateFunction) | PAL_STM32_PUPDR_PULLUP;
@@ -31,10 +35,6 @@ static constexpr iomode_t getCanTxPinMode(uint32_t alternateFunction) {
 	return PAL_MODE_ALTERNATE(alternateFunction);
 #endif
 }
-
-#if EFI_PROD_CODE
-
-extern const CANConfig *findCanConfig(can_baudrate_e rate);
 
 #else // not EFI_PROD_CODE
 // Nothing to actually set for the simulator's CAN config.
