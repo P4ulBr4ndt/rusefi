@@ -1286,7 +1286,6 @@
 #define IAT_CURVE_SIZE 16
 #define IAT_IGN_CORR_LOAD_COUNT 8
 #define IAT_IGN_CORR_TEMP_COUNT 8
-#define IDLE_ADVANCE_CLT_SIZE 8
 #define IDLE_ADVANCE_CURVE_SIZE 8
 #define idle_hardware_s_size 12
 #define idle_mode_e_auto_enum 0="IM_AUTO",1="IM_MANUAL"
@@ -1475,7 +1474,7 @@
 #define pedalSensor_NAME "Accelerator pedal"
 #define pedalToTpsTbl_NAME "ETB pedal target"
 #define PERCENT_TRIM_BYTE_PACKING_DIV 0.02
-#define persistent_config_s_size 24208
+#define persistent_config_s_size 23952
 #define pid_s_size 20
 #define pin_input_mode_e_auto_enum 0="PI_DEFAULT",4="PI_INVERTED_DEFAULT",6="PI_INVERTED_PULLDOWN",5="PI_INVERTED_PULLUP",2="PI_PULLDOWN",1="PI_PULLUP"
 #define pin_input_mode_e_PI_DEFAULT 0
@@ -1563,7 +1562,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 3318909433
+#define SIGNATURE_HASH 2920146993
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -1643,7 +1642,7 @@
 #define torqueReductionActivationMode_e_TORQUE_REDUCTION_BUTTON 0
 #define torqueReductionActivationMode_e_TORQUE_REDUCTION_CLUTCH_DOWN_SWITCH 2
 #define torqueReductionActivationMode_e_TORQUE_REDUCTION_CLUTCH_UP_SWITCH 3
-#define TOTAL_CONFIG_SIZE 24208
+#define TOTAL_CONFIG_SIZE 23952
 #define TPS_2_BYTE_PACKING_MULT 100
 #define TPS_PPS_TOO_HIGH_THRESHOLD 110
 #define TPS_PPS_TOO_LOW_THRESHOLD -10
@@ -2163,7 +2162,7 @@
 #define ts_show_wbo_can_menu true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI master.2026.08.10.frankenso_na6.3318909433"
+#define TS_SIGNATURE "rusEFI master.2026.08.10.frankenso_na6.2920146993"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_TEST_COMMAND 't'
