@@ -14,29 +14,6 @@
 
 // todo: this file is asking to improve conditional compilation. unit_tests and cypress/kinetis are both special cases
 #if HAL_USE_CAN || EFI_UNIT_TEST
-
-namespace {
-uint32_t canSerialRxOverride = 0;
-uint32_t canSerialTxOverride = 0;
-}
-
-uint32_t getCanSerialRxId() {
-	return canSerialRxOverride ? canSerialRxOverride : CAN_ECU_SERIAL_RX_ID;
-}
-
-uint32_t getCanSerialTxId() {
-	return canSerialTxOverride ? canSerialTxOverride : CAN_ECU_SERIAL_TX_ID;
-}
-
-void setCanSerialOverrideIds(uint32_t rxId, uint32_t txId) {
-	canSerialRxOverride = rxId;
-	canSerialTxOverride = txId;
-}
-
-void clearCanSerialOverrideIds() {
-	canSerialRxOverride = 0;
-	canSerialTxOverride = 0;
-}
 #include "serial_can.h"
 #include "can.h"
 #include "can_msg_tx.h"
@@ -50,26 +27,17 @@ static CanTsListener g_listener;
 static CanTransport transport(&g_listener);
 
 static CanStreamerState state(&transport, &transport, /*bus*/0, CAN_ECU_SERIAL_RX_ID, CAN_ECU_SERIAL_TX_ID);
-
-static void syncCanSerialFrameIds() {
-	state.rxFrameId = getCanSerialRxId();
-	state.txFrameId = getCanSerialTxId();
-}
 #endif // HAL_USE_CAN
 
 #if HAL_USE_CAN || EFI_UNIT_TEST
 
 static int isoTpPacketCounter = 0;
 
-bool CanTsListener::acceptFrame(const size_t, const CANRxFrame& frame) const {
-	return CAN_ID(frame) == getCanSerialRxId();
-}
-
 /**
  * incoming data main entry point
  */
 void CanTsListener::decodeFrame(const CANRxFrame& frame, efitick_t /*nowNt*/) {
-	// CAN ID filtering happens in acceptFrame, by the time we are here we know it's the active CAN serial RX ID
+	// CAN ID filtering happens in base class, by the time we are here we know it's the CAN_ECU_SERIAL_RX_ID packet
 	// todo: what if the FIFO is full?
 	CanRxMessage msg(frame);
 	if (engineConfiguration->verboseIsoTp) {
@@ -106,17 +74,14 @@ can_msg_t CanTransport::receive(CANRxFrame *crfp, can_sysinterval_t timeout) {
 }
 
 void tsOverCanInit() {
-	syncCanSerialFrameIds();
 	transport.init();
 }
 
 msg_t canStreamAddToTxTimeout(size_t *np, const uint8_t *txbuf, sysinterval_t timeout) {
-	syncCanSerialFrameIds();
 	return state.streamAddToTxTimeout(np, txbuf, timeout);
 }
 
 msg_t canStreamFlushTx(sysinterval_t timeout) {
-	syncCanSerialFrameIds();
 	return state.streamFlushTx(timeout);
 }
 
@@ -124,7 +89,6 @@ msg_t canStreamFlushTx(sysinterval_t timeout) {
 	// in entry: number of data frames to receive
 	// on exit the number of frames actually received
 msg_t canStreamReceiveTimeout(size_t *np, uint8_t *rxbuf, sysinterval_t timeout) {
-	syncCanSerialFrameIds();
 	return state.streamReceiveTimeout(np, rxbuf, timeout);
 }
 

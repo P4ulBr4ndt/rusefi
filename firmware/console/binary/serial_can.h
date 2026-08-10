@@ -18,7 +18,6 @@ public:
 	{
 	}
 
-	bool acceptFrame(const size_t busIndex, const CANRxFrame& frame) const override;
 	virtual void decodeFrame(const CANRxFrame& frame, efitick_t nowNt);
 
 	bool get(CanRxMessage &item, int timeout) {
@@ -51,8 +50,3 @@ msg_t canStreamFlushTx(sysinterval_t timeout);
 
 msg_t canStreamReceiveTimeout(size_t *np, uint8_t *rxbuf, sysinterval_t timeout);
 #endif /* HAL_USE_CAN */
-
-uint32_t getCanSerialRxId();
-uint32_t getCanSerialTxId();
-void setCanSerialOverrideIds(uint32_t rxId, uint32_t txId);
-void clearCanSerialOverrideIds();

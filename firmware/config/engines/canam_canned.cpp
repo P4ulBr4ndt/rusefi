@@ -27,10 +27,7 @@ static void cannedcltIdleRpm() {
 static void cannedidleAdvance() {
 #if IDLE_ADVANCE_CURVE_SIZE == 8
 	static const float hardCodedidleAdvance[8] = {10.0, 10.571428, 11.142858, 11.714286, 12.285714, 12.857142, 13.428572, 14.0};
-	// no CLT-based data available from the original 1D canned tune, so use the same RPM curve for every CLT row
-	for (int cltIndex = 0; cltIndex < IDLE_ADVANCE_CLT_SIZE; cltIndex++) {
-		copyArray(config->idleAdvance[cltIndex], hardCodedidleAdvance);
-	}
+	copyArray(config->idleAdvance, hardCodedidleAdvance);
 #endif
 }
 

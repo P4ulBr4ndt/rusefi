@@ -24,8 +24,7 @@ bool storageAllowWriteID(StorageItemId id)
 {
 #if (EFI_STORAGE_INT_FLASH == TRUE) || defined(EFI_UNIT_TEST)
 	if ((id == EFI_SETTINGS_RECORD_ID) ||
-		(id == EFI_SETTINGS_BACKUP_RECORD_ID) ||
-		(id == EFI_LTFT_RECORD_ID)) {
+		(id == EFI_SETTINGS_BACKUP_RECORD_ID)) {
 		// special case, settings can be stored in internal flash
 
 		// writing internal flash can cause cpu freeze
@@ -93,16 +92,14 @@ static bool storageWriteID(uint32_t id) {
 	// Do the actual flash write operation for given ID
 	if (id == EFI_SETTINGS_RECORD_ID) {
 		return writeToFlashNowImpl();
-	}
-
-	if (id == EFI_LTFT_RECORD_ID) {
+	} else if (id == EFI_LTFT_RECORD_ID) {
 		engine->module<LongTermFuelTrim>()->store();
 		return true;
+	} else {
+		efiPrintf("Requested to write unknown record id %ld", id);
+		// to clear pending bit
+		return true;
 	}
-
-	efiPrintf("Requested to write unknown record id %ld", id);
-	// to clear pending bit
-	return true;
 }
 
 static bool storageReadID(uint32_t id) {
@@ -111,11 +108,11 @@ static bool storageReadID(uint32_t id) {
 	if (id == EFI_LTFT_RECORD_ID) {
 		engine->module<LongTermFuelTrim>()->load();
 		return true;
+	} else {
+		efiPrintf("Requested to read unknown record id %ld", id);
+		// to clear pending bit
+		return true;
 	}
-
-	efiPrintf("Requested to read unknown record id %ld", id);
-	// to clear pending bit
-	return true;
 }
 
 static const char *storageTypeToName(StorageType type) {
