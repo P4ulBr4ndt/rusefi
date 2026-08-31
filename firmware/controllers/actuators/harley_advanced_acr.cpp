@@ -10,6 +10,7 @@
 #include "harley_advanced_acr.h"
 #include "trigger_central.h"
 #include "trigger_scheduler.h"
+#include "rusefi_enums.h"
 
 #if EFI_HD_ADVANCED_ACR_DEBUG
 #define ACR_DEBUG(fmt, ...) efiPrintf("ADV_ACR: " fmt, ##__VA_ARGS__)
@@ -162,14 +163,14 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 	bool cranking = engine->rpmCalculator.isCranking();
 	bool spinningUp = engine->rpmCalculator.isSpinningUp();
 	bool synced = getTriggerCentral()->triggerState.getShaftSynchronized();
-	uint8_t mapSyncCounter = getTriggerCentral()->mapVvt_sync_counter;
+	uint8_t syncCounter = engineConfiguration->vvtMode[0] == VVT_BOSCH_QUICK_START ? getTriggerCentral()->vvtCamCounter : getTriggerCentral()->mapVvt_sync_counter;
 	AcrMode desiredMode = AcrMode::Off;
 
 	if (running) {
 		desiredMode = AcrMode::Off;
 	} else if (!synced && (cranking || spinningUp)) {
 		desiredMode = AcrMode::ForceOn;
-	} else if (synced && mapSyncCounter < 2 && (cranking || spinningUp)) {
+	} else if (synced && syncCounter < 2 && (cranking || spinningUp)) {
 		// keep valves open until we've seen enough instant MAP sync confirmations
 		desiredMode = AcrMode::ForceOn;
 	} else if (synced) {
@@ -183,7 +184,7 @@ void HarleyAdvancedAcr::updateAdvancedAcr() {
 		if (desiredMode != AcrMode::Windowed) {
 			m_scheduled = false;
 		}
-		ACR_DEBUG("mode %d->%d run=%d crank=%d spin=%d sync=%d mapCnt=%d syncCnt=%d", (int)m_mode, (int)desiredMode, running, cranking, spinningUp, synced, mapSyncCounter, getTriggerCentral()->triggerState.getSynchronizationCounter());
+		ACR_DEBUG("mode %d->%d run=%d crank=%d spin=%d sync=%d mapCnt=%d syncCnt=%d", (int)m_mode, (int)desiredMode, running, cranking, spinningUp, synced, syncCounter, getTriggerCentral()->triggerState.getSynchronizationCounter());
 		m_mode = desiredMode;
 	}
 	bool enteringWindowed = (m_mode == AcrMode::Windowed && prevMode != AcrMode::Windowed);
