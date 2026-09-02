@@ -232,6 +232,8 @@ void EngineState::periodicFastCallback() {
 	for (size_t bankIndex = 0; bankIndex < FT_BANK_COUNT; bankIndex++) {
 		engine->engineState.stftCorrection[bankIndex] = clResult.banks[bankIndex];
 	}
+	engine->engineState.Rpm  = rpm;
+	engine->engineState.Load = fuelLoad;
 
 	// Now apply that to per-cylinder fueling and timing
 	for (size_t cylinderIndex = 0; cylinderIndex < engineConfiguration->cylindersCount; cylinderIndex++) {

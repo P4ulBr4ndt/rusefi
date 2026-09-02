@@ -88,6 +88,8 @@ struct_no_prefix engine_state_s
 
 	! todo: extract to injection.txt?
 	float[FT_BANK_COUNT iterate] stftCorrection;STFT: Bank; "%", 100, -1.0, 50, 150, 1
+	float Rpm;RPM at engineState fastCallback;"RPM", 1, 0, 0 10000, 1
+	float Load;fuelLoad at engineState fastCallback;"%", 1, 0, 0, 150, 1
 
 ! engine_state_s
 end_struct
