@@ -728,6 +728,7 @@ void updateTunerStudioState() {
 
 
 	tsOutputChannels->revolutionCounterSinceStart = engine->rpmCalculator.getRevolutionCounterSinceStart();
+	tsOutputChannels->revolutionCounterSincePhaseSync = engine->rpmCalculator.getRevolutionCounterSincePhaseSync();
 
 #if EFI_CLOCK_LOCKS
 	tsOutputChannels->maxLockedDuration = NT2US(maxLockedDuration);

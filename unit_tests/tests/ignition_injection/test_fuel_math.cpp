@@ -374,6 +374,29 @@ TEST(FuelMath, getCycleFuelMassTest) {
 	EXPECT_NEAR(engine->engineState.crankingFuel.tpsCoefficient, 1, EPS3D);
 }
 
+TEST(FuelMath, crankingCycleCounterWaitsForPhaseSync) {
+	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
+	engineConfiguration->isPhaseSyncRequiredForIgnition = true;
+	engine->triggerCentral.triggerState.setNeedsDisambiguation(true);
+	ASSERT_TRUE(isWaitingForPhaseSync());
+
+	// no fuel/spark yet: cranking fuel taper must not advance, total cycle count still does
+	for (size_t i = 0; i < 5; i++) {
+		engine->rpmCalculator.onNewEngineCycle();
+	}
+	EXPECT_EQ(5u, engine->rpmCalculator.getRevolutionCounterSinceStart());
+	EXPECT_EQ(0u, engine->rpmCalculator.getRevolutionCounterSincePhaseSync());
+
+	engine->triggerCentral.triggerState.syncEnginePhase(2, 0, 720);
+	ASSERT_FALSE(isWaitingForPhaseSync());
+
+	for (size_t i = 0; i < 3; i++) {
+		engine->rpmCalculator.onNewEngineCycle();
+	}
+	EXPECT_EQ(8u, engine->rpmCalculator.getRevolutionCounterSinceStart());
+	EXPECT_EQ(3u, engine->rpmCalculator.getRevolutionCounterSincePhaseSync());
+}
+
 TEST(FuelMath, postCrankingFactorAxis){
 	EngineTestHelper eth(engine_type_e::TEST_ENGINE);
 	setupSimpleTestEngineWithMafAndTT_ONE_trigger(&eth);

@@ -405,7 +405,8 @@ float getIatFuelCorrection() {
 }
 
 float getPostCrankingFuelCorrection() {
-	const auto revolutionCounter = engine->rpmCalculator.getRevolutionCounterSinceStart();
+	// count only cycles which could actually fire, same as cranking fuel
+	const auto revolutionCounter = engine->rpmCalculator.getRevolutionCounterSincePhaseSync();
 	// if the engine run time is past the last bin, disable ASE in case the table is filled with values more than 1.0, helps with compatibility
 	if (revolutionCounter > config->postCrankingDurationBins[efi::size(config->postCrankingDurationBins) - 1])
 		return 1;
@@ -473,7 +474,8 @@ percent_t getFuelALSCorrection(float rpm) {
  * @return Duration of fuel injection while craning
  */
 float getCrankingFuel(float baseFuel) {
-	return getCrankingFuel3(baseFuel, engine->rpmCalculator.getRevolutionCounterSinceStart());
+	// count only cycles which could actually fire, so the first combustion gets the first table column
+	return getCrankingFuel3(baseFuel, engine->rpmCalculator.getRevolutionCounterSincePhaseSync());
 }
 
 /**

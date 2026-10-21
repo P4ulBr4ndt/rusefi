@@ -162,6 +162,9 @@ private:
 
 #if EFI_ENGINE_CONTROL
 LimpManager * getLimpManager();
+
+// True while fuel and spark are held back because engine phase (cam/MAP sync) is not known yet
+bool isWaitingForPhaseSync();
 #endif // EFI_ENGINE_CONTROL
 
 

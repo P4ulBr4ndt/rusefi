@@ -37,6 +37,15 @@ static bool noFiringUntilVvtSync() {
 }
 #endif // EFI_SHAFT_POSITION_INPUT
 
+bool isWaitingForPhaseSync() {
+#if EFI_SHAFT_POSITION_INPUT
+	return noFiringUntilVvtSync()
+		&& !engine->triggerCentral.triggerState.hasSynchronizedPhase();
+#else
+	return false;
+#endif // EFI_SHAFT_POSITION_INPUT
+}
+
 void LimpManager::onFastCallback() {
 	updateState(Sensor::getOrZero(SensorType::Rpm), getTimeNowNt());
 }
@@ -99,8 +108,7 @@ void LimpManager::updateState(float rpm, efitick_t nowNt) {
 		allowFuel.clear(ClearReason::LambdaProtection);
 	}
 
-	if (noFiringUntilVvtSync()
-			&& !engine->triggerCentral.triggerState.hasSynchronizedPhase()) {
+	if (isWaitingForPhaseSync()) {
 		// Any engine that requires cam-assistance for a full crank sync (symmetrical crank) can't schedule until we have cam sync
 		// examples:
 		// NB2, Nissan VQ/MR: symmetrical crank wheel and we need to make sure no spark happens out of sync

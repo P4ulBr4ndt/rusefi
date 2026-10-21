@@ -102,6 +102,11 @@ public:
 	void assignRpmValue(float value);
 	uint32_t getRevolutionCounterSinceStart(void) const;
 	/**
+	 * Engine cycles since start which happened with known engine phase,
+	 * i.e. without cycles where fuel/spark were held back waiting for phase sync
+	 */
+	uint32_t getRevolutionCounterSincePhaseSync() const;
+	/**
 	 * RPM rate of change between current RPM and RPM measured during previous engine cycle
 	 * see also SC_RPM_ACCEL
 	 */
@@ -156,6 +161,10 @@ private:
 	 * Same as the above, but since the engine started spinning
 	 */
 	uint32_t revolutionCounterSinceStart = 0;
+	/**
+	 * Same as the above, but only counting once engine phase is known
+	 */
+	uint32_t revolutionCounterSincePhaseSync = 0;
 
 	spinning_state_e state = STOPPED;
 

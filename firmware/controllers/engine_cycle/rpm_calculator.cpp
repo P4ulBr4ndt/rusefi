@@ -207,6 +207,18 @@ spinning_state_e RpmCalculator::getState() const {
 void RpmCalculator::onNewEngineCycle() {
 	revolutionCounterSinceBoot++;
 	revolutionCounterSinceStart++;
+#if EFI_ENGINE_CONTROL
+	// Cranking fuel is indexed by this counter: don't run it down while no fuel/spark
+	// is fired yet because we wait for phase sync.
+	if (isWaitingForPhaseSync()) {
+		return;
+	}
+#endif // EFI_ENGINE_CONTROL
+	revolutionCounterSincePhaseSync++;
+}
+
+uint32_t RpmCalculator::getRevolutionCounterSincePhaseSync() const {
+	return revolutionCounterSincePhaseSync;
 }
 
 uint32_t RpmCalculator::getRevolutionCounterM(void) const {
@@ -223,6 +235,7 @@ void RpmCalculator::onSlowCallback() {
 void RpmCalculator::setStopSpinning() {
 	isSpinning = false;
 	revolutionCounterSinceStart = 0;
+	revolutionCounterSincePhaseSync = 0;
 	rpmRate = 0;
 
 	if (cachedRpmValue != 0) {
