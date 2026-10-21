@@ -1559,7 +1559,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 232816496
+#define SIGNATURE_HASH 590376970
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -2159,12 +2159,12 @@
 #define ts_show_wbo_can_menu true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI master.2026.08.10.alphax-4chan_f7.232816496"
+#define TS_SIGNATURE "rusEFI.master.261021.alphax-4chan_f7.590376970"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_TEST_COMMAND 't'
 #define TS_TEST_COMMAND_char t
-#define TS_TOTAL_OUTPUT_SIZE 2100
+#define TS_TOTAL_OUTPUT_SIZE 2104
 #define TS_TRIGGER_SCOPE_CHANNEL_1_NAME "C2/C3 Crank VR"
 #define TS_TRIGGER_SCOPE_CHANNEL_2_NAME "E5/E6 Cam VR"
 #define TS_TRIGGER_SCOPE_DISABLE 5
