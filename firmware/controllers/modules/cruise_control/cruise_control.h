@@ -52,6 +52,7 @@ private:
 	Pid m_pid;
 	CruiseControlStatus m_status = CruiseControlStatus::Disabled;
 	float m_desiredSpeedKph = 0;
+	float m_setpointKph = 0;
 	percent_t m_basePosition = 0;
 	percent_t m_throttleOffset = 0;
 	percent_t m_throttlePosition = 0;
@@ -69,3 +70,6 @@ void engageCCAtCurrentSpeed();
 void resumeCC();
 percent_t getCruiseControlThrottlePosition();
 void setCruiseControlPedalOverride(bool isOverriding);
+
+// Board hook: setpoint ramp rate in km/h per second
+float boardCruiseSetpointRampRate();

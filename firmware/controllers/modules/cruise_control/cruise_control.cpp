@@ -9,6 +9,11 @@ constexpr float kCruisePidI = 0.05f;
 constexpr float kCruisePidD = 0.0f;
 constexpr int16_t kCruisePidMin = -30;
 constexpr int16_t kCruisePidMax = 30;
+constexpr float kCruiseSetpointRampKphPerS = 2.0f;
+}
+
+PUBLIC_API_WEAK float boardCruiseSetpointRampRate() {
+	return kCruiseSetpointRampKphPerS;
 }
 
 void CruiseControl::initNoConfiguration() {
@@ -89,6 +94,9 @@ void CruiseControl::setCCStatus(CruiseControlStatus status) {
 	if (m_status != CruiseControlStatus::Enabled) {
 		m_throttleOffset = 0;
 		m_throttlePosition = 0;
+	} else {
+		// Start the setpoint ramp from the current speed
+		m_setpointKph = Sensor::get(SensorType::VehicleSpeed).value_or(m_desiredSpeedKph);
 	}
 }
 
@@ -133,7 +141,16 @@ expected<float> CruiseControl::getSetpoint() {
 		return unexpected;
 	}
 
-	return m_desiredSpeedKph;
+	// Ramp up to the desired speed so resuming from far below doesn't kick
+	float rate = boardCruiseSetpointRampRate();
+	if (rate <= 0) {
+		// Unset in older tunes
+		rate = kCruiseSetpointRampKphPerS;
+	}
+	float maxStep = rate * FAST_CALLBACK_PERIOD_MS / 1000.0f;
+	m_setpointKph = std::min(m_setpointKph + maxStep, m_desiredSpeedKph);
+
+	return m_setpointKph;
 }
 
 expected<float> CruiseControl::observePlant() {
