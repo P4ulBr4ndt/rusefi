@@ -29,8 +29,14 @@ public:
 	void engageCCAtCurrentSpeed();
 	void resumeCC();
 
-	percent_t getThrottleOffset() const {
-		return m_throttleOffset;
+	// Absolute throttle position requested by cruise, 0 when inactive
+	percent_t getThrottlePosition() const {
+		return m_throttlePosition;
+	}
+
+	// Set by the ETB when the grip opens further than cruise
+	void setPedalOverride(bool isOverriding) {
+		m_pedalOverride = isOverriding;
 	}
 
 private:
@@ -46,8 +52,11 @@ private:
 	Pid m_pid;
 	CruiseControlStatus m_status = CruiseControlStatus::Disabled;
 	float m_desiredSpeedKph = 0;
+	percent_t m_basePosition = 0;
 	percent_t m_throttleOffset = 0;
+	percent_t m_throttlePosition = 0;
 	bool m_shouldResetPid = true;
+	bool m_pedalOverride = false;
 };
 
 float getDesiredCCSpeed();
@@ -58,4 +67,5 @@ void setCCStatus(CruiseControlStatus status);
 CruiseControlStatus getCCStatus();
 void engageCCAtCurrentSpeed();
 void resumeCC();
-percent_t getCruiseControlThrottleOffset();
+percent_t getCruiseControlThrottlePosition();
+void setCruiseControlPedalOverride(bool isOverriding);

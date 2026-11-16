@@ -339,7 +339,10 @@ expected<percent_t> EtbController::getSetpointEtb() {
 	targetWithIdlePosition = interpolateClamped(0, etbIdleAddition, 100, 100, etbCurrentTarget);
 
 	percent_t targetPosition = targetWithIdlePosition + getLuaAdjustment();
-	targetPosition += getCruiseControlThrottleOffset();
+	// Cruise holds an absolute position, the pedal can only open further
+	percent_t cruisePosition = getCruiseControlThrottlePosition();
+	setCruiseControlPedalOverride(sanitizedPedal > 1.0f && targetPosition > cruisePosition);
+	targetPosition = std::max(targetPosition, cruisePosition);
 	// just an additional logging data point
 	adjustedEtbTarget = targetPosition;
 

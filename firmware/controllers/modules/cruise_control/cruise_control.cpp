@@ -42,6 +42,7 @@ void CruiseControl::onFastCallback() {
 			resetPid();
 		}
 		m_throttleOffset = 0;
+		m_throttlePosition = 0;
 	} else {
 		ClosedLoopController::update();
 	}
@@ -89,6 +90,7 @@ void CruiseControl::setCCStatus(CruiseControlStatus status) {
 
 	if (m_status != CruiseControlStatus::Enabled) {
 		m_throttleOffset = 0;
+		m_throttlePosition = 0;
 	}
 }
 
@@ -152,11 +154,18 @@ expected<percent_t> CruiseControl::getOpenLoop(float /*target*/) {
 expected<percent_t> CruiseControl::getClosedLoop(float target, float observation) {
 	if (m_shouldResetPid) {
 		resetPid();
+		// Take over from the current throttle so releasing the grip doesn't drop it
+		m_basePosition = Sensor::getOrZero(SensorType::Tps1);
 	}
 
 	if (Sensor::getOrZero(SensorType::Rpm) <= 0) {
 		m_pid.reset();
 		return 0;
+	}
+
+	// Hold the output while the grip overrides, so the PID doesn't wind down
+	if (m_pedalOverride) {
+		return m_throttleOffset;
 	}
 
 	return m_pid.getOutput(target, observation, FAST_CALLBACK_PERIOD_MS / 1000.0f);
@@ -166,15 +175,18 @@ void CruiseControl::setOutput(expected<percent_t> outputValue) {
 	if (!outputValue.Valid) {
 		m_pid.reset();
 		m_throttleOffset = 0;
+		m_throttlePosition = 0;
 		return;
 	}
 
 	m_throttleOffset = outputValue.Value;
+	m_throttlePosition = clampPercentValue(m_basePosition + m_throttleOffset);
 }
 
 void CruiseControl::resetPid() {
 	m_pid.reset();
 	m_throttleOffset = 0;
+	m_throttlePosition = 0;
 	m_shouldResetPid = false;
 }
 
@@ -229,6 +241,10 @@ void resumeCC() {
 	engine->module<CruiseControl>().unmock().resumeCC();
 }
 
-percent_t getCruiseControlThrottleOffset() {
-	return engine->module<CruiseControl>().unmock().getThrottleOffset();
+percent_t getCruiseControlThrottlePosition() {
+	return engine->module<CruiseControl>().unmock().getThrottlePosition();
+}
+
+void setCruiseControlPedalOverride(bool isOverriding) {
+	engine->module<CruiseControl>().unmock().setPedalOverride(isOverriding);
 }
