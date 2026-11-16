@@ -13,8 +13,6 @@ constexpr int16_t kCruisePidMax = 30;
 
 void CruiseControl::initNoConfiguration() {
 	m_pid.initPidClass(&engineConfiguration->cruisePid);
-	m_pid.iTermMin = kCruisePidMin;
-	m_pid.iTermMax = kCruisePidMax;
 
 	m_shouldResetPid = true;
 }
@@ -185,6 +183,9 @@ void CruiseControl::setOutput(expected<percent_t> outputValue) {
 
 void CruiseControl::resetPid() {
 	m_pid.reset();
+	// Keep the I-term inside the output limits so it can't wind up behind the clamp
+	m_pid.iTermMin = engineConfiguration->cruisePid.minValue;
+	m_pid.iTermMax = engineConfiguration->cruisePid.maxValue;
 	m_throttleOffset = 0;
 	m_throttlePosition = 0;
 	m_shouldResetPid = false;
