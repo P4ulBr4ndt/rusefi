@@ -76,6 +76,10 @@ extern std::optional<setup_custom_board_output_type> custom_board_getMetaLowSide
 // LTFT to VE table custom apply algo
 extern std::optional<setup_custom_board_overrides_type> custom_board_LtftTrimToVeApply;
 
+// TS page 4 (TS_PAGE_BOARD): returns the board's page memory, PAGE_SIZE_3 bytes laid out as page_3_generated.h
+using board_ts_page_type = uint8_t * (*)();
+extern std::optional<board_ts_page_type> custom_board_ts_page;
+
 // specific firmware builds are meant for specific hardware. In order to provide best user experience on well-known boards sometimes we reduce user flexibility.
 extern std::optional<setup_custom_board_overrides_type> custom_board_DefaultConfiguration;
 extern std::optional<setup_custom_board_overrides_type> custom_board_ConfigOverrides;
