@@ -49,6 +49,8 @@ private:
 	void resetPid();
 	float sanitizeSpeed(float speedKph) const;
 
+	// Copy of cruisePid with the offset zeroed, refreshed on every PID reset
+	pid_s m_pidConfig{};
 	Pid m_pid;
 	CruiseControlStatus m_status = CruiseControlStatus::Disabled;
 	float m_desiredSpeedKph = 0;

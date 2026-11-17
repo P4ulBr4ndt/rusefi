@@ -17,7 +17,7 @@ PUBLIC_API_WEAK float boardCruiseSetpointRampRate() {
 }
 
 void CruiseControl::initNoConfiguration() {
-	m_pid.initPidClass(&engineConfiguration->cruisePid);
+	m_pid.initPidClass(&m_pidConfig);
 
 	m_shouldResetPid = true;
 }
@@ -26,7 +26,6 @@ void CruiseControl::setDefaultConfiguration() {
 	engineConfiguration->cruisePid.pFactor = kCruisePidP;
 	engineConfiguration->cruisePid.iFactor = kCruisePidI;
 	engineConfiguration->cruisePid.dFactor = kCruisePidD;
-	engineConfiguration->cruisePid.offset = 0;
 	engineConfiguration->cruisePid.periodMs = FAST_CALLBACK_PERIOD_MS;
 	engineConfiguration->cruisePid.minValue = kCruisePidMin;
 	engineConfiguration->cruisePid.maxValue = kCruisePidMax;
@@ -199,10 +198,14 @@ void CruiseControl::setOutput(expected<percent_t> outputValue) {
 }
 
 void CruiseControl::resetPid() {
+	// Cruise starts from the takeover position, so there is no fixed PID offset
+	m_pidConfig = engineConfiguration->cruisePid;
+	m_pidConfig.offset = 0;
+
 	m_pid.reset();
 	// Keep the I-term inside the output limits so it can't wind up behind the clamp
-	m_pid.iTermMin = engineConfiguration->cruisePid.minValue;
-	m_pid.iTermMax = engineConfiguration->cruisePid.maxValue;
+	m_pid.iTermMin = m_pidConfig.minValue;
+	m_pid.iTermMax = m_pidConfig.maxValue;
 	m_throttleOffset = 0;
 	m_throttlePosition = 0;
 	m_shouldResetPid = false;
