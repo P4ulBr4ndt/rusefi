@@ -31,6 +31,16 @@ ifneq ("$(wildcard $(BOARD_DIR)/board_config.txt)","")
   CONFIG_INPUTS += $(BOARD_DIR)/board_config.txt
 endif
 
+ifneq ("$(wildcard $(BOARD_DIR)/board_page3.txt)","")
+  CONFIG_INPUTS += $(BOARD_DIR)/board_page3.txt
+else
+  CONFIG_INPUTS += $(PROJECT_DIR)/integration/config_page_3.txt
+endif
+
+ifneq ("$(wildcard $(BOARD_DIR)/board_event_triggers.ini)","")
+  CONFIG_INPUTS += $(BOARD_DIR)/board_event_triggers.ini
+endif
+
 # Build the generated pin code only if the connector directory exists
 ifneq ("$(wildcard $(BOARD_DIR)/connectors/*.yaml)","")
   PIN_FILES = \
@@ -51,6 +61,7 @@ CONFIG_FILES = \
   $(PROJECT_DIR)/$(META_OUTPUT_ROOT_FOLDER)controllers/generated/generated_fields_api_header.h \
   $(PROJECT_DIR)/$(META_OUTPUT_ROOT_FOLDER)controllers/generated/page_1_generated.h \
   $(PROJECT_DIR)/$(META_OUTPUT_ROOT_FOLDER)controllers/generated/page_2_generated.h \
+  $(PROJECT_DIR)/$(META_OUTPUT_ROOT_FOLDER)controllers/generated/page_3_generated.h \
   $(PROJECT_DIR)/$(META_OUTPUT_ROOT_FOLDER)controllers/lua/generated/value_lookup_generated.cpp \
   $(PROJECT_DIR)/$(META_OUTPUT_ROOT_FOLDER)controllers/lua/generated/value_lookup_generated.md \
   $(PROJECT_DIR)/../java_console/models/src/main/java/com/rusefi/config/generated/VariableRegistryValues.java \

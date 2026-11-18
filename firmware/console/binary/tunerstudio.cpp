@@ -168,6 +168,8 @@ void tunerStudioDebug(TsChannelBase* tsChannel, const char *msg) {
 // use this array for any disabled pages on TS
 uint8_t ts_blank_page_placeholder[256];
 
+std::optional<board_ts_page_type> custom_board_ts_page;
+
 static uint8_t* getWorkingPageAddr(TsChannelBase* tsChannel, size_t page, size_t offset) {
 	// TODO: validate offset?
 	switch (page) {
@@ -186,6 +188,12 @@ static uint8_t* getWorkingPageAddr(TsChannelBase* tsChannel, size_t page, size_t
 	case TS_PAGE_LTFT_TRIMS:
 		return (uint8_t *)ltftGetTsPage() + offset;
 #endif
+	case TS_PAGE_BOARD:
+		if (custom_board_ts_page.has_value()) {
+			return custom_board_ts_page.value()() + offset;
+		}
+		// No board page: the core placeholder page (integration/config_page_3.txt) fits the blank page
+		return (PAGE_SIZE_3 <= sizeof(ts_blank_page_placeholder)) ? ts_blank_page_placeholder + offset : nullptr;
 	default:
 		tunerStudioError(tsChannel, "ERROR: page address out of range");
 		return nullptr;
@@ -208,6 +216,8 @@ static constexpr size_t getTunerStudioPageSize(size_t page) {
 	case TS_PAGE_LTFT_TRIMS:
 		return ltftGetTsPageSize();
 #endif
+	case TS_PAGE_BOARD:
+		return PAGE_SIZE_3;
 	default:
 		return 0;
 	}
@@ -313,6 +323,12 @@ void TunerStudio::handleWriteChunkCommand(TsChannelBase* tsChannel, uint16_t pag
 	if (validateOffsetCount(page, offset, count)) {
 		tunerStudioError(tsChannel, "ERROR: WR out of range");
 		sendErrorCode(tsChannel, TS_RESPONSE_OUT_OF_RANGE);
+		return;
+	}
+
+	// The board page is ECU output only
+	if (page == TS_PAGE_BOARD) {
+		sendErrorCode(tsChannel, TS_RESPONSE_UNRECOGNIZED_COMMAND, "ERROR: WR read-only page");
 		return;
 	}
 

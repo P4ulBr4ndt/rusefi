@@ -1,0 +1,5 @@
+! Placeholder for TS page 4 (TS_PAGE_BOARD) on boards without their own board_page3.txt.
+! A board page is RAM-only output data served through custom_board_ts_page, see gen_config_common.sh
+struct_no_prefix page3_s
+  uint8_t[4] boardPagePlaceholder;;"",  1, 0, 0, 0, 0, noMsqSave,controllerPriority
+end_struct

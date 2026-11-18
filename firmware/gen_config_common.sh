@@ -42,6 +42,13 @@ set_board_file BOARD_VE_FILE "${BOARD_DIR}/board_ve.ini"
 set_board_file BOARD_INJECTION_SETTINGS_FILE "${BOARD_DIR}/board_injection_settings.ini"
 set_board_file BOARD_IGNITION_SETTINGS_FILE "${BOARD_DIR}/board_ignition_settings.ini"
 set_board_file BOARD_FRONT_PAGE_FILE "${BOARD_DIR}/board_front_page.ini"
+set_board_file BOARD_EVENT_TRIGGERS_FILE "${BOARD_DIR}/board_event_triggers.ini"
+
+# TS page 4 (TS_PAGE_BOARD): board-specific RAM-only page, core placeholder otherwise
+BOARD_PAGE_FILE="${BOARD_DIR}/board_page3.txt"
+if [ ! -f "$BOARD_PAGE_FILE" ]; then
+    BOARD_PAGE_FILE="integration/config_page_3.txt"
+fi
 
 
 # most static arguments go first
@@ -84,6 +91,8 @@ COMMON_GEN_CONFIG="
  -readfile BOARD_POPULAR_VEHICLES_FILE ${BOARD_POPULAR_VEHICLES_FILE} \
  -readfile BOARD_ENGINE_METADATA_FILE ${BOARD_ENGINE_METADATA_FILE} \
  -readfile BOARD_CAM_SETTINGS_FILE ${BOARD_CAM_SETTINGS_FILE} \
+ -readfile BOARD_EVENT_TRIGGERS_FROM_FILE ${BOARD_EVENT_TRIGGERS_FILE} \
+ -board_page ${BOARD_PAGE_FILE} \
  -prepend integration/rusefi_config_trigger.txt \
  -prepend ${META_OUTPUT_ROOT_FOLDER}console/binary/generated/total_live_data_generated.h \
  -soft_prepend ${BOARD_DIR}/prepend.txt \

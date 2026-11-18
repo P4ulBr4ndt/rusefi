@@ -38,6 +38,9 @@ public class ConfigDefinition {
     public static final String CONFIG_PATH = "java_tools/configuration_definition/src/main/resources/config_definition.options";
     public static final String READFILE_OPTION = "-readfile";
     public static final String KEY_ENUMS_CONFIG_PATH = "-enumsConfig";
+    // TS page 4: board-specific RAM-only page, see TS_PAGE_BOARD
+    private static final String KEY_BOARD_PAGE = "-board_page";
+    private static final String DEFAULT_BOARD_PAGE = "integration/config_page_3.txt";
 
     public static void main(String[] args) {
         try {
@@ -77,6 +80,7 @@ public class ConfigDefinition {
         String signaturePrependFile = null;
         List<String> enumInputFiles = new ArrayList<>();
         PinoutLogic pinoutLogic = null;
+        String boardPageFile = DEFAULT_BOARD_PAGE;
 
         for (int i = 0; i < args.length - 1; i += 2) {
             String key = args[i];
@@ -174,6 +178,9 @@ public class ConfigDefinition {
                     for (String inputFile : pinoutLogic.getInputFiles())
                         state.addInputFile(inputFile);
                     break;
+                case KEY_BOARD_PAGE:
+                    boardPageFile = args[i + 1];
+                    break;
                 case KEY_ENUMS_CONFIG_PATH:
                     String enumsDefinitionsFilePath = args[i + 1];
                     String enumsDefinitionsFilePathFixed = IoUtil3.prependIfNotAbsolute(RootHolder.ROOT, enumsDefinitionsFilePath);
@@ -185,6 +192,7 @@ public class ConfigDefinition {
         FieldsApiGenerator.run();
         handlePage(state, 1, softPrePrependsFileNames);
         handlePage(state, 2, softPrePrependsFileNames);
+        handleBoardPage(state, boardPageFile, softPrePrependsFileNames);
 
         if (tsInputFileFolder != null) {
             // used to update .ini files
@@ -217,6 +225,21 @@ public class ConfigDefinition {
 
     private static void handlePage(ReaderStateImpl parentState, int pageIndex, List<String> softPrepends) throws IOException {
         PlainConfigHandler page = new PlainConfigHandler("integration/config_page_" + pageIndex + ".txt", pageIndex, softPrepends);
+        registerPage(parentState, pageIndex, page);
+    }
+
+    /**
+     * Page 3 (TS page 4) is defined by the board, or by the core placeholder if the board has none.
+     * Its header goes to the board's generated folder since its layout is board-specific.
+     */
+    private static void handleBoardPage(ReaderStateImpl parentState, String boardPageFile, List<String> softPrepends) throws IOException {
+        PlainConfigHandler page = new PlainConfigHandler(boardPageFile, "controllers/generated/page_3_generated.h", softPrepends);
+        registerPage(parentState, 3, page);
+        // the page layout is part of the TS contract, so it has to change the signature
+        parentState.addInputFile(boardPageFile);
+    }
+
+    private static void registerPage(ReaderStateImpl parentState, int pageIndex, PlainConfigHandler page) throws IOException {
         page.doJob();
         // PAGE_CONTENT_1 is handled here!
         parentState.getVariableRegistry().put("PAGE_CONTENT_" + pageIndex, page.tsProjectConsumer.getContent());
