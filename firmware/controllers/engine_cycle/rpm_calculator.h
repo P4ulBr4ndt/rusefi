@@ -107,6 +107,10 @@ public:
 	 */
 	uint32_t getRevolutionCounterSincePhaseSync() const;
 	/**
+	 * Engine cycles since the engine transitioned from cranking to the running state
+	 */
+	uint32_t getRevolutionCounterSinceRunning() const;
+	/**
 	 * RPM rate of change between current RPM and RPM measured during previous engine cycle
 	 * see also SC_RPM_ACCEL
 	 */
@@ -165,6 +169,10 @@ private:
 	 * Same as the above, but only counting once engine phase is known
 	 */
 	uint32_t revolutionCounterSincePhaseSync = 0;
+	/**
+	 * Same as the above, but only counting once the engine is running (cranking finished)
+	 */
+	uint32_t revolutionCounterSinceRunning = 0;
 
 	spinning_state_e state = STOPPED;
 

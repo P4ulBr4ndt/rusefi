@@ -122,7 +122,8 @@ IIdleController::Phase IdleController::determinePhase(float rpm, IIdleController
 
 float IdleController::getCrankingTaperFraction(float clt) const {
   	float taperDuration = interpolate2d(clt, config->afterCrankingIACtaperDurationBins, config->afterCrankingIACtaperDuration);
-	return (float)engine->rpmCalculator.getRevolutionCounterSinceStart() / taperDuration;
+	// count from the end of cranking, so the taper length does not depend on how long cranking took
+	return (float)engine->rpmCalculator.getRevolutionCounterSinceRunning() / taperDuration;
 }
 
 float IdleController::getCrankingOpenLoop(float clt) const {

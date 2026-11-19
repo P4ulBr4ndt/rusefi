@@ -324,9 +324,22 @@ TEST(idle_v2, getCrankingTaperFraction) {
 	const float mockedTemperature = 50;
 
 	setArrayValues(config->afterCrankingIACtaperDuration, 500);
+	engineConfiguration->cranking.rpm = 500;
 
 	// 0 cycles - no taper yet, pure cranking value
 	EXPECT_FLOAT_EQ(0, dut.getCrankingTaperFraction(mockedTemperature));
+
+	// cycles while cranking must not advance the taper
+	engine->rpmCalculator.setRpmValue(200);
+	ASSERT_TRUE(engine->rpmCalculator.isCranking());
+	for (size_t i = 0; i < 100; i++) {
+		engine->rpmCalculator.onNewEngineCycle();
+	}
+	EXPECT_FLOAT_EQ(0, dut.getCrankingTaperFraction(mockedTemperature));
+
+	// cranking finished - taper starts counting
+	engine->rpmCalculator.setRpmValue(1000);
+	ASSERT_TRUE(engine->rpmCalculator.isRunning());
 
 	// 250 cycles - half way, 50% each value -> outputs 50
 	for (size_t i = 0; i < 250; i++) {
